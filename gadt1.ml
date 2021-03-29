@@ -34,19 +34,23 @@ type ('ctor, 'ty) t =
 
 let decode fields form =
   let rec loop :
-      type ctor ty. (ctor, ty) t -> string list -> (ty, string) result =
-   fun { fields; ctor } msg ->
+      type ctor ty. (ctor, ty) t -> string list -> (ty, string list) result =
+   fun { fields; ctor } errors ->
+    let open! Field in
     match fields with
-    | Field.[] -> Ok ctor
-    (* | Field.[ _ ] -> Error errors *)
-    | Field.(field :: fields) -> (
+    | [] ->
+      if List.length errors > 0 then
+        Error errors
+      else
+        Ok ctor
+    | field :: fields -> (
       match field.decoder form with
       | Ok v -> (
         match ctor v with
-        | ctor -> loop { fields; ctor } msg
+        | ctor -> loop { fields; ctor } errors
         | exception ex ->
           let _errors = List.cons (Printexc.to_string ex) in
-          loop { fields; ctor } msg)
+          loop { fields; ctor } errors)
       | Error _e -> failwith "")
   in
   loop fields []
