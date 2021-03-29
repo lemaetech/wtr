@@ -32,8 +32,7 @@ type ('ctor, 'ty) t =
   ; ctor : 'ctor
   }
 
-let decode : type ctor ty. (ctor, ty) t -> string Map.t -> (ty, string) result =
- fun fields form ->
+let decode fields form =
   let rec loop :
       type ctor ty. (ctor, ty) t -> string list -> (ty, string) result =
    fun { fields; ctor } msg ->
