@@ -1,2 +1,4 @@
 (executable
+ (flags
+  (:standard -principal))
  (name gadt1))
