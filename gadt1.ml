@@ -12,9 +12,11 @@ module Field = struct
     | [] : ('a, 'a) list
     | ( :: ) : 'a t * ('b, 'c) list -> ('a -> 'b, 'c) list
 
-  let make name decoder = { name; decoder }
+  let make : string -> 'a decoder -> 'a t =
+   fun name decoder -> { name; decoder }
 
-  let bool name =
+  let bool : string -> 'a t =
+   fun name ->
     let decoder map =
       match Map.find_opt name map with
       | Some v -> (
