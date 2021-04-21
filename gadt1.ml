@@ -1,60 +1,18 @@
-module Map = Map.Make (String)
+type ('ty, 'v) t =
+  | End : ('v, 'v) t
+  | Constant : string * ('ty, 'v) t -> ('ty, 'v) t
+  | Hole : ('ty, 'v) t -> (string -> 'ty, 'v) t
 
-type 'a decoder = string Map.t -> ('a, string) result
+let rec kprintf : type ty res. (string -> res) -> (ty, res) t -> ty =
+ fun k -> function
+  | End -> k ""
+  | Constant (const, fmt) -> kprintf (fun str -> k @@ const ^ str) fmt
+  | Hole fmt ->
+    let f s = kprintf (fun str -> k @@ s ^ str) fmt in
+    f
 
-module Field = struct
-  type 'a t =
-    { name : string
-    ; decoder : 'a decoder
-    }
+let printf fmt = kprintf (fun x -> x) fmt
 
-  type (_, _) list =
-    | [] : ('a, 'a) list
-    | ( :: ) : 'a t * ('b, 'c) list -> ('a -> 'b, 'c) list
+let fmt = Hole (Constant (" | ", Hole End))
 
-  let make : string -> 'a decoder -> 'a t =
-   fun name decoder -> { name; decoder }
-
-  let bool : string -> 'a t =
-   fun name ->
-    let decoder map =
-      match Map.find_opt name map with
-      | Some v -> (
-        try Ok (bool_of_string v) with
-        | _ -> Error ("ReWeb.Form.Field.bool: " ^ name))
-      | None -> Error "Not Found"
-    in
-    make name decoder
-end
-
-type ('ctor, 'ty) t =
-  { fields : ('ctor, 'ty) Field.list
-  ; ctor : 'ctor
-  }
-
-let decode fields form =
-  let rec loop :
-      type ctor ty. (ctor, ty) t -> string list -> (ty, string list) result =
-   fun ffields errors ->
-    let open! Field in
-    match ffields.fields with
-    | [] ->
-      if List.length errors > 0 then
-        Error errors
-      else
-        Ok ffields.ctor
-    | field :: tl -> (
-      match field.decoder form with
-      | Ok v -> (
-        match ffields.ctor v with
-        | ctor -> loop { fields = tl; ctor } errors
-        | exception ex ->
-          let errors = List.cons (Printexc.to_string ex) errors in
-          loop { ffields with fields = tl } errors)
-      | Error e ->
-        let errors = List.cons e errors in
-        loop { ffields with fields = tl } errors)
-  in
-  loop fields []
-
-let () = print_endline "Hello, World!"
+let a = printf fmt
