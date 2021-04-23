@@ -25,9 +25,17 @@ let fmt2 = Constant ("||", Constant ("   ", End))
 
 let f = printf fmt2
 
-let rec apply : type ty res. ty -> (ty, res) t -> res =
- fun f -> function
+type param =
+  | Int of int
+  | Float of float
+
+let rec apply : type ty res. (ty, res) t -> ty -> res =
+ fun fmt f ->
+  match fmt with
   | End -> f
-  | Constant (_, fmt) -> apply f fmt
-  | String fmt -> apply (f "hello") fmt
-  | Int fmt -> apply (f 10) fmt
+  | Constant (_, fmt) -> apply fmt f
+  | String fmt -> apply fmt (f "hello")
+  | Int fmt -> apply fmt (f 10)
+
+let a = apply fmt1 (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
+(* - : string = "hello || hello || 10" *)
