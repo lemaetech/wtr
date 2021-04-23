@@ -1,18 +1,26 @@
 type ('ty, 'v) t =
   | End : ('v, 'v) t
   | Constant : string * ('ty, 'v) t -> ('ty, 'v) t
-  | Hole : ('ty, 'v) t -> (string -> 'ty, 'v) t
+  | String : ('ty, 'v) t -> (string -> 'ty, 'v) t
+  | Int : ('ty, 'v) t -> (int -> 'ty, 'v) t
 
 let rec kprintf : type ty res. (string -> res) -> (ty, res) t -> ty =
  fun k -> function
   | End -> k ""
   | Constant (const, fmt) -> kprintf (fun str -> k @@ const ^ str) fmt
-  | Hole fmt ->
+  | String fmt ->
     let f s = kprintf (fun str -> k @@ s ^ str) fmt in
     f
+  | Int fmt ->
+    let f i = kprintf (fun str -> k @@ string_of_int i ^ str) fmt in
+    f
 
-let printf fmt = kprintf (fun x -> x) fmt
+let printf : ('ty, 'v) t -> 'a = fun fmt -> kprintf (fun x -> x) fmt
 
-let fmt = Hole (Constant (" | ", Hole End))
+let fmt1 = String (Constant (" | ", String (Constant (" ", Int End))))
 
-let a = printf fmt
+let f1 = printf fmt1 "hello" "hello" 12
+
+let fmt2 = Constant ("||", Constant ("   ", End))
+
+let f = printf fmt2
