@@ -50,7 +50,7 @@ let rec apply_params : type ty res. (ty, res) t -> ty -> param list -> res =
   | Int fmt, Int i :: params -> apply_params fmt (f i) params
   | _, _ -> failwith "Not matched"
 
-let a =
+let _a =
   apply_params fmt1
     (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
     [ String "a"; String "b"; Int 100 ]
