@@ -15,15 +15,15 @@ let rec kprintf : type ty res. (string -> res) -> (ty, res) t -> ty =
     let f i = kprintf (fun str -> k @@ string_of_int i ^ str) fmt in
     f
 
-let printf : ('ty, 'v) t -> 'a = fun fmt -> kprintf (fun x -> x) fmt
+let sprintf : ('ty, 'v) t -> 'a = fun fmt -> kprintf (fun x -> x) fmt
 
 let fmt1 = String (Constant (" | ", String (Constant (" ", Int End))))
 
-let f1 = printf fmt1 "hello" "hello" 12
+let f1 = sprintf fmt1 "hello" "hello" 12
 
 let fmt2 = Constant ("||", Constant ("   ", End))
 
-let f = printf fmt2
+let f = sprintf fmt2
 
 let rec apply : type ty res. (ty, res) t -> ty -> res =
  fun fmt f ->
