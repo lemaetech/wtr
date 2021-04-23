@@ -25,10 +25,6 @@ let fmt2 = Constant ("||", Constant ("   ", End))
 
 let f = printf fmt2
 
-type param =
-  | Int of int
-  | Float of float
-
 let rec apply : type ty res. (ty, res) t -> ty -> res =
  fun fmt f ->
   match fmt with
@@ -39,3 +35,23 @@ let rec apply : type ty res. (ty, res) t -> ty -> res =
 
 let a = apply fmt1 (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
 (* - : string = "hello || hello || 10" *)
+
+type param =
+  | Int of int
+  (* | Float of float *)
+  | String of string
+
+let rec apply_params : type ty res. (ty, res) t -> ty -> param list -> res =
+ fun fmt f params ->
+  match (fmt, params) with
+  | End, [] -> f
+  | Constant (_, fmt), params -> apply_params fmt f params
+  | String fmt, String s :: params -> apply_params fmt (f s) params
+  | Int fmt, Int i :: params -> apply_params fmt (f i) params
+  | _, _ -> failwith "Not matched"
+
+let a =
+  apply_params fmt1
+    (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
+    [ String "a"; String "b"; Int 100 ]
+(* val a : string = "a || b || 100" *)
