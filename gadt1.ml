@@ -24,3 +24,10 @@ let f1 = printf fmt1 "hello" "hello" 12
 let fmt2 = Constant ("||", Constant ("   ", End))
 
 let f = printf fmt2
+
+let rec apply : type ty res. ty -> (ty, res) t -> res =
+ fun f -> function
+  | End -> f
+  | Constant (_, fmt) -> apply f fmt
+  | String fmt -> apply (f "hello") fmt
+  | Int fmt -> apply (f 10) fmt
