@@ -1,4 +1,7 @@
+(library
+ (name hlist)
+ (modules hlist))
+
 (executable
- (flags
-  (:standard -principal))
- (name gadt1))
+ (name gadt1)
+ (modules gadt1))
