@@ -18,18 +18,21 @@ let hl = Hlist.[ 1; 1.2; "hello" ]
 (* val hl : (int -> float -> string -> void) Hlist.t = Hlist.(::) (1, Hlist.(::)
    (1.2, Hlist.(::) ("hello", Hlist.[]))) *)
 
-type 'a witness = ..
+module Witness = struct
+  type 'a witness = ..
 
-type 'a witness +=
-  | Int : int witness
-  | Float : float witness
-  | Bool : bool witness
+  type 'a witness +=
+    | Int : int witness
+    | Float : float witness
+    | Bool : bool witness
 
-module Witness = Make (struct
-  type 'a t = 'a witness
-end)
+  include Make (struct
+    type 'a t = 'a witness
+  end)
+end
 
 let a = Witness.[]
+(* val a : void Witness.t = Witness.[] *)
 
 (** [pack] packs ['a t] and ['a witness] into a monomorphic type so that we can
     create ['a t] at runtime dynamically. *)
