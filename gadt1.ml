@@ -1,4 +1,6 @@
-type ('ty, 'v) t =
+type ('ty, 'v) t = ..
+
+type ('ty, 'v) t +=
   | End : ('v, 'v) t
   | Constant : string * ('ty, 'v) t -> ('ty, 'v) t
   | String : ('ty, 'v) t -> (string -> 'ty, 'v) t
@@ -14,16 +16,19 @@ let rec kprintf : type ty res. (string -> res) -> (ty, res) t -> ty =
   | Int fmt ->
     let f i = kprintf (fun str -> k @@ string_of_int i ^ str) fmt in
     f
+  | _ -> assert false
 
 let sprintf : ('ty, 'v) t -> 'a = fun fmt -> kprintf (fun x -> x) fmt
 
 let fmt1 = String (Constant (" | ", String (Constant (" ", Int End))))
 
 let f1 = sprintf fmt1 "hello" "hello" 12
+(* val f1 : string = "hello | hello 12" *)
 
-let fmt2 = Constant ("||", Constant ("   ", End))
+let fmt2 = String (Constant ("   ", End))
 
 let f = sprintf fmt2
+(* val f : string -> string = <fun> *)
 
 let rec apply : type ty res. (ty, res) t -> ty -> res =
  fun fmt f ->
@@ -32,6 +37,7 @@ let rec apply : type ty res. (ty, res) t -> ty -> res =
   | Constant (_, fmt) -> apply fmt f
   | String fmt -> apply fmt (f "hello")
   | Int fmt -> apply fmt (f 10)
+  | _ -> assert false
 
 let a = apply fmt1 (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
 (* - : string = "hello || hello || 10" *)
@@ -55,3 +61,5 @@ let _a =
     (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
     [ String "a"; String "b"; Int 100 ]
 (* val a : string = "a || b || 100" *)
+
+(* type ('ty, 'v) t1 = .. *)
