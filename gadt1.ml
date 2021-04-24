@@ -32,18 +32,6 @@ let fmt2 = String (Constant ("   ", End))
 let f = sprintf fmt2
 (* val f : string -> string = <fun> *)
 
-let rec apply : type ty res. (ty, res) t -> ty -> res =
- fun fmt f ->
-  match fmt with
-  | End -> f
-  | Constant (_, fmt) -> apply fmt f
-  | String fmt -> apply fmt (f "hello")
-  | Int fmt -> apply fmt (f 10)
-  | _ -> assert false
-
-let a = apply fmt1 (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
-(* - : string = "hello || hello || 10" *)
-
 type param =
   | Int of int
   (* | Float of float *)
