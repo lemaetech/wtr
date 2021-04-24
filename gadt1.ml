@@ -51,5 +51,3 @@ let _a =
     (fun s1 s2 i -> s1 ^ " || " ^ s2 ^ " || " ^ string_of_int i)
     [ String "a"; String "b"; Int 100 ]
 (* val a : string = "a || b || 100" *)
-
-(* type ('ty, 'v) t1 = .. *)
