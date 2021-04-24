@@ -1,3 +1,5 @@
+(** Some experiments with GADTs. Based on article at
+    https://drup.github.io/2016/08/02/difflists/ *)
 type ('ty, 'v) t = ..
 
 type ('ty, 'v) t +=
