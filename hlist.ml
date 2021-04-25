@@ -1,5 +1,6 @@
 type void = |
 
+(** Makes ['a t] support OCaml list syntax. *)
 module Make_list (T : sig
   type 'a t
 end) =
