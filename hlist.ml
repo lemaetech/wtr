@@ -1,6 +1,6 @@
 type void = |
 
-module Make (T : sig
+module Make_list (T : sig
   type 'a t
 end) =
 struct
@@ -10,7 +10,7 @@ struct
 end
 
 (** Hl - Heterogenous list, let c = [ "s"; 1; 2.3; true ] *)
-module Hlist = Make (struct
+module Hlist = Make_list (struct
   type 'a t = 'a
 end)
 
@@ -26,7 +26,7 @@ module Witness = struct
     | Float : float witness
     | Bool : bool witness
 
-  include Make (struct
+  include Make_list (struct
     type 'a t = 'a witness
   end)
 end
@@ -48,3 +48,6 @@ let rec parse : int list -> pack = function
       Pack (Hlist.(true :: v), Witness.(Bool :: t))
     else
       Pack (Hlist.(10 :: v), Witness.(Int :: t))
+
+(* let route fmt f *)
+(* let match router path *)
