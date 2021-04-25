@@ -2,6 +2,10 @@
  (name hlist)
  (modules hlist))
 
+(library
+ (name route)
+ (modules route))
+
 (executable
  (name gadt1)
  (modules gadt1))
