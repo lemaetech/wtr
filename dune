@@ -3,8 +3,8 @@
  (modules hlist))
 
 (library
- (name route)
- (modules route))
+ (name router)
+ (modules router))
 
 (executable
  (name gadt1)
