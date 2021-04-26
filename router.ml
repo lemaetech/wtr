@@ -11,7 +11,7 @@ end
 module Route = struct
   type (_, _) t =
     | End : ('a, 'a) t
-    | Compose : ('a, 'b) Path.t * ('b, 'c) t -> ('a, 'c) t
+    | Combine : ('a, 'b) Path.t * ('b, 'c) t -> ('a, 'c) t
 end
 
 module R = Route
@@ -36,11 +36,11 @@ let add : type ty v. t -> (ty, v) Route.t -> ty -> t =
 
 (* /home/:string/:int*)
 let r1 : (string -> int -> 'a, 'a) Route.t =
-  R.Compose (P.Literal ("home", P.String (P.Int P.End)), R.End)
+  Combine (P.Literal ("home", P.String (P.Int P.End)), R.End)
 
 (* /home/:string/:string *)
 let r2 : (string -> string -> 'a, 'a) Route.t =
-  R.Compose (P.Literal ("home", P.String (P.String P.End)), R.End)
+  Combine (P.Literal ("home", P.String (P.String P.End)), R.End)
 
 let router1 =
   add empty r1 (fun (s1 : string) (i : int) -> s1 ^ " || " ^ string_of_int i)
