@@ -37,7 +37,7 @@ let add : type ty v. (ty, v) Route.t -> ty -> t -> t =
  fun route f t ->
   let loop (Node _node) = function
     | R.[] -> empty_with (Some (Handler (route, f)))
-    | R.(_ :: _) -> empty_with (Some (Handler (route, f)))
+    | _ :: _ -> empty_with (Some (Handler (route, f)))
   in
   loop t route
 
