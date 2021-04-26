@@ -14,12 +14,11 @@ module Route = struct
     | Combine : ('a, 'b) Path.t * ('b, 'c) t -> ('a, 'c) t
 end
 
-module R = Route
-module P = Path
 module Smap = Map.Make (String)
 
 type route_handler = Handler : ('ty, 'v) Route.t * 'ty -> route_handler
 
+(** Router *)
 type t =
   | Node of
       { data : route_handler option
@@ -30,6 +29,9 @@ type t =
 let empty_with data = Node { data; literal = Smap.empty; int_param = None }
 
 let empty = empty_with None
+
+module R = Route
+module P = Path
 
 let add : type ty v. t -> (ty, v) Route.t -> ty -> t =
  fun (Node node) route f -> Node { node with data = Some (Handler (route, f)) }
