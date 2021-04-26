@@ -2,18 +2,17 @@ open! Core
 
 module Path = struct
   type ('ty, 'v) t =
-    | End : ('v, 'v) t
-    | Literal : string * ('ty, 'v) t -> ('ty, 'v) t
-    | String : ('ty, 'v) t -> (string -> 'ty, 'v) t
-    | Int : ('ty, 'v) t -> (int -> 'ty, 'v) t
-    | Float : ('ty, 'v) t -> (int -> 'ty, 'v) t
-    | Bool : ('ty, 'v) t -> (bool -> 'ty, 'v) t
+    | Literal : string -> ('ty, 'v) t
+    | String : (string -> 'ty, 'v) t
+    | Int : (int -> 'ty, 'v) t
+    | Float : (float -> 'ty, 'v) t
+    | Bool : (bool -> 'ty, 'v) t
 end
 
 module Route = struct
   type (_, _) t =
-    | End : ('a, 'b) t
-    | Combine : ('a, 'b) Path.t * ('b, 'c) t -> ('a, 'c) t
+    | [] : ('a, 'b) t
+    | ( :: ) : ('a, 'b) Path.t * ('b, 'c) t -> ('a, 'c) t
 end
 
 type route_handler = Handler : ('ty, 'v) Route.t * 'ty -> route_handler
@@ -37,8 +36,8 @@ module P = Path
 let add : type ty v. (ty, v) Route.t -> ty -> t -> t =
  fun route f t ->
   let loop (Node _node) = function
-    | R.End -> empty_with (Some (Handler (route, f)))
-    | R.Combine (_, _) -> empty_with (Some (Handler (route, f)))
+    | R.[] -> empty_with (Some (Handler (route, f)))
+    | R.(_ :: _) -> empty_with (Some (Handler (route, f)))
   in
   loop t route
 
@@ -46,11 +45,11 @@ let match_uri : t -> string -> 'a option = fun _router uri -> Some uri
 
 (* /home/:string/:int*)
 let r1 : (string -> int -> 'a, 'a) Route.t =
-  Combine (P.Literal ("home", P.String (P.Int P.End)), R.End)
+  R.[ P.Literal "home"; P.String; P.Int ]
 
 (* /home/:string/:string *)
 let r2 : (string -> string -> 'a, 'a) Route.t =
-  Combine (P.Literal ("home", P.String (P.String P.End)), R.End)
+  R.[ P.Literal "home"; P.String; P.String ]
 
 let router =
   empty
