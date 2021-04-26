@@ -21,12 +21,13 @@ type route_handler = Handler : ('ty, 'v) Route.t * 'ty -> route_handler
 (** Router *)
 type t =
   | Node of
-      { data : route_handler option
+      { route_handler : route_handler option
       ; literal : t Smap.t
       ; int_param : t option
       }
 
-let empty_with data = Node { data; literal = Smap.empty; int_param = None }
+let empty_with route_handler =
+  Node { route_handler; literal = Smap.empty; int_param = None }
 
 let empty = empty_with None
 
@@ -34,7 +35,10 @@ module R = Route
 module P = Path
 
 let add : type ty v. (ty, v) Route.t -> ty -> t -> t =
- fun route f (Node node) -> Node { node with data = Some (Handler (route, f)) }
+ fun route f (Node node) ->
+  Node { node with route_handler = Some (Handler (route, f)) }
+
+let match_uri : t -> string -> 'a option = fun _router uri -> Some uri
 
 (* /home/:string/:int*)
 let r1 : (string -> int -> 'a, 'a) Route.t =
