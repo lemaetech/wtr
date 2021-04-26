@@ -33,8 +33,8 @@ let empty = empty_with None
 module R = Route
 module P = Path
 
-let add : type ty v. t -> (ty, v) Route.t -> ty -> t =
- fun (Node node) route f -> Node { node with data = Some (Handler (route, f)) }
+let add : type ty v. (ty, v) Route.t -> ty -> t -> t =
+ fun route f (Node node) -> Node { node with data = Some (Handler (route, f)) }
 
 (* /home/:string/:int*)
 let r1 : (string -> int -> 'a, 'a) Route.t =
@@ -44,8 +44,6 @@ let r1 : (string -> int -> 'a, 'a) Route.t =
 let r2 : (string -> string -> 'a, 'a) Route.t =
   Combine (P.Literal ("home", P.String (P.String P.End)), R.End)
 
-let router1 =
-  add empty r1 (fun (s1 : string) (i : int) -> s1 ^ " || " ^ string_of_int i)
-
-let route1 =
-  add router1 r2 (fun (s1 : string) (s2 : string) -> s1 ^ " || " ^ s2)
+let router =
+  add r1 (fun (s1 : string) (i : int) -> s1 ^ " || " ^ string_of_int i) empty
+  |> add r2 (fun (s1 : string) (s2 : string) -> s1 ^ " || " ^ s2)
