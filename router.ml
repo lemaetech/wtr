@@ -35,11 +35,15 @@ let add : type ty v. t -> (ty, v) Route.t -> ty -> t =
  fun (Node node) route f -> Node { node with data = Some (Handler (route, f)) }
 
 (* /home/:string/:int*)
-let r1 = R.Compose (P.Literal ("home", P.String (P.Int P.End)), R.End)
+let r1 : (string -> int -> 'a, 'a) Route.t =
+  R.Compose (P.Literal ("home", P.String (P.Int P.End)), R.End)
 
 (* /home/:string/:string *)
-let r2 = R.Compose (P.Literal ("home", P.String (P.String P.End)), R.End)
+let r2 : (string -> string -> 'a, 'a) Route.t =
+  R.Compose (P.Literal ("home", P.String (P.String P.End)), R.End)
 
-let router1 = add empty r1 (fun s1 i -> s1 ^ " || " ^ string_of_int i)
+let router1 =
+  add empty r1 (fun (s1 : string) (i : int) -> s1 ^ " || " ^ string_of_int i)
 
-let route1 = add router1 r2 (fun s1 s2 -> s1 ^ " || " ^ s2)
+let route1 =
+  add router1 r2 (fun (s1 : string) (s2 : string) -> s1 ^ " || " ^ s2)
