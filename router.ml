@@ -45,5 +45,6 @@ let r2 : (string -> string -> 'a, 'a) Route.t =
   Combine (P.Literal ("home", P.String (P.String P.End)), R.End)
 
 let router =
-  add r1 (fun (s1 : string) (i : int) -> s1 ^ " || " ^ string_of_int i) empty
+  empty
+  |> add r1 (fun (s1 : string) (i : int) -> s1 ^ " || " ^ string_of_int i)
   |> add r2 (fun (s1 : string) (s2 : string) -> s1 ^ " || " ^ s2)
