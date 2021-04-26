@@ -1,3 +1,5 @@
+open! Core
+
 module Path = struct
   type ('ty, 'v) t =
     | End : ('v, 'v) t
@@ -10,11 +12,9 @@ end
 
 module Route = struct
   type (_, _) t =
-    | End : ('a, 'a) t
+    | End : ('a, 'b) t
     | Combine : ('a, 'b) Path.t * ('b, 'c) t -> ('a, 'c) t
 end
-
-module Smap = Map.Make (String)
 
 type route_handler = Handler : ('ty, 'v) Route.t * 'ty -> route_handler
 
@@ -22,12 +22,12 @@ type route_handler = Handler : ('ty, 'v) Route.t * 'ty -> route_handler
 type t =
   | Node of
       { route_handler : route_handler option
-      ; literal : t Smap.t
+      ; literal : t String.Map.t
       ; int_param : t option
       }
 
 let empty_with route_handler =
-  Node { route_handler; literal = Smap.empty; int_param = None }
+  Node { route_handler; literal = String.Map.empty; int_param = None }
 
 let empty = empty_with None
 
@@ -35,8 +35,12 @@ module R = Route
 module P = Path
 
 let add : type ty v. (ty, v) Route.t -> ty -> t -> t =
- fun route f (Node node) ->
-  Node { node with route_handler = Some (Handler (route, f)) }
+ fun route f t ->
+  let loop (Node _node) = function
+    | R.End -> empty_with (Some (Handler (route, f)))
+    | R.Combine (_, _) -> empty_with (Some (Handler (route, f)))
+  in
+  loop t route
 
 let match_uri : t -> string -> 'a option = fun _router uri -> Some uri
 
