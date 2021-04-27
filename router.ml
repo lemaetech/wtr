@@ -10,7 +10,7 @@ module Path = struct
     | Bool : ('a, 'b) t -> (bool -> 'a, 'b) t
 end
 
-type 'b route = Route : ('a, 'c) Path.t * 'a * ('c -> 'b) -> 'b route
+type 'c route = Route : ('a, 'c) Path.t * 'a -> 'c route
 
 (** ['a t] is a trie based router where ['a] is the route value. *)
 type 'a t =
@@ -24,8 +24,7 @@ let empty_with route =
   Node { route; literal = String.Map.empty; int_param = None }
 
 (** [p @-> route_handler] creates a route from path [p] and [route_handler]. *)
-let ( @-> ) : ('a, 'b) Path.t -> 'a -> 'b route =
- fun path f -> Route (path, f, fun x -> x)
+let ( @-> ) : ('a, 'b) Path.t -> 'a -> 'b route = fun path f -> Route (path, f)
 
 let empty = empty_with None
 
@@ -50,7 +49,7 @@ end
 
 let add : 'b route -> 'b route t -> 'b route t =
  fun route t ->
-  let (Route (path, _, _)) = route in
+  let (Route (path, _)) = route in
   let path_patterns = Path_pattern.of_path path in
   let rec loop (Node t) = function
     | [] -> Node { t with route = Some route }
@@ -76,7 +75,7 @@ let add : 'b route -> 'b route t -> 'b route t =
   in
   loop t path_patterns
 
-let r1 : string route =
+let r1 =
   Path.(String (Int End)) @-> fun (s : string) (i : int) -> s ^ string_of_int i
 
 let r2 : string route = Path.(Literal ("home", Literal ("about", End))) @-> ""
@@ -87,4 +86,13 @@ let r3 : string route =
 let r4 : string route =
   Path.(Literal ("home", Float End)) @-> fun (f : float) -> string_of_float f
 
-let router = empty |> add r1 |> add r2
+(** This should give error (we added an extra () param in handler) but it
+    doesn't. It only errors when adding to the router.*)
+let r5 =
+  Path.(String (Int End))
+  @-> fun (s : string) (i : int) () -> s ^ string_of_int i
+
+let router = empty |> add r1 |> add r2 |> add r3 |> add r4
+
+(* |> add r5  *)
+(* This errors *)
