@@ -10,12 +10,10 @@ module Path = struct
 
   (* Parameter detail. *)
   and 'c param =
-    | P :
-        { encode : string -> 'c option
-        ; decode : 'c -> string
-        ; label : string (* :int, :float, :bool, :string *)
-        }
-        -> 'c param
+    { encode : string -> 'c option
+    ; decode : 'c -> string
+    ; name : string (* name e.g. :int, :float, :bool, :string etc *)
+    }
 
   (** [kind] encodes path kind/type. *)
   type kind =
@@ -31,7 +29,7 @@ module Path = struct
 
   let param path par = Param (par, path)
 
-  let create encode decode label = P { encode; decode; label }
+  let create encode decode name = { encode; decode; name }
 
   let string : ('a, 'b) t -> (string -> 'a, 'b) t =
    fun path -> create (fun s -> Some s) Fun.id ":string" |> param path
@@ -50,6 +48,9 @@ end
     the route handler. *)
 type 'c route = Route : ('a, 'c) Path.t * 'a -> 'c route
 
+(** [p @-> route_handler] creates a route from path [p] and [route_handler]. *)
+let ( @-> ) : ('a, 'b) Path.t -> 'a -> 'b route = fun path f -> Route (path, f)
+
 (** ['a t] is a trie based router where ['a] is the route value. *)
 type 'a t =
   | Node of
@@ -60,9 +61,6 @@ type 'a t =
 
 let empty_with route =
   Node { route; literals = String.Map.empty; params = String.Map.empty }
-
-(** [p @-> route_handler] creates a route from path [p] and [route_handler]. *)
-let ( @-> ) : ('a, 'b) Path.t -> 'a -> 'b route = fun path f -> Route (path, f)
 
 let empty = empty_with None
 
