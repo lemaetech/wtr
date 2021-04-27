@@ -13,11 +13,11 @@ module Path = struct
 
   (** Path pattern - Monomorphic version of [t]. *)
   type pattern =
-    | PLiteral : string -> pattern
-    | PString : pattern
-    | PInt : pattern
-    | PFloat : pattern
-    | PBool : pattern
+    | PLiteral of string
+    | PString
+    | PInt
+    | PFloat
+    | PBool
 
   (* [of_path path] converts [path] to [Path_pattern.t list]. This is done to
      get around some typing issue with using Path.t in the [add] function below. *)
