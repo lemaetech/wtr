@@ -31,23 +31,21 @@ module Path = struct
 
   let param path par = Param (par, path)
 
-  let create_path encode decode label = P { encode; decode; label }
+  let create encode decode label = P { encode; decode; label }
 
   let string : ('a, 'b) t -> (string -> 'a, 'b) t =
    fun path ->
-    let conv = create_path (fun s -> Some s) Fun.id ":string" in
+    let conv = create (fun s -> Some s) Fun.id ":string" in
     Param (conv, path)
 
   let int : ('a, 'b) t -> (int -> 'a, 'b) t =
-   fun path -> create_path int_of_string_opt string_of_int ":int" |> param path
+   fun path -> create int_of_string_opt string_of_int ":int" |> param path
 
   let float : ('a, 'b) t -> (float -> 'a, 'b) t =
-   fun path ->
-    create_path float_of_string_opt string_of_float ":float" |> param path
+   fun path -> create float_of_string_opt string_of_float ":float" |> param path
 
   let bool : ('a, 'b) t -> (bool -> 'a, 'b) t =
-   fun path ->
-    create_path bool_of_string_opt string_of_bool ":bool" |> param path
+   fun path -> create bool_of_string_opt string_of_bool ":bool" |> param path
 end
 
 (** ['c route] is a path with its handler. ['c] represents the value returned by
