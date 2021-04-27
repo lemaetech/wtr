@@ -5,59 +5,65 @@ module Path = struct
     | End : ('b, 'b) t
     | Literal : string * ('a, 'b) t -> ('a, 'b) t
         (** Literal path component eg. 'home' in '/home' *)
-    | Param : 'c enc_dec * ('a, 'b) t -> ('c -> 'a, 'b) t
-        (** Param path component eg. ':int' in '/home/:int' *)
+    | Param : 'c param * ('a, 'b) t -> ('c -> 'a, 'b) t
+        (** Parameter path component eg. ':int' in '/home/:int' *)
 
-  and 'c enc_dec =
-    | Enc_dec :
+  (* Parameter detail. *)
+  and 'c param =
+    | P :
         { encode : string -> 'c option
         ; decode : 'c -> string
-        ; label : string
+        ; label : string (* :int, :float, :bool, :string *)
         }
-        -> 'c enc_dec
+        -> 'c param
 
-  (** [kind] encodes the kind/type of a given path component. *)
+  (** [kind] encodes path kind/type. *)
   type kind =
     | KLiteral : string -> kind
-    | KParam : 'c enc_dec -> kind
+    | KParam : 'c param -> kind
 
   (* [of_path path] converts [path] to [Path_pattern.t list]. This is done to
      get around some typing issue with using Path.t in the [add] function below. *)
-  let rec pattern : type a b. (a, b) t -> kind list = function
+  let rec kind : type a b. (a, b) t -> kind list = function
     | End -> []
-    | Literal (lit, path) -> KLiteral lit :: pattern path
-    | Param (conv, path) -> KParam conv :: pattern path
+    | Literal (lit, path) -> KLiteral lit :: kind path
+    | Param (conv, path) -> KParam conv :: kind path
 
-  let create_path encode decode label = Enc_dec { encode; decode; label }
+  let param path par = Param (par, path)
 
-  let str : ('a, 'b) t -> (string -> 'a, 'b) t =
+  let create_path encode decode label = P { encode; decode; label }
+
+  let string : ('a, 'b) t -> (string -> 'a, 'b) t =
    fun path ->
     let conv = create_path (fun s -> Some s) Fun.id ":string" in
     Param (conv, path)
 
   let int : ('a, 'b) t -> (int -> 'a, 'b) t =
-   fun path ->
-    let conv = create_path int_of_string_opt string_of_int ":int" in
-
-    Param (conv, path)
+   fun path -> create_path int_of_string_opt string_of_int ":int" |> param path
 
   let float : ('a, 'b) t -> (float -> 'a, 'b) t =
    fun path ->
-    let conv = create_path float_of_string_opt string_of_float ":float" in
-    Param (conv, path)
+    create_path float_of_string_opt string_of_float ":float" |> param path
+
+  let bool : ('a, 'b) t -> (bool -> 'a, 'b) t =
+   fun path ->
+    create_path bool_of_string_opt string_of_bool ":bool" |> param path
 end
 
+(** ['c route] is a path with its handler. ['c] represents the value returned by
+    the route handler. *)
 type 'c route = Route : ('a, 'c) Path.t * 'a -> 'c route
 
 (** ['a t] is a trie based router where ['a] is the route value. *)
 type 'a t =
   | Node of
       { route : 'a route option
-      ; literal : 'a t String.Map.t
-      ; param : 'a t option
+      ; literals : 'a t String.Map.t
+      ; params : 'a t String.Map.t
       }
 
-let empty_with route = Node { route; literal = String.Map.empty; param = None }
+let empty_with route =
+  Node { route; literals = String.Map.empty; params = String.Map.empty }
 
 (** [p @-> route_handler] creates a route from path [p] and [route_handler]. *)
 let ( @-> ) : ('a, 'b) Path.t -> 'a -> 'b route = fun path f -> Route (path, f)
@@ -73,17 +79,18 @@ let add : 'b route -> 'b t -> 'b t =
    fun (Node t) -> function
     | [] -> Node { t with route = Some route }
     | KLiteral lit :: path_patterns ->
-      let literal =
-        match String.Map.find t.literal lit with
+      let literals =
+        match String.Map.find t.literals lit with
         | Some t' ->
-          String.Map.change t.literal lit ~f:(function
+          String.Map.change t.literals lit ~f:(function
               | Some _
               | None
               -> Some (loop t' path_patterns))
         | None ->
-          String.Map.add_exn t.literal ~key:lit ~data:(loop empty path_patterns)
+          String.Map.add_exn t.literals ~key:lit
+            ~data:(loop empty path_patterns)
       in
-      Node { t with literal }
+      Node { t with literals }
     (* | PInt :: path_patterns -> *)
     (*   let int_param = *)
     (*     let t' = Option.value t.int_param ~default:empty in *)
@@ -92,14 +99,14 @@ let add : 'b route -> 'b t -> 'b t =
     (*   Node { t with int_param } *)
     | _ -> assert false
   in
-  loop t (Path.pattern path)
+  loop t (Path.kind path)
 
 (* let match' : 'b route t -> string -> 'b option = fun router uri -> *)
 
 (* None *)
 
 let r1 =
-  Path.(str (int End)) @-> fun (s : string) (i : int) -> s ^ string_of_int i
+  Path.(string (int End)) @-> fun (s : string) (i : int) -> s ^ string_of_int i
 
 let r2 : string route = Path.(Literal ("home", Literal ("about", End))) @-> ""
 
@@ -112,7 +119,8 @@ let r4 : string route =
 (** This should give error (we added an extra () param in handler) but it
     doesn't. It only errors when adding to the router.*)
 let r5 =
-  Path.(str (int End)) @-> fun (s : string) (i : int) () -> s ^ string_of_int i
+  Path.(string (int End))
+  @-> fun (s : string) (i : int) () -> s ^ string_of_int i
 
 let router = empty |> add r1 |> add r2 |> add r3 |> add r4
 
