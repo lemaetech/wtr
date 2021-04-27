@@ -73,31 +73,23 @@ let add : 'b route -> 'b t -> 'b t =
  fun route t ->
   let (Route (path, _)) = route in
   let rec loop : 'b t -> Path.kind list -> 'b t =
-   fun (Node t) -> function
+   fun (Node t) kinds ->
+    let add_update m key kinds =
+      match String.Map.find m key with
+      | Some t' ->
+        String.Map.change m key ~f:(function
+            | Some _
+            | None
+            -> Some (loop t' kinds))
+      | None -> String.Map.add_exn m ~key ~data:(loop empty kinds)
+    in
+    match kinds with
     | [] -> Node { t with route = Some route }
     | KLiteral lit :: kinds ->
-      let literals =
-        match String.Map.find t.literals lit with
-        | Some t' ->
-          String.Map.change t.literals lit ~f:(function
-              | Some _
-              | None
-              -> Some (loop t' kinds))
-        | None ->
-          String.Map.add_exn t.literals ~key:lit ~data:(loop empty kinds)
-      in
+      let literals = add_update t.literals lit kinds in
       Node { t with literals }
     | KParam p :: kinds ->
-      let params =
-        match String.Map.find t.params p.name with
-        | Some t' ->
-          String.Map.change t.params p.name ~f:(function
-              | Some _
-              | None
-              -> Some (loop t' kinds))
-        | None ->
-          String.Map.add_exn t.params ~key:p.name ~data:(loop empty kinds)
-      in
+      let params = add_update t.params p.name kinds in
       Node { t with params }
   in
   loop t (Path.kind path)
