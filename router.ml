@@ -15,25 +15,21 @@ module Path = struct
     ; name : string (* name e.g. :int, :float, :bool, :string etc *)
     }
 
-  let param path par = Param (par, path)
-
-  let create_param encode decode name = { encode; decode; name }
+  let param encode decode name path = Param ({ encode; decode; name }, path)
 
   let lit : string -> ('a, 'b) t -> ('a, 'b) t = fun s path -> Literal (s, path)
 
   let string : ('a, 'b) t -> (string -> 'a, 'b) t =
-   fun path -> create_param (fun s -> Some s) Fun.id ":string" |> param path
+   fun path -> param (fun s -> Some s) Fun.id ":string" path
 
   let int : ('a, 'b) t -> (int -> 'a, 'b) t =
-   fun path -> create_param int_of_string_opt string_of_int ":int" |> param path
+   fun path -> param int_of_string_opt string_of_int ":int" path
 
   let float : ('a, 'b) t -> (float -> 'a, 'b) t =
-   fun path ->
-    create_param float_of_string_opt string_of_float ":float" |> param path
+   fun path -> param float_of_string_opt string_of_float ":float" path
 
   let bool : ('a, 'b) t -> (bool -> 'a, 'b) t =
-   fun path ->
-    create_param bool_of_string_opt string_of_bool ":bool" |> param path
+   fun path -> param bool_of_string_opt string_of_bool ":bool" path
 
   (** [kind] encodes path kind/type. *)
   type kind =
