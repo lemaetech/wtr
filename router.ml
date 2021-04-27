@@ -67,8 +67,6 @@ let empty_with route =
 
 let empty = empty_with None
 
-module Path_pattern = struct end
-
 let add : 'b route -> 'b t -> 'b t =
  fun route t ->
   let (Route (path, _)) = route in
@@ -94,7 +92,28 @@ let add : 'b route -> 'b t -> 'b t =
   in
   loop t (Path.kind path)
 
-(* let match' : 'b route t -> string -> 'b option = fun router uri -> *)
+let apply : type c. c route -> string list -> c =
+ fun (Route (_, f)) _params ->
+  let rec loop f = function
+    | [] -> f
+    | p :: params -> loop (f p) params
+  in
+  loop f params
+
+let match' : 'b route t -> string -> 'b option =
+ fun t uri ->
+  let tokens =
+    String.rstrip uri ~drop:(function
+      | '/' -> true
+      | _ -> false)
+    |> String.split ~on:'/'
+  in
+  let rec loop (Node t) params tokens =
+    match tokens with
+    | [] -> Option.map t.route ~f:(fun route -> apply route params)
+    | _ -> assert false
+  in
+  loop t [] tokens
 
 (* None *)
 
