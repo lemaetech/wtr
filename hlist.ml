@@ -19,7 +19,7 @@ let hl = Hlist.[ 1; 1.2; "hello" ]
 (* val hl : (int -> float -> string -> void) Hlist.t = Hlist.(::) (1, Hlist.(::)
    (1.2, Hlist.(::) ("hello", Hlist.[]))) *)
 
-(** Type witness for {Hlist}*)
+(** Type witness for {!Hlist} *)
 module Type_witness = struct
   type 'a witness = ..
 
