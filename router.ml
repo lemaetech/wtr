@@ -51,7 +51,6 @@ module Path_pattern = struct end
 let add : 'b route -> 'b t -> 'b t =
  fun route t ->
   let (Route (path, _)) = route in
-  let path_patterns = Path.pattern path in
   let rec loop : 'b t -> Path.p_pattern list -> 'b t =
    fun (Node t) -> function
     | [] -> Node { t with route = Some route }
@@ -75,7 +74,7 @@ let add : 'b route -> 'b t -> 'b t =
       Node { t with int_param }
     | _ -> assert false
   in
-  loop t path_patterns
+  loop t (Path.pattern path)
 
 (* let match': 'b route t -> string -> 'b option = *)
 
