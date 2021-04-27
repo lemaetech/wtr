@@ -1,7 +1,9 @@
 open! Core
 
 module Path = struct
-  type ('a, 'b) t =
+  type ('a, 'b) t = ..
+
+  type ('a, 'b) t +=
     | End : ('b, 'b) t
     | Literal : string * ('a, 'b) t -> ('a, 'b) t
     | String : ('a, 'b) t -> (string -> 'a, 'b) t
@@ -10,22 +12,23 @@ module Path = struct
     | Bool : ('a, 'b) t -> (bool -> 'a, 'b) t
 
   (** Path pattern - Monomorphic version of [t]. *)
-  type p_pattern =
-    | PLiteral : string -> p_pattern
-    | PString : p_pattern
-    | PInt : p_pattern
-    | PFloat : p_pattern
-    | PBool : p_pattern
+  type pattern =
+    | PLiteral : string -> pattern
+    | PString : pattern
+    | PInt : pattern
+    | PFloat : pattern
+    | PBool : pattern
 
   (* [of_path path] converts [path] to [Path_pattern.t list]. This is done to
      get around some typing issue with using Path.t in the [add] function below. *)
-  let rec pattern : type a b. (a, b) t -> p_pattern list = function
+  let rec pattern : type a b. (a, b) t -> pattern list = function
     | End -> []
     | Literal (lit, path) -> PLiteral lit :: pattern path
     | String path -> PString :: pattern path
     | Int path -> PInt :: pattern path
     | Float path -> PFloat :: pattern path
     | Bool path -> PBool :: pattern path
+    | _ -> assert false
 end
 
 type 'c route = Route : ('a, 'c) Path.t * 'a -> 'c route
@@ -51,7 +54,7 @@ module Path_pattern = struct end
 let add : 'b route -> 'b t -> 'b t =
  fun route t ->
   let (Route (path, _)) = route in
-  let rec loop : 'b t -> Path.p_pattern list -> 'b t =
+  let rec loop : 'b t -> Path.pattern list -> 'b t =
    fun (Node t) -> function
     | [] -> Node { t with route = Some route }
     | PLiteral lit :: path_patterns ->
