@@ -15,6 +15,26 @@ module Path = struct
     ; name : string (* name e.g. :int, :float, :bool, :string etc *)
     }
 
+  let param path par = Param (par, path)
+
+  let create_param encode decode name = { encode; decode; name }
+
+  let lit : string -> ('a, 'b) t -> ('a, 'b) t = fun s path -> Literal (s, path)
+
+  let string : ('a, 'b) t -> (string -> 'a, 'b) t =
+   fun path -> create_param (fun s -> Some s) Fun.id ":string" |> param path
+
+  let int : ('a, 'b) t -> (int -> 'a, 'b) t =
+   fun path -> create_param int_of_string_opt string_of_int ":int" |> param path
+
+  let float : ('a, 'b) t -> (float -> 'a, 'b) t =
+   fun path ->
+    create_param float_of_string_opt string_of_float ":float" |> param path
+
+  let bool : ('a, 'b) t -> (bool -> 'a, 'b) t =
+   fun path ->
+    create_param bool_of_string_opt string_of_bool ":bool" |> param path
+
   (** [kind] encodes path kind/type. *)
   type kind =
     | KLiteral : string -> kind
@@ -26,22 +46,6 @@ module Path = struct
     | End -> []
     | Literal (lit, path) -> KLiteral lit :: kind path
     | Param (conv, path) -> KParam conv :: kind path
-
-  let param path par = Param (par, path)
-
-  let create encode decode name = { encode; decode; name }
-
-  let string : ('a, 'b) t -> (string -> 'a, 'b) t =
-   fun path -> create (fun s -> Some s) Fun.id ":string" |> param path
-
-  let int : ('a, 'b) t -> (int -> 'a, 'b) t =
-   fun path -> create int_of_string_opt string_of_int ":int" |> param path
-
-  let float : ('a, 'b) t -> (float -> 'a, 'b) t =
-   fun path -> create float_of_string_opt string_of_float ":float" |> param path
-
-  let bool : ('a, 'b) t -> (bool -> 'a, 'b) t =
-   fun path -> create bool_of_string_opt string_of_bool ":bool" |> param path
 end
 
 (** ['c route] is a path with its handler. ['c] represents the value returned by
