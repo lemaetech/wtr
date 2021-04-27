@@ -47,7 +47,7 @@ module Path = struct
     | Param (conv, path) -> KParam conv :: kind path
 end
 
-(** ['c route] is a path with its handler. ['c] represents the value returned by
+(** ['c route] is a path and its handler. ['c] represents the value returned by
     the handler. *)
 type 'c route = Route : ('a, 'c) Path.t * 'a -> 'c route
 
