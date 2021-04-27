@@ -34,9 +34,7 @@ module Path = struct
   let create encode decode label = P { encode; decode; label }
 
   let string : ('a, 'b) t -> (string -> 'a, 'b) t =
-   fun path ->
-    let conv = create (fun s -> Some s) Fun.id ":string" in
-    Param (conv, path)
+   fun path -> create (fun s -> Some s) Fun.id ":string" |> param path
 
   let int : ('a, 'b) t -> (int -> 'a, 'b) t =
    fun path -> create int_of_string_opt string_of_int ":int" |> param path
