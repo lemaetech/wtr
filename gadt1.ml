@@ -8,7 +8,7 @@ type ('ty, 'v) t +=
   | String : ('ty, 'v) t -> (string -> 'ty, 'v) t
   | Int : ('ty, 'v) t -> (int -> 'ty, 'v) t
 
-let rec kprintf : type ty res. (string -> res) -> (ty, res) t -> ty =
+let rec kprintf : type ty res. ('a -> res) -> (ty, res) t -> ty =
  fun k -> function
   | End -> k ""
   | Constant (const, fmt) -> kprintf (fun str -> k @@ const ^ str) fmt
