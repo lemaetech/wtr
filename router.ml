@@ -38,8 +38,9 @@ module Path = struct
     | KLiteral : string -> kind
     | KParam : 'c param -> kind
 
-  (* [of_path path] converts [path] to [Path_pattern.t list]. This is done to
-     get around some typing issue with using Path.t in the [add] function below. *)
+  (* [kind path] converts [path] to [kind list]. This is done to get around
+     OCaml type inference issue when using [Path.t] type in the [add] function
+     below. *)
   let rec kind : type a b. (a, b) t -> kind list = function
     | End -> []
     | Literal (lit, path) -> KLiteral lit :: kind path
@@ -47,7 +48,7 @@ module Path = struct
 end
 
 (** ['c route] is a path with its handler. ['c] represents the value returned by
-    the route handler. *)
+    the handler. *)
 type 'c route = Route : ('a, 'c) Path.t * 'a -> 'c route
 
 (** [p @-> route_handler] creates a route from path [p] and [route_handler]. *)
@@ -74,26 +75,30 @@ let add : 'b route -> 'b t -> 'b t =
   let rec loop : 'b t -> Path.kind list -> 'b t =
    fun (Node t) -> function
     | [] -> Node { t with route = Some route }
-    | KLiteral lit :: path_patterns ->
+    | KLiteral lit :: kinds ->
       let literals =
         match String.Map.find t.literals lit with
         | Some t' ->
           String.Map.change t.literals lit ~f:(function
               | Some _
               | None
-              -> Some (loop t' path_patterns))
+              -> Some (loop t' kinds))
         | None ->
-          String.Map.add_exn t.literals ~key:lit
-            ~data:(loop empty path_patterns)
+          String.Map.add_exn t.literals ~key:lit ~data:(loop empty kinds)
       in
       Node { t with literals }
-    (* | PInt :: path_patterns -> *)
-    (*   let int_param = *)
-    (*     let t' = Option.value t.int_param ~default:empty in *)
-    (*     Some (loop t' path_patterns) *)
-    (*   in *)
-    (*   Node { t with int_param } *)
-    | _ -> assert false
+    | KParam p :: kinds ->
+      let params =
+        match String.Map.find t.params p.name with
+        | Some t' ->
+          String.Map.change t.params p.name ~f:(function
+              | Some _
+              | None
+              -> Some (loop t' kinds))
+        | None ->
+          String.Map.add_exn t.params ~key:p.name ~data:(loop empty kinds)
+      in
+      Node { t with params }
   in
   loop t (Path.kind path)
 
