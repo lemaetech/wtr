@@ -15,9 +15,11 @@ module Path = struct
     ; name : string (* name e.g. :int, :float, :bool, :string etc *)
     }
 
-  let param encode decode name path = Param ({ encode; decode; name }, path)
+  let end_ : ('b, 'b) t = End
 
   let lit : string -> ('a, 'b) t -> ('a, 'b) t = fun s path -> Literal (s, path)
+
+  let param encode decode name path = Param ({ encode; decode; name }, path)
 
   let string : ('a, 'b) t -> (string -> 'a, 'b) t =
    fun path -> param (fun s -> Some s) Fun.id ":string" path
@@ -100,20 +102,20 @@ let add : 'b route -> 'b t -> 'b t =
 (* None *)
 
 let r1 =
-  Path.(string (int End)) @-> fun (s : string) (i : int) -> s ^ string_of_int i
+  Path.(string (int end_)) @-> fun (s : string) (i : int) -> s ^ string_of_int i
 
-let r2 : string route = Path.(Literal ("home", Literal ("about", End))) @-> ""
+let r2 : string route = Path.(lit "home" (lit "about" end_)) @-> ""
 
 let r3 : string route =
-  Path.(Literal ("home", int End)) @-> fun (i : int) -> string_of_int i
+  Path.(lit "home" (int end_)) @-> fun (i : int) -> string_of_int i
 
 let r4 : string route =
-  Path.(Literal ("home", float End)) @-> fun (f : float) -> string_of_float f
+  Path.(lit "home" (float end_)) @-> fun (f : float) -> string_of_float f
 
 (** This should give error (we added an extra () param in handler) but it
     doesn't. It only errors when adding to the router.*)
 let r5 =
-  Path.(string (int End))
+  Path.(string (int end_))
   @-> fun (s : string) (i : int) () -> s ^ string_of_int i
 
 let router = empty |> add r1 |> add r2 |> add r3 |> add r4
