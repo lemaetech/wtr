@@ -12,7 +12,7 @@ end
 
 type 'b route = Route : ('a, 'c) Path.t * 'a * ('c -> 'b) -> 'b route
 
-(** ['a t] is a trie based router where ['a is the route] *)
+(** ['a t] is a trie based router where ['a] is the route value. *)
 type 'a t =
   | Node of
       { route : 'a option
