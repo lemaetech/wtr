@@ -111,10 +111,26 @@ let rec match' : 'b t -> string -> 'b option =
       | _ -> false)
     |> String.split ~on:'/'
   in
-  let loop (Node t) vars tokens =
+  let rec loop (Node t) captured_vars tokens =
     match tokens with
-    | [] -> Option.map t.route ~f:(fun (Route (path, f)) -> apply path f vars)
-    | _ -> assert false
+    | [] ->
+      Option.map t.route ~f:(fun (Route (path, f)) ->
+          apply path f captured_vars)
+    | tok :: tokens -> (
+      (* Check if one of the vars are matched first. If none is matched then
+         match literals. *)
+      let var_matched =
+        String.Map.to_sequence t.vars
+        |> Sequence.fold_until ~init:None
+             ~f:(fun _acc (_, (D (_, decode), t')) ->
+               match decode tok with
+               | Some _t -> Stop (Some (tok, t'))
+               | None -> Continue None)
+             ~finish:(fun _ -> None)
+      in
+      match var_matched with
+      | Some (value, t) -> loop t (value :: captured_vars) tokens
+      | None -> loop (Node t) captured_vars tokens)
   in
   loop t [] tokens
 
