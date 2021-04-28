@@ -33,23 +33,28 @@ module Type_witness = struct
   end)
 end
 
-let a = Type_witness.[]
-(* val a : void Witness.t = Witness.[] *)
+module Witness = struct
+  type _ witness = T : (string -> 'a) -> 'a witness
+
+  include Make_list (struct
+    type 'a t = 'a witness
+  end)
+end
 
 (** [pack] packs ['a t] and ['a witness] into a monomorphic type so that we can
     create ['a t] at runtime dynamically. *)
-type pack = Pack : 'a Hlist.t * 'a Type_witness.t -> pack
+type pack = Pack : 'a Hlist.t * 'a Witness.t -> pack
 
 let rec parse : int list -> pack = function
-  | [] -> Pack (Hlist.[], Type_witness.[])
+  | [] -> Pack (Hlist.[], Witness.[])
   | x :: l ->
     let (Pack (v, t)) = parse l in
     if x = 0 then
-      Pack (Hlist.(10. :: v), Type_witness.(Float :: t))
+      Pack (Hlist.(10. :: v), Witness.(T float_of_string :: t))
     else if x = 1 then
-      Pack (Hlist.(true :: v), Type_witness.(Bool :: t))
+      Pack (Hlist.(true :: v), Witness.(T bool_of_string :: t))
     else
-      Pack (Hlist.(10 :: v), Type_witness.(Int :: t))
+      Pack (Hlist.(10 :: v), Witness.(T int_of_string :: t))
 
 (* let route fmt f *)
 (* let match router path *)

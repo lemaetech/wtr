@@ -36,14 +36,16 @@ let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
 (** [kind] encodes uri kind/type. *)
 type kind =
   | KLiteral : string -> kind
-  | KVar : 'c var -> kind
+  | KVar : var_decoder -> kind
+
+and var_decoder = D : string * (string -> 'c option) -> var_decoder
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
 let rec kind : type a b. (a, b) uri -> kind list = function
   | End -> []
   | Literal (lit, uri) -> KLiteral lit :: kind uri
-  | Var (conv, uri) -> KVar conv :: kind uri
+  | Var (conv, uri) -> KVar (D (conv.name, conv.decode)) :: kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -54,11 +56,12 @@ let ( @-> ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
 (** ['a t] is a trie based router where ['a] is the route value. *)
 type 'a t =
-  | Node of
+  | Node :
       { route : 'a route option
       ; literals : 'a t String.Map.t
-      ; vars : 'a t String.Map.t
+      ; vars : (var_decoder * 'a t) String.Map.t
       }
+      -> 'a t
 
 let empty_with route =
   Node { route; literals = String.Map.empty; vars = String.Map.empty }
@@ -70,22 +73,33 @@ let add : 'b route -> 'b t -> 'b t =
   let (Route (uri, _)) = route in
   let rec loop : 'b t -> kind list -> 'b t =
    fun (Node t) kinds ->
-    let add_update m key kinds =
-      match String.Map.find m key with
-      | Some t' ->
-        String.Map.change m key ~f:(function
-            | Some _
-            | None
-            -> Some (loop t' kinds))
-      | None -> String.Map.add_exn m ~key ~data:(loop empty kinds)
-    in
     match kinds with
     | [] -> Node { t with route = Some route }
     | KLiteral lit :: kinds ->
-      let literals = add_update t.literals lit kinds in
+      let literals =
+        match String.Map.find t.literals lit with
+        | Some t' ->
+          String.Map.change t.literals lit ~f:(function
+              | Some _
+              | None
+              -> Some (loop t' kinds))
+        | None ->
+          String.Map.add_exn t.literals ~key:lit ~data:(loop empty kinds)
+      in
       Node { t with literals }
-    | KVar p :: kinds ->
-      let vars = add_update t.vars p.name kinds in
+    | KVar decoder :: kinds ->
+      let (D (name, _)) = decoder in
+      let vars =
+        match String.Map.find t.vars name with
+        | Some (_, t') ->
+          String.Map.change t.vars name ~f:(function
+              | Some _
+              | None
+              -> Some (decoder, loop t' kinds))
+        | None ->
+          let d = (decoder, loop empty kinds) in
+          String.Map.add_exn t.vars ~key:name ~data:d
+      in
       Node { t with vars }
   in
   loop t (kind uri)
