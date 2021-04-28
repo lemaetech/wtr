@@ -10,8 +10,8 @@ module Path = struct
 
   (* Parameter detail. *)
   and 'c param =
-    { encode : string -> 'c option
-    ; decode : 'c -> string
+    { decode : string -> 'c option
+    ; encode : 'c -> string
     ; name : string (* name e.g. :int, :float, :bool, :string etc *)
     }
 
@@ -19,7 +19,7 @@ module Path = struct
 
   let lit : string -> ('a, 'b) t -> ('a, 'b) t = fun s path -> Literal (s, path)
 
-  let param encode decode name path = Param ({ encode; decode; name }, path)
+  let param decode encode name path = Param ({ encode; decode; name }, path)
 
   let string : ('a, 'b) t -> (string -> 'a, 'b) t =
    fun path -> param (fun s -> Some s) Fun.id ":string" path
@@ -92,15 +92,18 @@ let add : 'b route -> 'b t -> 'b t =
   in
   loop t (Path.kind path)
 
-let apply : type c. c route -> string list -> c =
- fun (Route (_, f)) _params ->
-  let rec loop f = function
-    | [] -> f
-    | p :: params -> loop (f p) params
-  in
-  loop f params
+let rec apply : type a b. (a, b) Path.t -> a -> string list -> b =
+ fun path f params ->
+  match (path, params) with
+  | End, [] -> f
+  | Literal (_, path), params -> apply path f params
+  | Param (conv, path), p :: params -> (
+    match conv.decode p with
+    | Some p' -> apply path (f p') params
+    | None -> failwith "Route not matched")
+  | _, _ -> failwith "Route not matched"
 
-let match' : 'b route t -> string -> 'b option =
+let match' : 'b t -> string -> 'b option =
  fun t uri ->
   let tokens =
     String.rstrip uri ~drop:(function
@@ -108,9 +111,9 @@ let match' : 'b route t -> string -> 'b option =
       | _ -> false)
     |> String.split ~on:'/'
   in
-  let rec loop (Node t) params tokens =
+  let loop (Node t) params tokens =
     match tokens with
-    | [] -> Option.map t.route ~f:(fun route -> apply route params)
+    | [] -> Option.map t.route ~f:(fun (Route (path, f)) -> apply path f params)
     | _ -> assert false
   in
   loop t [] tokens
