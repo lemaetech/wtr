@@ -4,12 +4,11 @@ open! Core
 type ('a, 'b) uri =
   | End : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
-      (** Literal uri component eg. 'home' in '/home' *)
+      (** Uri literal string component eg. 'home' in '/home' *)
   | Var : 'c var * ('a, 'b) uri -> ('c -> 'a, 'b) uri
       (** Uri variable component, i.e. the value is determined during runtime,
           eg. ':int' in '/home/:int' *)
 
-(* Parameter detail. *)
 and 'c var =
   { decode : string -> 'c option
   ; encode : 'c -> string
@@ -34,17 +33,17 @@ let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
  fun uri -> var bool_of_string_opt string_of_bool ":bool" uri
 
-(** [kind] encodes uri component kind/type. *)
+(** [kind] encodes uri kind/type. *)
 type kind =
   | KLiteral : string -> kind
-  | KVar : 'c var -> kind
+  | KParam : 'c var -> kind
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
 let rec kind : type a b. (a, b) uri -> kind list = function
   | End -> []
   | Literal (lit, uri) -> KLiteral lit :: kind uri
-  | Var (conv, uri) -> KVar conv :: kind uri
+  | Var (conv, uri) -> KParam conv :: kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -85,24 +84,13 @@ let add : 'b route -> 'b t -> 'b t =
     | KLiteral lit :: kinds ->
       let literals = add_update t.literals lit kinds in
       Node { t with literals }
-    | KVar p :: kinds ->
+    | KParam p :: kinds ->
       let vars = add_update t.vars p.name kinds in
       Node { t with vars }
   in
   loop t (kind uri)
 
-let rec apply : type a b. (a, b) uri -> a -> string list -> b =
- fun uri f vars ->
-  match (uri, vars) with
-  | End, [] -> f
-  | Literal (_, uri), vars -> apply uri f vars
-  | Var (conv, uri), p :: vars -> (
-    match conv.decode p with
-    | Some p' -> apply uri (f p') vars
-    | None -> failwith "Route not matched")
-  | _, _ -> failwith "Route not matched"
-
-let match' : 'b t -> string -> 'b option =
+let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
   let tokens =
     String.rstrip uri ~drop:(function
@@ -116,6 +104,17 @@ let match' : 'b t -> string -> 'b option =
     | _ -> assert false
   in
   loop t [] tokens
+
+and apply : type a b. (a, b) uri -> a -> string list -> b =
+ fun uri f vars ->
+  match (uri, vars) with
+  | End, [] -> f
+  | Literal (_, uri), vars -> apply uri f vars
+  | Var (conv, uri), p :: vars -> (
+    match conv.decode p with
+    | Some p' -> apply uri (f p') vars
+    | None -> failwith "Route not matched")
+  | _, _ -> failwith "Route not matched"
 
 (* None *)
 
