@@ -124,7 +124,7 @@ let rec match' : 'b t -> string -> 'b option =
         |> Sequence.fold_until ~init:None
              ~f:(fun _acc (_, (D (_, decode), t')) ->
                match decode tok with
-               | Some _t -> Stop (Some (tok, t'))
+               | Some _v -> Stop (Some (tok, t'))
                | None -> Continue None)
              ~finish:(fun _ -> None)
       in
