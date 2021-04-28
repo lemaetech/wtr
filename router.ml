@@ -36,14 +36,14 @@ let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
 (** [kind] encodes uri kind/type. *)
 type kind =
   | KLiteral : string -> kind
-  | KParam : 'c var -> kind
+  | KVar : 'c var -> kind
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
 let rec kind : type a b. (a, b) uri -> kind list = function
   | End -> []
   | Literal (lit, uri) -> KLiteral lit :: kind uri
-  | Var (conv, uri) -> KParam conv :: kind uri
+  | Var (conv, uri) -> KVar conv :: kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -84,7 +84,7 @@ let add : 'b route -> 'b t -> 'b t =
     | KLiteral lit :: kinds ->
       let literals = add_update t.literals lit kinds in
       Node { t with literals }
-    | KParam p :: kinds ->
+    | KVar p :: kinds ->
       let vars = add_update t.vars p.name kinds in
       Node { t with vars }
   in
