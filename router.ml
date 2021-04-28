@@ -97,8 +97,7 @@ let add : 'b route -> 'b t -> 'b t =
               | None
               -> Some (decoder, loop t' kinds))
         | None ->
-          let d = (decoder, loop empty kinds) in
-          String.Map.add_exn t.vars ~key:name ~data:d
+          String.Map.add_exn t.vars ~key:name ~data:(decoder, loop empty kinds)
       in
       Node { t with vars }
   in
