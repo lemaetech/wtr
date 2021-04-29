@@ -126,10 +126,9 @@ let rec match' : 'b t -> string -> 'b option =
       match var_matched with
       | Some (value, t') ->
         (loop [@tailcall]) t' (value :: decoded_values) tokens
-      | None -> (
-        match String.Map.find t.literals tok with
-        | Some t' -> (loop [@tailcall]) t' decoded_values tokens
-        | None -> None))
+      | None ->
+        Option.bind (String.Map.find t.literals tok) ~f:(fun t' ->
+            (loop [@tailcall]) t' decoded_values tokens))
   in
   loop t [] tokens
 
