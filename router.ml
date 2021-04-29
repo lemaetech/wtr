@@ -105,6 +105,11 @@ let add : 'b route -> 'b t -> 'b t =
   in
   loop t (kind uri)
 
+(* Represents decoded value, i.e. by calling function (string -> 'c option). We
+   use Obj.t to get around the issue of 'value escaping its scope' in
+   var_decoder type GADT. *)
+type decoded_value = Obj.t
+
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
   let tokens =
@@ -113,41 +118,38 @@ let rec match' : 'b t -> string -> 'b option =
       | _ -> false)
     |> String.split ~on:'/'
   in
-  let rec loop (Node t) captured_vars tokens =
+  let rec loop (Node t) decoded_values tokens =
     match tokens with
     | [] ->
       Option.map t.route ~f:(fun (Route (path, f)) ->
-          apply path f captured_vars)
+          apply path f decoded_values)
     | tok :: tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
          match literals. *)
       let var_matched =
         String.Map.to_sequence t.vars
         |> Sequence.fold_until ~init:None
-             ~f:(fun _acc (_, (Var_decoder var, t')) ->
+             ~f:(fun _acc (_var_name, (Var_decoder var, t')) ->
                match var.decode tok with
-               | Some _v -> Stop (Some (tok, t'))
+               | Some v -> Stop (Some (Obj.repr v, t'))
                | None -> Continue None)
              ~finish:(fun _ -> None)
       in
       match var_matched with
-      | Some (value, t) -> loop t (value :: captured_vars) tokens
-      | None -> loop (Node t) captured_vars tokens)
+      | Some (value, t') -> loop t' (value :: decoded_values) tokens
+      | None -> loop (Node t) decoded_values tokens)
   in
   loop t [] tokens
 
-and apply : type a b. (a, b) uri -> a -> string list -> b =
+and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
  fun uri f vars ->
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (var, uri), p :: vars -> (
-    match var.decode p with
-    | Some p' -> apply uri (f p') vars
-    | None -> failwith "Route not matched")
-  | _, _ -> failwith "Route not matched"
+  | Var (var, uri), p :: vars -> apply uri (f @@ to_var_type var p) vars
+  | _, _ -> assert false
 
-(* None *)
+and to_var_type : type c. c var -> decoded_value -> c = fun _ v : c -> Obj.obj v
 
 let r1 = string (int end_) @-> fun (s : string) (i : int) -> s ^ string_of_int i
 
