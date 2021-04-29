@@ -127,7 +127,7 @@ let rec match' : 'b t -> string -> 'b option =
       (* Check if one of the vars are matched first. If none is matched then
          match literals. *)
       let var_matched =
-        String.Map.to_sequence t.vars
+        String.Map.to_sequence t.vars (* TODO sort by increasing *)
         |> Sequence.fold_until ~init:None
              ~f:(fun _acc (_var_name, (Var_decoder var, t')) ->
                match var.decode tok with
@@ -136,8 +136,12 @@ let rec match' : 'b t -> string -> 'b option =
              ~finish:(fun _ -> None)
       in
       match var_matched with
-      | Some (value, t') -> loop t' (value :: decoded_values) tokens
-      | None -> loop (Node t) decoded_values tokens)
+      | Some (value, t') ->
+        (loop [@tailcall]) t' (value :: decoded_values) tokens
+      | None -> (
+        match String.Map.find t.literals tok with
+        | Some t' -> (loop [@tailcall]) t' decoded_values tokens
+        | None -> None))
   in
   loop t [] tokens
 
