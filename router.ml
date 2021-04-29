@@ -1,6 +1,7 @@
 open! Core
 
-(** [('a, 'b) uri] represents a uniform resource identifier *)
+(** [('a, 'b) uri] represents a uniform resource identifier. The variant members
+    describe the uri path component types. *)
 type ('a, 'b) uri =
   | End : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
