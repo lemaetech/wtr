@@ -60,12 +60,12 @@ type 'a t =
   | Node :
       { route : 'a route option
       ; literals : 'a t String.Map.t
-      ; vars : (kvar * 'a t) String.Map.t
+      ; vars : (kvar * 'a t) Queue.t
       }
       -> 'a t
 
 let empty_with route =
-  Node { route; literals = String.Map.empty; vars = String.Map.empty }
+  Node { route; literals = String.Map.empty; vars = Queue.create () }
 
 let empty = empty_with None
 
@@ -85,12 +85,11 @@ let add : 'b route -> 'b t -> 'b t =
       Node { t with literals }
     | KVar kvar :: uri_kinds ->
       let (V var) = kvar in
-      let vars =
-        String.Map.change t.vars var.name ~f:(function
-          | Some (_, t') -> Some (kvar, loop t' uri_kinds)
-          | None -> Some (kvar, loop empty uri_kinds))
-      in
-      Node { t with vars }
+      (Queue.find t.vars ~f:(fun (V var', _) -> String.equal var.name var'.name)
+      |> function
+      | Some (_, t') -> Queue.enqueue t.vars (kvar, loop t' uri_kinds)
+      | None -> Queue.enqueue t.vars (kvar, loop empty uri_kinds));
+      Node t
   in
   loop t (uri_kind uri)
 
@@ -113,15 +112,14 @@ let rec match' : 'b t -> string -> 'b option =
       Option.map t.route ~f:(fun (Route (uri, f)) -> apply uri f decoded_values)
     | uri_token :: uri_tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
-         match literals. *)
+         match literals. The route that is added first is evaluated first. *)
       let var_matched =
-        String.Map.to_sequence t.vars (* TODO sort by increasing *)
-        |> Sequence.fold_until ~init:None
-             ~f:(fun _acc (_var_name, (V var, t')) ->
-               match var.decode uri_token with
-               | Some v -> Stop (Some (Obj.repr v, t'))
-               | None -> Continue None)
-             ~finish:(fun _ -> None)
+        Queue.fold_until t.vars ~init:None
+          ~f:(fun _acc (V var, t') ->
+            match var.decode uri_token with
+            | Some v -> Stop (Some (Obj.repr v, t'))
+            | None -> Continue None)
+          ~finish:(fun _ -> None)
       in
       match var_matched with
       | Some (value, t') ->
