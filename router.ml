@@ -56,15 +56,12 @@ let ( @-> ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
 (** ['a t] is a trie based router where ['a] is the route value. *)
 type 'a t =
-  | Node :
-      { route : 'a route option
-      ; literals : 'a t String.Map.t
-      ; vars : (kvar * 'a t) Queue.t
-      }
-      -> 'a t
+  { route : 'a route option
+  ; literals : 'a t String.Map.t
+  ; vars : (kvar * 'a t) list
+  }
 
-let empty_with route =
-  Node { route; literals = String.Map.empty; vars = Queue.create () }
+let empty_with route = { route; literals = String.Map.empty; vars = [] }
 
 let empty = empty_with None
 
@@ -72,23 +69,25 @@ let add : 'b route -> 'b t -> 'b t =
  fun route t ->
   let (Route (uri, _)) = route in
   let rec loop : 'b t -> uri_kind list -> 'b t =
-   fun (Node t) uri_kinds ->
+   fun t uri_kinds ->
     match uri_kinds with
-    | [] -> Node { t with route = Some route }
+    | [] -> { t with route = Some route }
     | KLiteral lit :: uri_kinds ->
       let literals =
         String.Map.change t.literals lit ~f:(function
           | Some t' -> Some (loop t' uri_kinds)
           | None -> Some (loop empty uri_kinds))
       in
-      Node { t with literals }
+      { t with literals }
     | KVar kvar :: uri_kinds ->
       let (V var) = kvar in
-      (Queue.find t.vars ~f:(fun (V var', _) -> String.equal var.name var'.name)
-      |> function
-      | Some (_, t') -> Queue.enqueue t.vars (kvar, loop t' uri_kinds)
-      | None -> Queue.enqueue t.vars (kvar, loop empty uri_kinds));
-      Node t
+      let vars =
+        List.find t.vars ~f:(fun (V var', _) -> String.equal var.name var'.name)
+        |> function
+        | Some (_, t') -> (kvar, loop t' uri_kinds) :: t.vars
+        | None -> (kvar, loop empty uri_kinds) :: t.vars
+      in
+      { t with vars }
   in
   loop t (uri_kind uri)
 
@@ -105,7 +104,7 @@ let rec match' : 'b t -> string -> 'b option =
       | _ -> false)
     |> String.split ~on:'/'
   in
-  let rec loop (Node t) decoded_values uri_tokens =
+  let rec loop t decoded_values uri_tokens =
     match uri_tokens with
     | [] ->
       Option.map t.route ~f:(fun (Route (uri, f)) -> apply uri f decoded_values)
@@ -113,7 +112,7 @@ let rec match' : 'b t -> string -> 'b option =
       (* Check if one of the vars are matched first. If none is matched then
          match literals. The route that is added first is evaluated first. *)
       let var_matched =
-        Queue.fold_until t.vars ~init:None
+        List.fold_until t.vars ~init:None
           ~f:(fun _ (V var, t') ->
             match var.decode uri_token with
             | Some v -> Stop (Some (Obj.repr v, t'))
@@ -141,20 +140,18 @@ and to_var_type : type c. c var -> decoded_value -> c = fun _ v : c -> Obj.obj v
 
 let r1 = string (int end_) @-> fun (s : string) (i : int) -> s ^ string_of_int i
 
-let r2 : string route = lit "home" (lit "about" end_) @-> ""
+let r2 = lit "home" (lit "about" end_) @-> ""
 
-let r3 : string route =
-  lit "home" (int end_) @-> fun (i : int) -> string_of_int i
+let r3 = lit "home" (int end_) @-> fun (i : int) -> string_of_int i
 
-let r4 : string route =
-  lit "home" (float end_) @-> fun (f : float) -> string_of_float f
+let r4 = lit "home" (float end_) @-> fun (f : float) -> string_of_float f
+
+let router = empty |> add r1 |> add r2 |> add r3 |> add r4
 
 (** This should give error (we added an extra () var in handler) but it doesn't.
     It only errors when adding to the router.*)
 let r5 =
   string (int end_) @-> fun (s : string) (i : int) () -> s ^ string_of_int i
-
-let router = empty |> add r1 |> add r2 |> add r3 |> add r4
 
 (* |> add r5  *)
 (* This errors *)
