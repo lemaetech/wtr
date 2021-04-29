@@ -115,7 +115,7 @@ let rec match' : 'b t -> string -> 'b option =
          match literals. The route that is added first is evaluated first. *)
       let var_matched =
         Queue.fold_until t.vars ~init:None
-          ~f:(fun _acc (V var, t') ->
+          ~f:(fun _ (V var, t') ->
             match var.decode uri_token with
             | Some v -> Stop (Some (Obj.repr v, t'))
             | None -> Continue None)
