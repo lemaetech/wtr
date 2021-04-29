@@ -84,7 +84,7 @@ let add : 'b route -> 'b t -> 'b t =
       let vars =
         List.find t.vars ~f:(fun (V var', _) -> String.equal var.name var'.name)
         |> function
-        | Some (_, t') -> (kvar, loop t' uri_kinds) :: t.vars
+        | Some (kvar, t') -> (kvar, loop t' uri_kinds) :: t.vars
         | None -> (kvar, loop empty uri_kinds) :: t.vars
       in
       { t with vars }
@@ -112,12 +112,14 @@ let rec match' : 'b t -> string -> 'b option =
       (* Check if one of the vars are matched first. If none is matched then
          match literals. The route that is added first is evaluated first. *)
       let var_matched =
-        List.fold_until t.vars ~init:None
-          ~f:(fun _ (V var, t') ->
-            match var.decode uri_token with
-            | Some v -> Stop (Some (Obj.repr v, t'))
-            | None -> Continue None)
-          ~finish:(fun _ -> None)
+        t.vars
+        |> List.rev
+        |> List.fold_until ~init:None
+             ~f:(fun _ (V var, t') ->
+               match var.decode uri_token with
+               | Some v -> Stop (Some (Obj.repr v, t'))
+               | None -> Continue None)
+             ~finish:(fun _ -> None)
       in
       match var_matched with
       | Some (value, t') ->
