@@ -140,8 +140,8 @@ and apply : type a b. (a, b) uri -> a -> string list -> b =
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (conv, uri), p :: vars -> (
-    match conv.decode p with
+  | Var (var, uri), p :: vars -> (
+    match var.decode p with
     | Some p' -> apply uri (f p') vars
     | None -> failwith "Route not matched")
   | _, _ -> failwith "Route not matched"
