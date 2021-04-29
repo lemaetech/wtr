@@ -34,19 +34,19 @@ let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
  fun uri -> var bool_of_string_opt string_of_bool ":bool" uri
 
-(** [kind] encodes uri kind/type. *)
-type kind =
-  | KLiteral : string -> kind
-  | KVar : var_decoder -> kind
+(** [uri_kind] encodes uri kind/type. *)
+type uri_kind =
+  | KLiteral : string -> uri_kind
+  | KVar : var_decoder -> uri_kind
 
 and var_decoder = Var_decoder : 'c var -> var_decoder
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
-let rec kind : type a b. (a, b) uri -> kind list = function
+let rec uri_kind : type a b. (a, b) uri -> uri_kind list = function
   | End -> []
-  | Literal (lit, uri) -> KLiteral lit :: kind uri
-  | Var (var, uri) -> KVar (Var_decoder var) :: kind uri
+  | Literal (lit, uri) -> KLiteral lit :: uri_kind uri
+  | Var (var, uri) -> KVar (Var_decoder var) :: uri_kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -72,42 +72,31 @@ let empty = empty_with None
 let add : 'b route -> 'b t -> 'b t =
  fun route t ->
   let (Route (uri, _)) = route in
-  let rec loop : 'b t -> kind list -> 'b t =
-   fun (Node t) kinds ->
-    match kinds with
+  let rec loop : 'b t -> uri_kind list -> 'b t =
+   fun (Node t) uri_kinds ->
+    match uri_kinds with
     | [] -> Node { t with route = Some route }
-    | KLiteral lit :: kinds ->
+    | KLiteral lit :: uri_kinds ->
       let literals =
-        match String.Map.find t.literals lit with
-        | Some t' ->
-          String.Map.change t.literals lit ~f:(function
-              | Some _
-              | None
-              -> Some (loop t' kinds))
-        | None ->
-          String.Map.add_exn t.literals ~key:lit ~data:(loop empty kinds)
+        String.Map.change t.literals lit ~f:(function
+          | Some t' -> Some (loop t' uri_kinds)
+          | None -> Some (loop empty uri_kinds))
       in
       Node { t with literals }
-    | KVar decoder :: kinds ->
+    | KVar decoder :: uri_kinds ->
       let (Var_decoder var) = decoder in
       let vars =
-        match String.Map.find t.vars var.name with
-        | Some (_, t') ->
-          String.Map.change t.vars var.name ~f:(function
-              | Some _
-              | None
-              -> Some (decoder, loop t' kinds))
-        | None ->
-          String.Map.add_exn t.vars ~key:var.name
-            ~data:(decoder, loop empty kinds)
+        String.Map.change t.vars var.name ~f:(function
+          | Some (_, t') -> Some (decoder, loop t' uri_kinds)
+          | None -> Some (decoder, loop empty uri_kinds))
       in
       Node { t with vars }
   in
-  loop t (kind uri)
+  loop t (uri_kind uri)
 
-(* Represents decoded value, i.e. by calling function (string -> 'c option). We
-   use Obj.t to get around the issue of 'value escaping its scope' in
-   var_decoder type GADT. *)
+(* Represents decoded value [c] in [Some c]. [Some c] is returned by [decode]
+   function of ['c var]. We use Obj.t to get around the issue of 'value escaping
+   its scope' in var_decoder type GADT. *)
 type decoded_value = Obj.t
 
 let rec match' : 'b t -> string -> 'b option =
