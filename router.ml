@@ -38,14 +38,14 @@ type kind =
   | KLiteral : string -> kind
   | KVar : var_decoder -> kind
 
-and var_decoder = D : string * (string -> 'c option) -> var_decoder
+and var_decoder = Var_decoder : 'c var -> var_decoder
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
 let rec kind : type a b. (a, b) uri -> kind list = function
   | End -> []
   | Literal (lit, uri) -> KLiteral lit :: kind uri
-  | Var (conv, uri) -> KVar (D (conv.name, conv.decode)) :: kind uri
+  | Var (var, uri) -> KVar (Var_decoder var) :: kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -88,16 +88,17 @@ let add : 'b route -> 'b t -> 'b t =
       in
       Node { t with literals }
     | KVar decoder :: kinds ->
-      let (D (name, _)) = decoder in
+      let (Var_decoder var) = decoder in
       let vars =
-        match String.Map.find t.vars name with
+        match String.Map.find t.vars var.name with
         | Some (_, t') ->
-          String.Map.change t.vars name ~f:(function
+          String.Map.change t.vars var.name ~f:(function
               | Some _
               | None
               -> Some (decoder, loop t' kinds))
         | None ->
-          String.Map.add_exn t.vars ~key:name ~data:(decoder, loop empty kinds)
+          String.Map.add_exn t.vars ~key:var.name
+            ~data:(decoder, loop empty kinds)
       in
       Node { t with vars }
   in
@@ -122,8 +123,8 @@ let rec match' : 'b t -> string -> 'b option =
       let var_matched =
         String.Map.to_sequence t.vars
         |> Sequence.fold_until ~init:None
-             ~f:(fun _acc (_, (D (_, decode), t')) ->
-               match decode tok with
+             ~f:(fun _acc (_, (Var_decoder var, t')) ->
+               match var.decode tok with
                | Some _v -> Stop (Some (tok, t'))
                | None -> Continue None)
              ~finish:(fun _ -> None)
