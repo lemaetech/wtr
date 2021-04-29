@@ -94,7 +94,8 @@ let add : 'b route -> 'b t -> 'b t =
 (* Represents decoded value [c] in [Some c]. [Some c] is returned by [decode]
    function of ['c var]. We use Obj.t to get around the issue of 'value escaping
    its scope' in [kvar] GADT when it is used in [match'] function. *)
-type decoded_value = Obj.t
+
+(* type decoded_value = Obj.t *)
 
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
@@ -104,10 +105,11 @@ let rec match' : 'b t -> string -> 'b option =
       | _ -> false)
     |> String.split ~on:'/'
   in
-  let rec loop t decoded_values uri_tokens =
+  let uri_tokens = List.slice uri_tokens 1 (List.length uri_tokens) in
+  let rec loop t var_values uri_tokens =
     match uri_tokens with
     | [] ->
-      Option.map t.route ~f:(fun (Route (uri, f)) -> apply uri f decoded_values)
+      Option.map t.route ~f:(fun (Route (uri, f)) -> apply uri f var_values)
     | uri_token :: uri_tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
          match literals. The route that is added first is evaluated first. *)
@@ -117,28 +119,34 @@ let rec match' : 'b t -> string -> 'b option =
         |> List.fold_until ~init:None
              ~f:(fun _ (V var, t') ->
                match var.decode uri_token with
-               | Some v -> Stop (Some (Obj.repr v, t'))
+               | Some _ -> Stop (Some (uri_token, t'))
                | None -> Continue None)
              ~finish:(fun _ -> None)
       in
       match var_matched with
       | Some (value, t') ->
-        (loop [@tailcall]) t' (value :: decoded_values) uri_tokens
+        (loop [@tailcall]) t' (value :: var_values) uri_tokens
       | None ->
         Option.bind (String.Map.find t.literals uri_token) ~f:(fun t' ->
-            (loop [@tailcall]) t' decoded_values uri_tokens))
+            (loop [@tailcall]) t' var_values uri_tokens))
   in
   loop t [] uri_tokens
 
-and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
+and apply : type a b. (a, b) uri -> a -> string list -> b =
  fun uri f vars ->
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (var, uri), p :: vars -> apply uri (f @@ to_var_type var p) vars
+  | Var (var, uri), p :: vars -> (
+    match var.decode p with
+    | Some v -> apply uri (f v) vars
+    | None -> assert false)
   | _, _ -> assert false
 
-and to_var_type : type c. c var -> decoded_value -> c = fun _ v : c -> Obj.obj v
+(* and to_var_type : type c. c var -> decoded_value -> c = *)
+(*  fun _ v : c -> *)
+(*   Printf.printf "converting to var type\n"; *)
+(*   Obj.obj v *)
 
 let r1 = string (int end_) @-> fun (s : string) (i : int) -> s ^ string_of_int i
 
