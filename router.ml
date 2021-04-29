@@ -96,41 +96,41 @@ let add : 'b route -> 'b t -> 'b t =
 
 (* Represents decoded value [c] in [Some c]. [Some c] is returned by [decode]
    function of ['c var]. We use Obj.t to get around the issue of 'value escaping
-   its scope' in var_decoder type GADT. *)
+   its scope' in [kvar] GADT when it is used in [match'] function. *)
 type decoded_value = Obj.t
 
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
-  let tokens =
+  let uri_tokens =
     String.rstrip uri ~drop:(function
       | '/' -> true
       | _ -> false)
     |> String.split ~on:'/'
   in
-  let rec loop (Node t) decoded_values tokens =
-    match tokens with
+  let rec loop (Node t) decoded_values uri_tokens =
+    match uri_tokens with
     | [] ->
       Option.map t.route ~f:(fun (Route (uri, f)) -> apply uri f decoded_values)
-    | tok :: tokens -> (
+    | uri_token :: uri_tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
          match literals. *)
       let var_matched =
         String.Map.to_sequence t.vars (* TODO sort by increasing *)
         |> Sequence.fold_until ~init:None
              ~f:(fun _acc (_var_name, (V var, t')) ->
-               match var.decode tok with
+               match var.decode uri_token with
                | Some v -> Stop (Some (Obj.repr v, t'))
                | None -> Continue None)
              ~finish:(fun _ -> None)
       in
       match var_matched with
       | Some (value, t') ->
-        (loop [@tailcall]) t' (value :: decoded_values) tokens
+        (loop [@tailcall]) t' (value :: decoded_values) uri_tokens
       | None ->
-        Option.bind (String.Map.find t.literals tok) ~f:(fun t' ->
-            (loop [@tailcall]) t' decoded_values tokens))
+        Option.bind (String.Map.find t.literals uri_token) ~f:(fun t' ->
+            (loop [@tailcall]) t' decoded_values uri_tokens))
   in
-  loop t [] tokens
+  loop t [] uri_tokens
 
 and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
  fun uri f vars ->
