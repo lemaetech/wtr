@@ -37,16 +37,16 @@ let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
 (** [uri_kind] encodes uri kind/type. *)
 type uri_kind =
   | KLiteral : string -> uri_kind
-  | KVar : var_decoder -> uri_kind
+  | KVar : kvar -> uri_kind
 
-and var_decoder = Var_decoder : 'c var -> var_decoder
+and kvar = V : 'c var -> kvar
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
 let rec uri_kind : type a b. (a, b) uri -> uri_kind list = function
   | End -> []
   | Literal (lit, uri) -> KLiteral lit :: uri_kind uri
-  | Var (var, uri) -> KVar (Var_decoder var) :: uri_kind uri
+  | Var (var, uri) -> KVar (V var) :: uri_kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -60,7 +60,7 @@ type 'a t =
   | Node :
       { route : 'a route option
       ; literals : 'a t String.Map.t
-      ; vars : (var_decoder * 'a t) String.Map.t
+      ; vars : (kvar * 'a t) String.Map.t
       }
       -> 'a t
 
@@ -83,12 +83,12 @@ let add : 'b route -> 'b t -> 'b t =
           | None -> Some (loop empty uri_kinds))
       in
       Node { t with literals }
-    | KVar decoder :: uri_kinds ->
-      let (Var_decoder var) = decoder in
+    | KVar kvar :: uri_kinds ->
+      let (V var) = kvar in
       let vars =
         String.Map.change t.vars var.name ~f:(function
-          | Some (_, t') -> Some (decoder, loop t' uri_kinds)
-          | None -> Some (decoder, loop empty uri_kinds))
+          | Some (_, t') -> Some (kvar, loop t' uri_kinds)
+          | None -> Some (kvar, loop empty uri_kinds))
       in
       Node { t with vars }
   in
@@ -117,7 +117,7 @@ let rec match' : 'b t -> string -> 'b option =
       let var_matched =
         String.Map.to_sequence t.vars (* TODO sort by increasing *)
         |> Sequence.fold_until ~init:None
-             ~f:(fun _acc (_var_name, (Var_decoder var, t')) ->
+             ~f:(fun _acc (_var_name, (V var, t')) ->
                match var.decode tok with
                | Some v -> Stop (Some (Obj.repr v, t'))
                | None -> Continue None)
