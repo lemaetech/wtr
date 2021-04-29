@@ -13,7 +13,7 @@ type ('a, 'b) uri =
 and 'c var =
   { decode : string -> 'c option
   ; encode : 'c -> string
-  ; name : string (* name e.g. :int, :float, :bool, :string etc *)
+  ; name : string (* name e.g. int, float, bool, string etc *)
   }
 
 let end_ : ('b, 'b) uri = End
@@ -23,16 +23,16 @@ let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
 let var decode encode name uri = Var ({ encode; decode; name }, uri)
 
 let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
- fun uri -> var (fun s -> Some s) Fun.id ":string" uri
+ fun uri -> var (fun s -> Some s) Fun.id "string" uri
 
 let int : ('a, 'b) uri -> (int -> 'a, 'b) uri =
- fun uri -> var int_of_string_opt string_of_int ":int" uri
+ fun uri -> var int_of_string_opt string_of_int "int" uri
 
 let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
- fun uri -> var float_of_string_opt string_of_float ":float" uri
+ fun uri -> var float_of_string_opt string_of_float "float" uri
 
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
- fun uri -> var bool_of_string_opt string_of_bool ":bool" uri
+ fun uri -> var bool_of_string_opt string_of_bool "bool" uri
 
 (** [uri_kind] encodes uri kind/type. *)
 type uri_kind =
