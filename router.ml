@@ -110,8 +110,7 @@ let rec match' : 'b t -> string -> 'b option =
   let rec loop (Node t) decoded_values tokens =
     match tokens with
     | [] ->
-      Option.map t.route ~f:(fun (Route (path, f)) ->
-          apply path f decoded_values)
+      Option.map t.route ~f:(fun (Route (uri, f)) -> apply uri f decoded_values)
     | tok :: tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
          match literals. *)
