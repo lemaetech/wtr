@@ -109,7 +109,8 @@ let rec match' : 'b t -> string -> 'b option =
   let rec loop t var_values uri_tokens =
     match uri_tokens with
     | [] ->
-      Option.map t.route ~f:(fun (Route (uri, f)) -> apply uri f var_values)
+      Option.map t.route ~f:(fun (Route (uri, f)) ->
+          var_values |> List.rev |> apply uri f)
     | uri_token :: uri_tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
          match literals. The route that is added first is evaluated first. *)
@@ -138,6 +139,7 @@ and apply : type a b. (a, b) uri -> a -> string list -> b =
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
   | Var (var, uri), p :: vars -> (
+    Printf.printf "var.name : %s, p: %s\n%!" var.name p;
     match var.decode p with
     | Some v -> apply uri (f v) vars
     | None -> assert false)
