@@ -10,3 +10,7 @@
 (executable
  (name gadt1)
  (modules gadt1))
+
+(executable
+ (name hmap)
+ (modules hmap))
