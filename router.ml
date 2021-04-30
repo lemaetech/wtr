@@ -91,12 +91,6 @@ let add : 'b route -> 'b t -> 'b t =
   in
   loop t (uri_kind uri)
 
-(* Represents decoded value [c] in [Some c]. [Some c] is returned by [decode]
-   function of ['c var]. We use Obj.t to get around the issue of 'value escaping
-   its scope' in [kvar] GADT when it is used in [match'] function. *)
-
-(* type decoded_value = Obj.t *)
-
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
   let uri_tokens =
@@ -139,16 +133,10 @@ and apply : type a b. (a, b) uri -> a -> string list -> b =
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
   | Var (var, uri), p :: vars -> (
-    Printf.printf "var.name : %s, p: %s\n%!" var.name p;
     match var.decode p with
     | Some v -> apply uri (f v) vars
     | None -> assert false)
   | _, _ -> assert false
-
-(* and to_var_type : type c. c var -> decoded_value -> c = *)
-(*  fun _ v : c -> *)
-(*   Printf.printf "converting to var type\n"; *)
-(*   Obj.obj v *)
 
 let r1 = string (int end_) @-> fun (s : string) (i : int) -> s ^ string_of_int i
 
