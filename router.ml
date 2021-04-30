@@ -132,8 +132,8 @@ and apply : type a b. (a, b) uri -> a -> string list -> b =
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (var, uri), p :: vars -> (
-    match var.decode p with
+  | Var (var, uri), v :: vars -> (
+    match var.decode v with
     | Some v -> apply uri (f v) vars
     | None -> assert false)
   | _, _ -> assert false
