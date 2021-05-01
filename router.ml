@@ -17,24 +17,14 @@ and 'c var =
       }
       -> 'c var
 
-type (_, _) eq = Eq : ('c -> 'a, 'b) eq
+module Eq = struct
+  type (_, _) t = Refl : ('a, 'a) t
+end
 
-let eq : ('c -> 'a, 'b) uri -> ('d -> 'e, 'f) uri -> ('c -> 'a, 'b) eq option =
- fun a b ->
-  match (a, b) with
-  | Var (V var', _), Var (V var'', _) ->
-    if String.equal var'.name var''.name then
-      Some Eq
-    else
-      None
-  | _, _ -> None
-
-type (_, _) eq_var = Eq_var : ('a, 'a) eq_var
-
-let eq_var : 'a var -> 'b var -> ('a, 'b) eq_var option =
+let eq : 'a var -> 'b var -> ('a, 'b) Eq.t option =
  fun (V { name; _ }) (V { name = name'; _ }) ->
   if String.equal name name' then
-    Some Eq_var
+    Some Eq.Refl
   else
     None
 
@@ -115,6 +105,8 @@ let add : 'b route -> 'b t -> 'b t =
   in
   loop t (uri_kind uri)
 
+type decoded_value = D : 'c var * 'c -> decoded_value
+
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
   let uri_tokens =
@@ -137,9 +129,10 @@ let rec match' : 'b t -> string -> 'b option =
         |> List.rev
         |> List.fold_until ~init:None
              ~f:(fun _ (kvar, t') ->
-               let (KV (V var)) = kvar in
+               let (KV kvar) = kvar in
+               let (V var) = kvar in
                match var.decode uri_token with
-               | Some _ -> Stop (Some (uri_token, t'))
+               | Some v -> Stop (Some (D (kvar, v), t'))
                | None -> Continue None)
              ~finish:(fun _ -> None)
       in
@@ -152,15 +145,20 @@ let rec match' : 'b t -> string -> 'b option =
   in
   loop t [] uri_tokens
 
-and apply : type a b. (a, b) uri -> a -> string list -> b =
+and cast : type a b. (a, b) Eq.t -> a -> b = fun Eq.Refl x -> x
+
+and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
  fun uri f vars ->
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (V var, uri), v :: vars -> (
-    match var.decode v with
-    | Some v -> apply uri (f v) vars
-    | None -> assert false)
+  | Var (var, uri), D (var', v) :: vars ->
+    let v =
+      match eq var var' with
+      | Some Eq.Refl -> v
+      | None -> assert false
+    in
+    apply uri (f v) vars
   | _, _ -> assert false
 
 let r1 = string (int end_) @-> fun (s : string) (i : int) -> s ^ string_of_int i
