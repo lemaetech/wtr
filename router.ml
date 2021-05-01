@@ -11,16 +11,18 @@ type ('a, 'b) uri =
           eg. ':int' in '/home/:int' *)
 
 and 'c var =
-  { decode : string -> 'c option
-  ; name : string (* name e.g. int, float, bool, string etc *)
-  }
+  | V :
+      { decode : string -> 'c option
+      ; name : string (* name e.g. int, float, bool, string etc *)
+      }
+      -> 'c var
 
 type (_, _) eq = Eq : ('c -> 'a, 'b) eq
 
 let eq : ('c -> 'a, 'b) uri -> ('d -> 'e, 'f) uri -> ('c -> 'a, 'b) eq option =
  fun a b ->
   match (a, b) with
-  | Var (var', _), Var (var'', _) ->
+  | Var (V var', _), Var (V var'', _) ->
     if String.equal var'.name var''.name then
       Some Eq
     else
@@ -31,7 +33,7 @@ let end_ : ('b, 'b) uri = End
 
 let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
 
-let var decode name uri = Var ({ decode; name }, uri)
+let var decode name uri = Var (V { decode; name }, uri)
 
 let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
  fun uri -> var (fun s -> Some s) "string" uri
@@ -50,14 +52,14 @@ type uri_kind =
   | KLiteral : string -> uri_kind
   | KVar : kvar -> uri_kind
 
-and kvar = V : ('c -> 'a, 'b) uri -> kvar
+and kvar = KV : ('c -> 'a, 'b) uri -> kvar
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
 let rec uri_kind : type a b. (a, b) uri -> uri_kind list = function
   | End -> []
   | Literal (lit, uri) -> KLiteral lit :: uri_kind uri
-  | Var (_, uri) as var -> KVar (V var) :: uri_kind uri
+  | Var (_, uri) as var -> KVar (KV var) :: uri_kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -92,9 +94,9 @@ let add : 'b route -> 'b t -> 'b t =
       in
       { t with literals }
     | KVar kvar :: uri_kinds ->
-      let (V var) = kvar in
+      let (KV var) = kvar in
       let vars =
-        List.find t.vars ~f:(fun (V var', _) -> Option.is_some (eq var var'))
+        List.find t.vars ~f:(fun (KV var', _) -> Option.is_some (eq var var'))
         |> function
         | Some (kvar, t') -> (kvar, loop t' uri_kinds) :: t.vars
         | None -> (kvar, loop empty uri_kinds) :: t.vars
@@ -126,7 +128,7 @@ let rec match' : 'b t -> string -> 'b option =
         |> List.fold_until ~init:None
              ~f:(fun _ (kvar, t') ->
                match kvar with
-               | V (Var (var', _)) -> (
+               | KV (Var (V var', _)) -> (
                  match var'.decode uri_token with
                  | Some _ -> Stop (Some (uri_token, t'))
                  | None -> Continue None)
@@ -147,7 +149,7 @@ and apply : type a b. (a, b) uri -> a -> string list -> b =
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (var, uri), v :: vars -> (
+  | Var (V var, uri), v :: vars -> (
     match var.decode v with
     | Some v -> apply uri (f v) vars
     | None -> assert false)
@@ -163,10 +165,12 @@ let r4 = lit "home" (float end_) @-> fun (f : float) -> string_of_float f
 
 let router = empty |> add r1 |> add r2 |> add r3 |> add r4
 
+let _m = match' router "/home/100001"
+
 (** This should give error (we added an extra () var in handler) but it doesn't.
     It only errors when adding to the router.*)
-let r5 =
-  string (int end_) @-> fun (s : string) (i : int) () -> s ^ string_of_int i
+(* let r5 = *)
+(* string (int end_) @-> fun (s : string) (i : int) () -> s ^ string_of_int i *)
 
 (* |> add r5  *)
 (* This errors *)
