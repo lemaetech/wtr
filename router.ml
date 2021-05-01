@@ -29,6 +29,15 @@ let eq : ('c -> 'a, 'b) uri -> ('d -> 'e, 'f) uri -> ('c -> 'a, 'b) eq option =
       None
   | _, _ -> None
 
+type (_, _) eq_var = Eq_var : ('a, 'a) eq_var
+
+let eq_var : 'a var -> 'b var -> ('a, 'b) eq_var option =
+ fun (V { name; _ }) (V { name = name'; _ }) ->
+  if String.equal name name' then
+    Some Eq_var
+  else
+    None
+
 let end_ : ('b, 'b) uri = End
 
 let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
@@ -52,14 +61,14 @@ type uri_kind =
   | KLiteral : string -> uri_kind
   | KVar : kvar -> uri_kind
 
-and kvar = KV : ('c -> 'a, 'b) uri -> kvar
+and kvar = KV : 'c var -> kvar
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [add] function below. *)
 let rec uri_kind : type a b. (a, b) uri -> uri_kind list = function
   | End -> []
   | Literal (lit, uri) -> KLiteral lit :: uri_kind uri
-  | Var (_, uri) as var -> KVar (KV var) :: uri_kind uri
+  | Var (var, uri) -> KVar (KV var) :: uri_kind uri
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -94,9 +103,10 @@ let add : 'b route -> 'b t -> 'b t =
       in
       { t with literals }
     | KVar kvar :: uri_kinds ->
-      let (KV var) = kvar in
+      let (KV (V var)) = kvar in
       let vars =
-        List.find t.vars ~f:(fun (KV var', _) -> Option.is_some (eq var var'))
+        List.find t.vars ~f:(fun (KV (V var'), _) ->
+            String.equal var.name var'.name)
         |> function
         | Some (kvar, t') -> (kvar, loop t' uri_kinds) :: t.vars
         | None -> (kvar, loop empty uri_kinds) :: t.vars
@@ -127,12 +137,10 @@ let rec match' : 'b t -> string -> 'b option =
         |> List.rev
         |> List.fold_until ~init:None
              ~f:(fun _ (kvar, t') ->
-               match kvar with
-               | KV (Var (V var', _)) -> (
-                 match var'.decode uri_token with
-                 | Some _ -> Stop (Some (uri_token, t'))
-                 | None -> Continue None)
-               | _ -> assert false)
+               let (KV (V var)) = kvar in
+               match var.decode uri_token with
+               | Some _ -> Stop (Some (uri_token, t'))
+               | None -> Continue None)
              ~finish:(fun _ -> None)
       in
       match var_matched with
