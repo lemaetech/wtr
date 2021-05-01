@@ -12,5 +12,5 @@
  (modules gadt1))
 
 (executable
- (name hmap)
- (modules hmap))
+ (name recover_type)
+ (modules recover_type))
