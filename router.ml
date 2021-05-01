@@ -18,15 +18,15 @@ and 'c var =
       -> 'c var
 
 module Eq = struct
-  type (_, _) t = Refl : ('a, 'a) t
+  type (_, _) t = Eq : ('a, 'a) t
 end
 
-let eq : 'a var -> 'b var -> ('a, 'b) Eq.t option =
- fun (V { name; _ }) (V { name = name'; _ }) ->
-  if String.equal name name' then
-    Some Eq.Refl
-  else
-    None
+let eq : type a b. a var -> b var -> (a, a) Eq.t option =
+ fun t t' ->
+  match (t, t') with
+  | V { name; _ }, V { name = name'; _ } when String.equal name name' ->
+    Some Eq.Eq
+  | _, _ -> None
 
 let end_ : ('b, 'b) uri = End
 
@@ -145,7 +145,7 @@ let rec match' : 'b t -> string -> 'b option =
   in
   loop t [] uri_tokens
 
-and cast : type a b. (a, b) Eq.t -> a -> b = fun Eq.Refl x -> x
+and cast : type a b. (a, b) Eq.t -> a -> b = fun Eq.Eq x -> x
 
 and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
  fun uri f vars ->
@@ -155,7 +155,7 @@ and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
   | Var (var, uri), D (var', v) :: vars ->
     let v =
       match eq var var' with
-      | Some Eq.Refl -> v
+      | Some _ -> v
       | None -> assert false
     in
     apply uri (f v) vars
