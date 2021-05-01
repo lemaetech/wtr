@@ -3,7 +3,7 @@ module Eq = struct
 end
 
 type _ key =
-  | V :
+  | K :
       { decode : string -> 'c option
       ; name : string
       }
@@ -12,14 +12,18 @@ type _ key =
 let eq : type a b. a key -> b key -> (a, a) Eq.t option =
  fun t t' ->
   match (t, t') with
-  | V { name; _ }, V { name = name'; _ } when String.equal name name' ->
+  | K { name; _ }, K { name = name'; _ } when String.equal name name' ->
     Some Eq.Eq
   | _, _ -> None
 
-let a_int = V { decode = int_of_string_opt; name = "int" }
+let a_int = K { decode = int_of_string_opt; name = "int" }
 
-let b_int = V { decode = int_of_string_opt; name = "int" }
+let b_int = K { decode = int_of_string_opt; name = "int" }
 
-let c_int = V { decode = float_of_string_opt; name = "float" }
+let c_int = K { decode = float_of_string_opt; name = "float" }
 
 let _c = eq a_int c_int
+
+type a = A : 'a key -> a
+
+type b = B : 'a key * 'a -> b
