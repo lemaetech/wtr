@@ -155,7 +155,7 @@ and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
   | Var (var, uri), D (var', v) :: vars ->
     let v =
       match eq var var' with
-      | Some eq -> cast eq v (* Obj.magic v *)
+      | Some (Eq.Eq as _eq) -> (* cast eq v*) Obj.magic v
       | None -> assert false
     in
     apply uri (f v) vars
