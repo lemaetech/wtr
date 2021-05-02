@@ -32,21 +32,29 @@ let decode : a -> string -> b =
   B (K key, v)
 
 (* --- Equality tests --- *)
-let a_int = K { decode = int_of_string_opt; name = "int" }
+let a_int : int key = K { decode = int_of_string_opt; name = "int" }
 
-let b_int = K { decode = int_of_string_opt; name = "int" }
+let b_int : int key = K { decode = int_of_string_opt; name = "int" }
 
-let c_int = K { decode = float_of_string_opt; name = "float" }
+let a_float : float key = K { decode = float_of_string_opt; name = "float" }
 
-let _c = eq a_int c_int
+let _c : (float, float) Eq.t option = eq a_float a_int
+(* None *)
 
 (* --- Try recovering values --- *)
-let aa = A a_int
+let aa : a = A a_int
 
-let bb = decode aa "123"
+let bb : b = decode aa "123"
 
 let to_float : c -> b -> float option =
  fun (C (key, f)) (B (key', v)) ->
   match eq key key' with
   | Some Eq.Eq -> Some (f v)
+  (*
+     File "recover_type.ml", line 52, characters 12-13:
+     52 |     Some (f v)
+                      ^
+     Error: This expression has type $B_'a but an expression was expected of type
+              $C_'a
+  *)
   | None -> None
