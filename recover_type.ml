@@ -54,8 +54,8 @@ let to_float : c -> b -> float option =
   (* Uncommment above line to make it work. *)
   (*
      File "recover_type.ml", line 52, characters 12-13:
-     52 |     Some (f v)
-                      ^
+     52 |     (f v)
+                 ^
      Error: This expression has type $B_'a but an expression was expected of type
               $C_'a
   *)
