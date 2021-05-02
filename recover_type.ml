@@ -70,3 +70,19 @@ let cc_int : c =
 
 let f = to_float cc_int bb
 (* - : float option = Some 123 *)
+
+(* Attempt with using cast. *)
+let cast : type a b. (a, b) Eq.t -> b -> a = fun Eq.Eq x -> x
+
+let cast_to_float : c -> b -> float option =
+ fun (C (key, f)) (B (key', v)) ->
+  match eq key key' with
+  | Some eq -> f (cast eq v)
+  (*
+File "recover_type.ml", line 80, characters 26-27:
+80 |   | Some eq -> f (cast eq v)
+                               ^
+Error: This expression has type $B_'a but an expression was expected of type
+         $C_'a
+  *)
+  | None -> None
