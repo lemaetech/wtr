@@ -74,7 +74,7 @@ let f = to_float cc_int bb
 (* Attempt with using cast. *)
 let cast : type a b. (a, b) Eq.t -> b -> a = fun Eq.Eq x -> x
 
-let cast_to_float : c -> b -> float option =
+let to_float_with_cast : c -> b -> float option =
  fun (C (key, f)) (B (key', v)) ->
   match eq key key' with
   | Some eq -> f (cast eq v)
