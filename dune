@@ -12,5 +12,9 @@
  (modules gadt1))
 
 (executable
+ (name type_equality)
+ (modules type_equality))
+
+(executable
  (name recover_type)
  (modules recover_type))

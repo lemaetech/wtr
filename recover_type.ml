@@ -2,19 +2,25 @@ module Eq = struct
   type (_, _) t = Eq : ('a, 'a) t
 end
 
+type _ tid = ..
+
+type _ tid += Int : int tid | Float : float tid | Bool : bool tid
+
 type _ key =
   | K :
       { decode : string -> 'c option
       ; name : string
+      ; tid : 'c tid
       }
       -> 'c key
 
-let eq : type a b. a key -> b key -> (a, a) Eq.t option =
- fun t t' ->
-  match (t, t') with
-  | K { name; _ }, K { name = name'; _ } when String.equal name name' ->
-    Some Eq.Eq
-  | _, _ -> None
+let eq : type a b. a key -> b key -> (a, b) Eq.t option =
+ fun (K { tid = atid; _ }) (K { tid = btid; _ }) ->
+  match (atid, btid) with
+  | Int, Int -> Some Eq.Eq
+  | Float, Float -> Some Eq.Eq
+  | Bool, Bool -> Some Eq.Eq
+  | _ -> None
 
 type a = A : 'a key -> a
 
@@ -32,13 +38,14 @@ let decode : a -> string -> b =
   B (K key, v)
 
 (* --- Equality tests --- *)
-let a_int : int key = K { decode = int_of_string_opt; name = "int" }
+let a_int : int key = K { decode = int_of_string_opt; tid = Int; name = "int" }
 
-let b_int : int key = K { decode = int_of_string_opt; name = "int" }
+let b_int : int key = K { decode = int_of_string_opt; tid = Int; name = "int" }
 
-let a_float : float key = K { decode = float_of_string_opt; name = "float" }
+let a_float : float key =
+  K { decode = float_of_string_opt; tid = Float; name = "float" }
 
-let _c : (float, float) Eq.t option = eq a_float a_int
+let _c = eq a_float a_int
 (* None *)
 
 (* --- Try recovering values --- *)
@@ -50,15 +57,6 @@ let to_float : c -> b -> float option =
  fun (C (key, f)) (B (key', v)) ->
   match eq key key' with
   | Some Eq.Eq -> f v
-  (* f (Obj.magic v) *)
-  (* Uncommment above line to make it work. *)
-  (*
-     File "recover_type.ml", line 52, characters 12-13:
-     52 |     (f v)
-                 ^
-     Error: This expression has type $B_'a but an expression was expected of type
-              $C_'a
-  *)
   | None -> None
 
 let cc_int : c =
@@ -70,19 +68,3 @@ let cc_int : c =
 
 let f = to_float cc_int bb
 (* - : float option = Some 123 *)
-
-(* Attempt with using cast. *)
-let cast : type a b. (a, b) Eq.t -> b -> a = fun Eq.Eq x -> x
-
-let to_float_with_cast : c -> b -> float option =
- fun (C (key, f)) (B (key', v)) ->
-  match eq key key' with
-  | Some eq -> f (cast eq v)
-  (*
-File "recover_type.ml", line 80, characters 26-27:
-80 |   | Some eq -> f (cast eq v)
-                               ^
-Error: This expression has type $B_'a but an expression was expected of type
-         $C_'a
-  *)
-  | None -> None
