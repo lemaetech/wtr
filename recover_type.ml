@@ -49,7 +49,9 @@ let bb : b = decode aa "123"
 let to_float : c -> b -> float option =
  fun (C (key, f)) (B (key', v)) ->
   match eq key key' with
-  | Some Eq.Eq -> Some (f v)
+  | Some Eq.Eq -> f v
+  (* f (Obj.magic v) *)
+  (* Uncommment above line to make it work. *)
   (*
      File "recover_type.ml", line 52, characters 12-13:
      52 |     Some (f v)
@@ -58,3 +60,13 @@ let to_float : c -> b -> float option =
               $C_'a
   *)
   | None -> None
+
+let cc_int : c =
+  C
+    ( a_int
+    , fun i ->
+        try Some (float_of_int i) with
+        | _ -> None )
+
+let f = to_float cc_int bb
+(* - : float option = Some 123 *)

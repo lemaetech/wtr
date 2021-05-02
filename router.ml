@@ -145,7 +145,7 @@ let rec match' : 'b t -> string -> 'b option =
   in
   loop t [] uri_tokens
 
-and cast : type a b. (a, b) Eq.t -> a var -> b var = fun Eq.Eq x -> x
+and cast : type a b. (a, b) Eq.t -> a -> b = fun Eq.Eq x -> x
 
 and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
  fun uri f vars ->
@@ -155,7 +155,7 @@ and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
   | Var (var, uri), D (var', v) :: vars ->
     let v =
       match eq var var' with
-      | Some Eq.Eq -> Obj.magic v
+      | Some eq -> cast eq v (* Obj.magic v *)
       | None -> assert false
     in
     apply uri (f v) vars
