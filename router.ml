@@ -29,18 +29,16 @@ type ('a, 'b) uri =
           eg. ':int' in '/home/:int' *)
 
 and 'c var =
-  | V :
-      { decode : string -> 'c option
-      ; name : string (* name e.g. int, float, bool, string etc *)
-      ; tid : 'c Vty.t
-      }
-      -> 'c var
+  { decode : string -> 'c option
+  ; name : string (* name e.g. int, float, bool, string etc *)
+  ; tid : 'c Vty.t
+  }
 
 let end_ : ('b, 'b) uri = End
 
 let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
 
-let var decode name tid uri = Var (V { decode; name; tid }, uri)
+let var decode name tid uri = Var ({ decode; name; tid }, uri)
 
 let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
  fun uri -> var (fun s -> Some s) "string" Vty.String uri
@@ -103,8 +101,8 @@ let add : 'b route -> 'b t -> 'b t =
       in
       { t with literals }
     | KVar kvar :: uri_kinds ->
-      let (KV (V var)) = kvar in
-      (Queue.find t.vars ~f:(fun (KV (V var'), _) ->
+      let (KV var) = kvar in
+      (Queue.find t.vars ~f:(fun (KV var', _) ->
            String.equal var.name var'.name)
       |> function
       | Some (kvar, t') -> Queue.enqueue t.vars (kvar, loop t' uri_kinds)
@@ -135,7 +133,7 @@ let rec match' : 'b t -> string -> 'b option =
       Queue.fold_until t.vars ~init:None
         ~f:(fun _ (kvar, t') ->
           let (KV kvar) = kvar in
-          let (V var) = kvar in
+          let var = kvar in
           match var.decode uri_token with
           | Some v -> Stop (Some (D (kvar, v), t'))
           | None -> Continue None)
@@ -154,7 +152,7 @@ and exec_route_handler : type a b. (a, b) uri -> a -> decoded_value list -> b =
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> exec_route_handler uri f vars
-  | Var (V { tid; _ }, uri), D (V { tid = tid'; _ }, v) :: vars -> (
+  | Var ({ tid; _ }, uri), D ({ tid = tid'; _ }, v) :: vars -> (
     match Vty.eq tid tid' with
     | Some Vty.Eq -> exec_route_handler uri (f v) vars
     | None -> assert false)

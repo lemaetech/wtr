@@ -16,9 +16,5 @@
  (modules type_equality))
 
 (executable
- (name generic)
- (modules generic))
-
-(executable
  (name recover_type)
  (modules recover_type))
