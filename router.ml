@@ -82,9 +82,7 @@ let empty_with route = { route; path = Queue.create () }
 let empty = empty_with None
 
 let add (Route (uri, _) as route) t =
-  let rec loop : 'b t -> uri_kind list -> 'b t =
-   fun t uri_kinds ->
-    match uri_kinds with
+  let rec loop t = function
     | [] -> { t with route = Some route }
     | (KLiteral lit as kvar) :: uri_kinds ->
       update_path
@@ -102,11 +100,12 @@ let add (Route (uri, _) as route) t =
           | _ -> false)
         t kvar uri_kinds
   and update_path ~f t kvar uri_kinds =
-    (Queue.find t.path ~f
+    Queue.find ~f t.path
     |> function
-    | Some (kvar, t') -> Queue.enqueue t.path (kvar, loop t' uri_kinds)
-    | None -> Queue.enqueue t.path (kvar, loop empty uri_kinds));
-    t
+    | Some (_kvar, t') -> loop t' uri_kinds
+    | None ->
+      Queue.enqueue t.path (kvar, loop empty uri_kinds);
+      t
   in
   loop t (uri_kind uri)
 
