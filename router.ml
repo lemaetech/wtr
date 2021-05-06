@@ -163,7 +163,11 @@ let r4 = lit "home" (float end_) >- fun (f : float) -> string_of_float f
 
 let router = empty |> add r1 |> add r2 |> add r3 |> add r4
 
+let _m = match' router "/home/100001.1"
+
 let _m = match' router "/home/100001"
+
+let _m1 = match' router "/home/about"
 
 (** This should give error (we added an extra () var in handler) but it doesn't.
     It only errors when adding to the router.*)
