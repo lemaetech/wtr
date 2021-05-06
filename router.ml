@@ -1,6 +1,7 @@
 open! Core
 
-module Ty = struct
+(** Variable type. *)
+module Vty = struct
   type _ t = ..
 
   type _ t += Int : int t | Float : float t | Bool : bool t | String : string t
@@ -31,7 +32,7 @@ and 'c var =
   | V :
       { decode : string -> 'c option
       ; name : string (* name e.g. int, float, bool, string etc *)
-      ; tid : 'c Ty.t
+      ; tid : 'c Vty.t
       }
       -> 'c var
 
@@ -42,16 +43,16 @@ let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
 let var decode name tid uri = Var (V { decode; name; tid }, uri)
 
 let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
- fun uri -> var (fun s -> Some s) "string" Ty.String uri
+ fun uri -> var (fun s -> Some s) "string" Vty.String uri
 
 let int : ('a, 'b) uri -> (int -> 'a, 'b) uri =
- fun uri -> var int_of_string_opt "int" Ty.Int uri
+ fun uri -> var int_of_string_opt "int" Vty.Int uri
 
 let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
- fun uri -> var float_of_string_opt "float" Ty.Float uri
+ fun uri -> var float_of_string_opt "float" Vty.Float uri
 
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
- fun uri -> var bool_of_string_opt "bool" Ty.Bool uri
+ fun uri -> var bool_of_string_opt "bool" Vty.Bool uri
 
 (** [uri_kind] Existential which encodes uri kind/type. *)
 type uri_kind =
@@ -154,8 +155,8 @@ and exec_route_handler : type a b. (a, b) uri -> a -> decoded_value list -> b =
   | End, [] -> f
   | Literal (_, uri), vars -> exec_route_handler uri f vars
   | Var (V { tid; _ }, uri), D (V { tid = tid'; _ }, v) :: vars -> (
-    match Ty.eq tid tid' with
-    | Some Ty.Eq -> exec_route_handler uri (f v) vars
+    match Vty.eq tid tid' with
+    | Some Vty.Eq -> exec_route_handler uri (f v) vars
     | None -> assert false)
   | _, _ -> assert false
 
