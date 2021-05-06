@@ -71,10 +71,11 @@ let ( @-> ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 type 'a t =
   { route : 'a route option
   ; literals : 'a t String.Map.t
-  ; vars : (kvar * 'a t) list
+  ; vars : (kvar * 'a t) Queue.t
   }
 
-let empty_with route = { route; literals = String.Map.empty; vars = [] }
+let empty_with route =
+  { route; literals = String.Map.empty; vars = Queue.create () }
 
 let empty = empty_with None
 
@@ -94,14 +95,12 @@ let add : 'b route -> 'b t -> 'b t =
       { t with literals }
     | KVar kvar :: uri_kinds ->
       let (KV (V var)) = kvar in
-      let vars =
-        List.find t.vars ~f:(fun (KV (V var'), _) ->
-            String.equal var.name var'.name)
-        |> function
-        | Some (kvar, t') -> (kvar, loop t' uri_kinds) :: t.vars
-        | None -> (kvar, loop empty uri_kinds) :: t.vars
-      in
-      { t with vars }
+      (Queue.find t.vars ~f:(fun (KV (V var'), _) ->
+           String.equal var.name var'.name)
+      |> function
+      | Some (kvar, t') -> Queue.enqueue t.vars (kvar, loop t' uri_kinds)
+      | None -> Queue.enqueue t.vars (kvar, loop empty uri_kinds));
+      t
   in
   loop t (uri_kind uri)
 
@@ -126,8 +125,7 @@ let rec match' : 'b t -> string -> 'b option =
          match literals. The route that is added first is evaluated first. *)
       let var_matched =
         t.vars
-        |> List.rev
-        |> List.fold_until ~init:None
+        |> Base.Queue.fold_until ~init:None
              ~f:(fun _ (kvar, t') ->
                let (KV kvar) = kvar in
                let (V var) = kvar in
@@ -155,7 +153,7 @@ and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
   | Var (var, uri), D (var', v) :: vars ->
     let v =
       match eq var var' with
-      | Some (Eq.Eq as _eq) -> (* cast eq v*) Obj.magic v
+      | Some (Eq.Eq as _eq) -> (* cast eq_ v*) Obj.magic v
       | None -> assert false
     in
     apply uri (f v) vars
