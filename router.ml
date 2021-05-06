@@ -1,11 +1,20 @@
 open! Core
 
 module Ty = struct
-  type (_, _) eq = Eq : ('a, 'a) eq
-
   type _ t = ..
 
   type _ t += Int : int t | Float : float t | Bool : bool t | String : string t
+
+  type (_, _) eq = Eq : ('a, 'a) eq
+
+  let eq : type a b. a t -> b t -> (a, b) eq option =
+   fun atid btid ->
+    match (atid, btid) with
+    | Int, Int -> Some Eq
+    | Float, Float -> Some Eq
+    | Bool, Bool -> Some Eq
+    | String, String -> Some Eq
+    | _ -> None
 end
 
 (** [('a, 'b) uri] represents a uniform resource identifier. The variant members
@@ -25,16 +34,6 @@ and 'c var =
       ; tid : 'c Ty.t
       }
       -> 'c var
-
-let eq : type a b. a var -> b var -> (a, b) Ty.eq option =
- fun (V { tid = atid; _ }) (V { tid = btid; _ }) ->
-  Ty.(
-    match (atid, btid) with
-    | Int, Int -> Some Eq
-    | Float, Float -> Some Eq
-    | Bool, Bool -> Some Eq
-    | String, String -> Some Eq
-    | _ -> None)
 
 let end_ : ('b, 'b) uri = End
 
@@ -154,8 +153,8 @@ and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (var, uri), D (var', v) :: vars -> (
-    match eq var var' with
+  | Var (V { tid; _ }, uri), D (V { tid = tid'; _ }, v) :: vars -> (
+    match Ty.eq tid tid' with
     | Some Ty.Eq -> apply uri (f v) vars
     | None -> assert false)
   | _, _ -> assert false
