@@ -123,18 +123,15 @@ let rec match' : 'b t -> string -> 'b option =
     | uri_token :: uri_tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
          match literals. The route that is added first is evaluated first. *)
-      let var_matched =
-        t.vars
-        |> Base.Queue.fold_until ~init:None
-             ~f:(fun _ (kvar, t') ->
-               let (KV kvar) = kvar in
-               let (V var) = kvar in
-               match var.decode uri_token with
-               | Some v -> Stop (Some (D (kvar, v), t'))
-               | None -> Continue None)
-             ~finish:(fun _ -> None)
-      in
-      match var_matched with
+      Queue.fold_until t.vars ~init:None
+        ~f:(fun _ (kvar, t') ->
+          let (KV kvar) = kvar in
+          let (V var) = kvar in
+          match var.decode uri_token with
+          | Some v -> Stop (Some (D (kvar, v), t'))
+          | None -> Continue None)
+        ~finish:(fun _ -> None)
+      |> function
       | Some (value, t') ->
         (loop [@tailcall]) t' (value :: var_values) uri_tokens
       | None ->
