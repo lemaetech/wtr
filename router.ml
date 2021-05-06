@@ -74,10 +74,10 @@ let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 (** ['a t] is a node in a trie based router. *)
 type 'a t =
   { route : 'a route option (* ; literals : 'a t String.Map.t *)
-  ; path : (uri_kind * 'a t) Queue.t
+  ; path : (uri_kind * 'a t) list
   }
 
-let empty_with route = { route; path = Queue.create () }
+let empty_with route = { route; path = [] }
 
 let empty = empty_with None
 
@@ -100,13 +100,15 @@ let add (Route (uri, _) as route) t =
           | _ -> false)
         t kvar uri_kinds
   and update_path ~f t kvar uri_kinds =
-    Queue.find ~f t.path
-    |> function
-    | Some (_kvar, t') -> loop t' uri_kinds
-    | None ->
-      Queue.enqueue t.path (kvar, loop empty uri_kinds);
-      t
+    let path =
+      List.find ~f t.path
+      |> function
+      | Some (kvar, t') -> (kvar, loop t' uri_kinds) :: t.path
+      | None -> (kvar, loop empty uri_kinds) :: t.path
+    in
+    { t with path }
   in
+
   loop t (uri_kind uri)
 
 type decoded_value = D : 'c var * 'c -> decoded_value
@@ -119,7 +121,7 @@ let rec match' : 'b t -> string -> 'b option =
       Option.map t.route ~f:(fun (Route (uri, f)) ->
           exec_route_handler f (uri, List.rev decoded_values))
     | uri_token :: uri_tokens ->
-      Queue.fold_until t.path ~init:None
+      List.fold_until t.path ~init:None
         ~f:
           (fun _ -> function
             | KVar var, t' -> (
