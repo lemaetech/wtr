@@ -95,7 +95,10 @@ let add (Route (uri, _) as route) t =
     | (KVar var as kvar) :: uri_kinds ->
       update_path
         ~f:(function
-          | KVar var', _ -> String.equal var.name var'.name
+          | KVar var', _ -> (
+            match Var_ty.eq var.tid var'.tid with
+            | Some Var_ty.Eq -> true
+            | None -> false)
           | _ -> false)
         t kvar uri_kinds
   and update_path ~f t kvar uri_kinds =
