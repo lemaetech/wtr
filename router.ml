@@ -71,6 +71,24 @@ type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 (** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
 let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
+module Map = Map.Make_plain (struct
+  type t = uri_kind
+
+  let compare (a : uri_kind) (b : uri_kind) =
+    match (a, b) with
+    | KLiteral lit, KLiteral lit' when String.equal lit lit' -> 0
+    | KVar var, KVar var' -> (
+      match Var_ty.eq var.tid var'.tid with
+      | Some Var_ty.Eq -> 0
+      | None -> -1)
+    | KLiteral _, KVar _ -> 1
+    | _ -> -1
+
+  let sexp_of_t = function
+    | KLiteral lit -> Sexp.(List [ Atom "KLiteral"; Atom lit ])
+    | KVar var -> Sexp.(List [ Atom "Kvar"; Atom var.name ])
+end)
+
 (** ['a t] is a node in a trie based router. *)
 type 'a t =
   { route : 'a route option (* ; literals : 'a t String.Map.t *)
@@ -84,31 +102,22 @@ let empty = empty_with None
 let add (Route (uri, _) as route) t =
   let rec loop t = function
     | [] -> { t with route = Some route }
-    | (KLiteral lit as kvar) :: uri_kinds ->
-      update_path
-        ~f:(function
-          | KLiteral lit', _ -> String.equal lit lit'
-          | _ -> false)
-        t kvar uri_kinds
-    | (KVar var as kvar) :: uri_kinds ->
-      update_path
-        ~f:(function
-          | KVar var', _ -> (
-            match Var_ty.eq var.tid var'.tid with
-            | Some Var_ty.Eq -> true
-            | None -> false)
-          | _ -> false)
-        t kvar uri_kinds
-  and update_path ~f t kvar uri_kinds =
-    let path =
-      List.find ~f t.path
-      |> function
-      | Some (kvar, t') -> (kvar, loop t' uri_kinds) :: t.path
-      | None -> (kvar, loop empty uri_kinds) :: t.path
-    in
-    { t with path }
+    | uri_kind :: uri_kinds ->
+      let path =
+        List.find t.path ~f:(fun (uri_kind', _t') ->
+            match (uri_kind', uri_kind) with
+            | KLiteral lit', KLiteral lit -> String.equal lit lit'
+            | KVar var', KVar var -> (
+              match Var_ty.eq var.tid var'.tid with
+              | Some Var_ty.Eq -> true
+              | None -> false)
+            | _ -> false)
+        |> function
+        | Some (uri_kind, t') -> (uri_kind, loop t' uri_kinds)
+        | None -> (uri_kind, loop empty uri_kinds)
+      in
+      { t with path }
   in
-
   loop t (uri_kind uri)
 
 type decoded_value = D : 'c var * 'c -> decoded_value
