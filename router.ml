@@ -78,11 +78,17 @@ module Map = Map.Make_plain (struct
     match (a, b) with
     | KLiteral lit, KLiteral lit' when String.equal lit lit' -> 0
     | KVar var, KVar var' -> (
-      match Var_ty.eq var.tid var'.tid with
-      | Some Var_ty.Eq -> 0
-      | None -> -1)
-    | KLiteral _, KVar _ -> 1
-    | _ -> -1
+      Var_ty.(
+        match (var.tid, var'.tid) with
+        | Int, Int -> 0
+        | Float, Float -> 0
+        | Bool, Bool -> 0
+        | String, String -> 0
+        | Int, _ -> 1
+        | _, Int -> -1
+        | _, _ -> (* TODO this case needs to handle extensions. *) -1))
+    | KLiteral _, _ -> 1
+    | _, KLiteral _ -> -1
 
   let sexp_of_t = function
     | KLiteral lit -> Sexp.(List [ Atom "KLiteral"; Atom lit ])
