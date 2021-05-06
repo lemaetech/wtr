@@ -1,5 +1,13 @@
 open! Core
 
+module Ty = struct
+  type (_, _) eq = Eq : ('a, 'a) eq
+
+  type _ t = ..
+
+  type _ t += Int : int t | Float : float t | Bool : bool t | String : string t
+end
+
 (** [('a, 'b) uri] represents a uniform resource identifier. The variant members
     describe the uri path component types. *)
 type ('a, 'b) uri =
@@ -14,37 +22,37 @@ and 'c var =
   | V :
       { decode : string -> 'c option
       ; name : string (* name e.g. int, float, bool, string etc *)
+      ; tid : 'c Ty.t
       }
       -> 'c var
 
-module Eq = struct
-  type (_, _) t = Eq : ('a, 'a) t
-end
-
-let eq : type a b. a var -> b var -> (a, a) Eq.t option =
- fun t t' ->
-  match (t, t') with
-  | V { name; _ }, V { name = name'; _ } when String.equal name name' ->
-    Some Eq.Eq
-  | _, _ -> None
+let eq : type a b. a var -> b var -> (a, b) Ty.eq option =
+ fun (V { tid = atid; _ }) (V { tid = btid; _ }) ->
+  Ty.(
+    match (atid, btid) with
+    | Int, Int -> Some Eq
+    | Float, Float -> Some Eq
+    | Bool, Bool -> Some Eq
+    | String, String -> Some Eq
+    | _ -> None)
 
 let end_ : ('b, 'b) uri = End
 
 let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
 
-let var decode name uri = Var (V { decode; name }, uri)
+let var decode name tid uri = Var (V { decode; name; tid }, uri)
 
 let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
- fun uri -> var (fun s -> Some s) "string" uri
+ fun uri -> var (fun s -> Some s) "string" Ty.String uri
 
 let int : ('a, 'b) uri -> (int -> 'a, 'b) uri =
- fun uri -> var int_of_string_opt "int" uri
+ fun uri -> var int_of_string_opt "int" Ty.Int uri
 
 let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
- fun uri -> var float_of_string_opt "float" uri
+ fun uri -> var float_of_string_opt "float" Ty.Float uri
 
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
- fun uri -> var bool_of_string_opt "bool" uri
+ fun uri -> var bool_of_string_opt "bool" Ty.Bool uri
 
 (** [uri_kind] encodes uri kind/type. *)
 type uri_kind =
@@ -140,20 +148,15 @@ let rec match' : 'b t -> string -> 'b option =
   in
   loop t [] uri_tokens
 
-and cast : type a b. (a, b) Eq.t -> a -> b = fun Eq.Eq x -> x
-
 and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
  fun uri f vars ->
   match (uri, vars) with
   | End, [] -> f
   | Literal (_, uri), vars -> apply uri f vars
-  | Var (var, uri), D (var', v) :: vars ->
-    let v =
-      match eq var var' with
-      | Some (Eq.Eq as _eq) -> (* cast eq_ v*) Obj.magic v
-      | None -> assert false
-    in
-    apply uri (f v) vars
+  | Var (var, uri), D (var', v) :: vars -> (
+    match eq var var' with
+    | Some Ty.Eq -> apply uri (f v) vars
+    | None -> assert false)
   | _, _ -> assert false
 
 let r1 = string (int end_) @-> fun (s : string) (i : int) -> s ^ string_of_int i

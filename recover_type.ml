@@ -67,4 +67,4 @@ let cc_int : c =
         | _ -> None )
 
 let f = to_float cc_int bb
-(* - : float option = Some 123 *)
+(* - : float option = Some 123. *)
