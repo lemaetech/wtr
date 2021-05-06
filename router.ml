@@ -115,13 +115,6 @@ type decoded_value = D : 'c var * 'c -> decoded_value
 
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
-  let uri_tokens =
-    String.rstrip uri ~drop:(function
-      | '/' -> true
-      | _ -> false)
-    |> String.split ~on:'/'
-  in
-  let uri_tokens = List.slice uri_tokens 1 (List.length uri_tokens) in
   let rec loop t decoded_values uri_tokens =
     match uri_tokens with
     | [] ->
@@ -143,6 +136,13 @@ let rec match' : 'b t -> string -> 'b option =
         Option.bind (String.Map.find t.literals uri_token) ~f:(fun t' ->
             (loop [@tailcall]) t' decoded_values uri_tokens))
   in
+  let uri_tokens =
+    String.rstrip uri ~drop:(function
+      | '/' -> true
+      | _ -> false)
+    |> String.split ~on:'/'
+  in
+  let uri_tokens = List.slice uri_tokens 1 (List.length uri_tokens) in
   loop t [] uri_tokens
 
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
