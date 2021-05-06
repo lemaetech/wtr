@@ -122,11 +122,11 @@ let rec match' : 'b t -> string -> 'b option =
     |> String.split ~on:'/'
   in
   let uri_tokens = List.slice uri_tokens 1 (List.length uri_tokens) in
-  let rec loop t var_values uri_tokens =
+  let rec loop t decoded_values uri_tokens =
     match uri_tokens with
     | [] ->
       Option.map t.route ~f:(fun (Route (uri, f)) ->
-          var_values |> List.rev |> exec_route_handler uri f)
+          exec_route_handler f (uri, List.rev decoded_values))
     | uri_token :: uri_tokens -> (
       (* Check if one of the vars are matched first. If none is matched then
          match literals. The route that is added first is evaluated first. *)
@@ -138,21 +138,21 @@ let rec match' : 'b t -> string -> 'b option =
         ~finish:(fun _ -> None)
       |> function
       | Some (value, t') ->
-        (loop [@tailcall]) t' (value :: var_values) uri_tokens
+        (loop [@tailcall]) t' (value :: decoded_values) uri_tokens
       | None ->
         Option.bind (String.Map.find t.literals uri_token) ~f:(fun t' ->
-            (loop [@tailcall]) t' var_values uri_tokens))
+            (loop [@tailcall]) t' decoded_values uri_tokens))
   in
   loop t [] uri_tokens
 
-and exec_route_handler : type a b. (a, b) uri -> a -> decoded_value list -> b =
- fun uri f vars ->
-  match (uri, vars) with
+and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
+ fun f -> function
   | End, [] -> f
-  | Literal (_, uri), vars -> exec_route_handler uri f vars
-  | Var ({ tid; _ }, uri), D ({ tid = tid'; _ }, v) :: vars -> (
+  | Literal (_, uri), decoded_values ->
+    exec_route_handler f (uri, decoded_values)
+  | Var ({ tid; _ }, uri), D ({ tid = tid'; _ }, v) :: decoded_values -> (
     match Vty.eq tid tid' with
-    | Some Vty.Eq -> exec_route_handler uri (f v) vars
+    | Some Vty.Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false)
   | _, _ -> assert false
 
