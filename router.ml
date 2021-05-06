@@ -73,7 +73,7 @@ let rec uri_kind : type a b. (a, b) uri -> uri_kind list = function
     the handler. *)
 type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
-(** [p @-> route_handler] creates a route from uri [p] and [route_handler]. *)
+(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
 let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
 (** ['a t] is a node in a trie based router. *)
