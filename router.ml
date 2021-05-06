@@ -54,11 +54,12 @@ let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
  fun uri -> var bool_of_string_opt "bool" Ty.Bool uri
 
-(** [uri_kind] encodes uri kind/type. *)
+(** [uri_kind] Existential which encodes uri kind/type. *)
 type uri_kind =
   | KLiteral : string -> uri_kind
   | KVar : kvar -> uri_kind
 
+(** 'c var uri kind existential. *)
 and kvar = KV : 'c var -> kvar
 
 (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
@@ -73,9 +74,9 @@ let rec uri_kind : type a b. (a, b) uri -> uri_kind list = function
 type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
 (** [p @-> route_handler] creates a route from uri [p] and [route_handler]. *)
-let ( @-> ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
+let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
-(** ['a t] is a trie based router where ['a] is the route value. *)
+(** ['a t] is a node in a trie based router. *)
 type 'a t =
   { route : 'a route option
   ; literals : 'a t String.Map.t
@@ -159,13 +160,13 @@ and apply : type a b. (a, b) uri -> a -> decoded_value list -> b =
     | None -> assert false)
   | _, _ -> assert false
 
-let r1 = string (int end_) @-> fun (s : string) (i : int) -> s ^ string_of_int i
+let r1 = string (int end_) >- fun (s : string) (i : int) -> s ^ string_of_int i
 
-let r2 = lit "home" (lit "about" end_) @-> ""
+let r2 = lit "home" (lit "about" end_) >- ""
 
-let r3 = lit "home" (int end_) @-> fun (i : int) -> string_of_int i
+let r3 = lit "home" (int end_) >- fun (i : int) -> string_of_int i
 
-let r4 = lit "home" (float end_) @-> fun (f : float) -> string_of_float f
+let r4 = lit "home" (float end_) >- fun (f : float) -> string_of_float f
 
 let router = empty |> add r1 |> add r2 |> add r3 |> add r4
 
