@@ -1,4 +1,4 @@
-(** Variable type. *)
+(** Variable type - a type witness for ['c var] below. *)
 module Var_ty = struct
   type _ t = ..
 
@@ -15,6 +15,10 @@ module Var_ty = struct
     | String, String -> Some Eq
     | _ -> None
 end
+
+type 'a ty = 'a Var_ty.t = ..
+
+include Var_ty
 
 (** [('a, 'b) uri] represents a uniform resource identifier. The variant members
     describe the uri path component types. *)
@@ -54,7 +58,6 @@ let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
     the handler. *)
 type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
-(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
 let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
 (** [uri_kind] Existential which encodes uri kind/type. *)
