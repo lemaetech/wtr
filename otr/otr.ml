@@ -1,5 +1,5 @@
 (** Variable type - a type witness for ['c var] below. *)
-module Var_ty = struct
+module Ty = struct
   type _ t = ..
 
   type _ t += Int : int t | Float : float t | Bool : bool t | String : string t
@@ -16,9 +16,9 @@ module Var_ty = struct
     | _ -> None
 end
 
-type 'a ty = 'a Var_ty.t = ..
+type 'a ty = 'a Ty.t = ..
 
-include Var_ty
+include Ty
 
 (** [('a, 'b) uri] represents a uniform resource identifier. The variant members
     describe the uri path component types. *)
@@ -33,7 +33,7 @@ type ('a, 'b) uri =
 and 'c var =
   { name : string (* name e.g. int, float, bool, string etc *)
   ; decode : string -> 'c option
-  ; ty : 'c Var_ty.t
+  ; ty : 'c Ty.t
   }
 
 let end_ : ('b, 'b) uri = End
@@ -43,16 +43,16 @@ let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
 let var decode name ty uri = Var ({ decode; name; ty }, uri)
 
 let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
- fun uri -> var (fun s -> Some s) "string" Var_ty.String uri
+ fun uri -> var (fun s -> Some s) "string" Ty.String uri
 
 let int : ('a, 'b) uri -> (int -> 'a, 'b) uri =
- fun uri -> var int_of_string_opt "int" Var_ty.Int uri
+ fun uri -> var int_of_string_opt "int" Ty.Int uri
 
 let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
- fun uri -> var float_of_string_opt "float" Var_ty.Float uri
+ fun uri -> var float_of_string_opt "float" Ty.Float uri
 
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
- fun uri -> var bool_of_string_opt "bool" Var_ty.Bool uri
+ fun uri -> var bool_of_string_opt "bool" Ty.Bool uri
 
 type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
@@ -68,8 +68,8 @@ module Uri_kind = struct
     match (a, b) with
     | KLiteral lit', KLiteral lit -> String.equal lit lit'
     | KVar var', KVar var -> (
-      match Var_ty.eq var.ty var'.ty with
-      | Some Var_ty.Eq -> true
+      match Ty.eq var.ty var'.ty with
+      | Some Ty.Eq -> true
       | None -> false)
     | _ -> false
 
@@ -168,8 +168,8 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | Literal (_, uri), decoded_values ->
     exec_route_handler f (uri, decoded_values)
   | Var ({ ty; _ }, uri), D ({ ty = ty'; _ }, v) :: decoded_values -> (
-    match Var_ty.eq ty ty' with
-    | Some Var_ty.Eq -> exec_route_handler (f v) (uri, decoded_values)
+    match Ty.eq ty ty' with
+    | Some Ty.Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false)
   | _, _ -> assert false
 
@@ -188,11 +188,3 @@ let _m = match' router "/home/100001.1"
 let _m1 = match' router "/home/100001"
 
 let _m2 = match' router "/home/about"
-
-(** This should give error (we added an extra () var in handler) but it doesn't.
-    It only errors when adding to the router.*)
-(* let r5 = *)
-(* string (int end_) @-> fun (s : string) (i : int) () -> s ^ string_of_int i *)
-
-(* |> add r5  *)
-(* This errors *)
