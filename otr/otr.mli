@@ -39,7 +39,7 @@ type _ ty +=
   | Bool : bool ty
   | String : string ty
 
-val var :
+val arg :
      (string -> 'c option)
   -> string
   -> 'c ty

@@ -1,4 +1,4 @@
-(** Variable type - a type witness for ['c var] below. *)
+(** Variable type - a type witness for ['c arg] below. *)
 module Ty = struct
   type _ t = ..
 
@@ -21,16 +21,16 @@ type 'a ty = 'a Ty.t = ..
 include Ty
 
 (** [('a, 'b) path] represents a uniform resource identifier. The variant
-    members describe the path path component types. *)
+    members describe the path component types. *)
 type ('a, 'b) path =
   | End : ('b, 'b) path
   | Literal : string * ('a, 'b) path -> ('a, 'b) path
-      (** Uri literal string component eg. 'home' in '/home' *)
-  | Var : 'c var * ('a, 'b) path -> ('c -> 'a, 'b) path
-      (** Uri variable component, i.e. the value is determined dpathng runtime,
-          eg. ':int' in '/home/:int' *)
+      (** Uri path literal string component eg. 'home' in '/home' *)
+  | Arg : 'c arg * ('a, 'b) path -> ('c -> 'a, 'b) path
+      (** Uri path argument component, i.e. the value is determined during
+          runtime, eg. ':int' in '/home/:int' *)
 
-and 'c var =
+and 'c arg =
   { name : string (* name e.g. int, float, bool, string etc *)
   ; decode : string -> 'c option
   ; ty : 'c Ty.t
@@ -41,35 +41,35 @@ let end_ : ('b, 'b) path = End
 let lit : string -> ('a, 'b) path -> ('a, 'b) path =
  fun s path -> Literal (s, path)
 
-let var decode name ty path = Var ({ decode; name; ty }, path)
+let arg decode name ty path = Arg ({ decode; name; ty }, path)
 
 let string : ('a, 'b) path -> (string -> 'a, 'b) path =
- fun path -> var (fun s -> Some s) "string" Ty.String path
+ fun path -> arg (fun s -> Some s) "string" Ty.String path
 
 let int : ('a, 'b) path -> (int -> 'a, 'b) path =
- fun path -> var int_of_string_opt "int" Ty.Int path
+ fun path -> arg int_of_string_opt "int" Ty.Int path
 
 let float : ('a, 'b) path -> (float -> 'a, 'b) path =
- fun path -> var float_of_string_opt "float" Ty.Float path
+ fun path -> arg float_of_string_opt "float" Ty.Float path
 
 let bool : ('a, 'b) path -> (bool -> 'a, 'b) path =
- fun path -> var bool_of_string_opt "bool" Ty.Bool path
+ fun path -> arg bool_of_string_opt "bool" Ty.Bool path
 
 type 'c route = Route : ('a, 'c) path * 'a -> 'c route
 
 let ( >- ) : ('a, 'b) path -> 'a -> 'b route = fun path f -> Route (path, f)
 
-(** [path_kind] Existential which encodes path kind/type. *)
-module Uri_kind = struct
+(** Defines existential to encode path component type. *)
+module Path_type = struct
   type t =
-    | KLiteral : string -> t
-    | KVar : 'c var -> t
+    | PLiteral : string -> t
+    | PVar : 'c arg -> t
 
   let equal a b =
     match (a, b) with
-    | KLiteral lit', KLiteral lit -> String.equal lit lit'
-    | KVar var', KVar var -> (
-      match Ty.eq var.ty var'.ty with
+    | PLiteral lit', PLiteral lit -> String.equal lit lit'
+    | PVar arg', PVar arg -> (
+      match Ty.eq arg.ty arg'.ty with
       | Some Ty.Eq -> true
       | None -> false)
     | _ -> false
@@ -78,14 +78,14 @@ module Uri_kind = struct
      type inference issue when using [path] type in the [add] function below. *)
   let rec of_path : type a b. (a, b) path -> t list = function
     | End -> []
-    | Literal (lit, path) -> KLiteral lit :: of_path path
-    | Var (var, path) -> KVar var :: of_path path
+    | Literal (lit, path) -> PLiteral lit :: of_path path
+    | Arg (arg, path) -> PVar arg :: of_path path
 end
 
 (** ['a t] is a node in a trie based router. *)
 type 'a node =
   { route : 'a route option
-  ; path : (Uri_kind.t * 'a node) list
+  ; path : (Path_type.t * 'a node) list
   }
 
 let update_path t path = { t with path }
@@ -97,13 +97,13 @@ let add t (Route (path, _) as route) =
     | [] -> { t with route = Some route }
     | path_kind :: path_kinds ->
       List.find_opt
-        (fun (path_kind', _) -> Uri_kind.equal path_kind path_kind')
+        (fun (path_kind', _) -> Path_type.equal path_kind path_kind')
         t.path
       |> (function
            | Some _ ->
              List.map
                (fun (path_kind', t') ->
-                 if Uri_kind.equal path_kind path_kind' then
+                 if Path_type.equal path_kind path_kind' then
                    (path_kind', loop t' path_kinds)
                  else
                    (path_kind', t'))
@@ -111,11 +111,11 @@ let add t (Route (path, _) as route) =
            | None -> (path_kind, loop empty path_kinds) :: t.path)
       |> update_path t
   in
-  loop t (Uri_kind.of_path path)
+  loop t (Path_type.of_path path)
 
 type 'a t =
   { route : 'a route option
-  ; path : (Uri_kind.t * 'a t) array
+  ; path : (Path_type.t * 'a t) array
   }
 
 let rec create routes = List.fold_left add empty routes |> compile
@@ -129,7 +129,7 @@ and compile : 'a node -> 'a t =
       |> Array.of_list
   }
 
-type decoded_value = D : 'c var * 'c -> decoded_value
+type decoded_value = D : 'c arg * 'c -> decoded_value
 
 let rec match' t path =
   let rec loop t decoded_values = function
@@ -144,13 +144,13 @@ let rec match' t path =
       let matched_node = ref None in
       while !continue && !index < Array.length t.path do
         match t.path.(!index) with
-        | KVar var, t' -> (
-          match var.decode path_token with
+        | PVar arg, t' -> (
+          match arg.decode path_token with
           | Some v ->
-            matched_node := Some (t', D (var, v) :: decoded_values);
+            matched_node := Some (t', D (arg, v) :: decoded_values);
             continue := false
           | None -> incr index)
-        | KLiteral lit, t' when String.equal lit path_token ->
+        | PLiteral lit, t' when String.equal lit path_token ->
           matched_node := Some (t', decoded_values);
           continue := false
         | _ -> incr index
@@ -167,7 +167,7 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
   | End, [] -> f
   | Literal (_, path), decoded_values ->
     exec_route_handler f (path, decoded_values)
-  | Var ({ ty; _ }, path), D ({ ty = ty'; _ }, v) :: decoded_values -> (
+  | Arg ({ ty; _ }, path), D ({ ty = ty'; _ }, v) :: decoded_values -> (
     match Ty.eq ty ty' with
     | Some Ty.Eq -> exec_route_handler (f v) (path, decoded_values)
     | None -> assert false)
