@@ -66,14 +66,14 @@ module Uri_kind = struct
       | Some Var_ty.Eq -> true
       | None -> false)
     | _ -> false
-end
 
-(* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
-   type inference issue when using [uri] type in the [add] function below. *)
-let rec uri_kind : type a b. (a, b) uri -> Uri_kind.t list = function
-  | End -> []
-  | Literal (lit, uri) -> KLiteral lit :: uri_kind uri
-  | Var (var, uri) -> KVar var :: uri_kind uri
+  (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
+     type inference issue when using [uri] type in the [add] function below. *)
+  let rec of_uri : type a b. (a, b) uri -> t list = function
+    | End -> []
+    | Literal (lit, uri) -> KLiteral lit :: of_uri uri
+    | Var (var, uri) -> KVar var :: of_uri uri
+end
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
@@ -110,7 +110,7 @@ let add (Route (uri, _) as route) t =
       in
       { t with path }
   in
-  loop t (uri_kind uri)
+  loop t (Uri_kind.of_uri uri)
 
 type decoded_value = D : 'c var * 'c -> decoded_value
 
