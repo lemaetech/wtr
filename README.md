@@ -1,2 +1,3 @@
-# gadt1
-Explore OCaml gadt 
+# Otr - OCaml Typed Router
+A typed router for OCaml web applications.
+
