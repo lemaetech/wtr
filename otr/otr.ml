@@ -91,7 +91,7 @@ let update_path t path = { t with path }
 
 let empty : 'a node = { route = None; path = [] }
 
-let add (Route (uri, _) as route) t =
+let add t (Route (uri, _) as route) =
   let rec loop t = function
     | [] -> { t with route = Some route }
     | uri_kind :: uri_kinds ->
@@ -117,7 +117,9 @@ type 'a t =
   ; path : (Uri_kind.t * 'a t) array
   }
 
-let rec compile : 'a node -> 'a t =
+let rec create routes = List.fold_left add empty routes |> compile
+
+and compile : 'a node -> 'a t =
  fun t ->
   { route = t.route
   ; path =
@@ -125,9 +127,6 @@ let rec compile : 'a node -> 'a t =
       |> List.map (fun (uri_kind, t) -> (uri_kind, compile t))
       |> Array.of_list
   }
-
-let create routes =
-  List.fold_left (fun router route -> add route router) empty routes |> compile
 
 type decoded_value = D : 'c var * 'c -> decoded_value
 
@@ -182,9 +181,7 @@ let r3 = lit "home" (int end_) >- fun i -> "int " ^ string_of_int i
 
 let r4 = lit "home" (float end_) >- fun f -> "float " ^ string_of_float f
 
-let router = empty |> add r2 |> add r3 |> add r4 |> add r1
-
-let router = compile router
+let router = create [ r2; r3; r4; r1 ]
 
 let _m = match' router "/home/100001.1"
 
