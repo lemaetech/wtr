@@ -7,8 +7,8 @@ module Var_ty = struct
   type (_, _) eq = Eq : ('a, 'a) eq
 
   let eq : type a b. a t -> b t -> (a, b) eq option =
-   fun atid btid ->
-    match (atid, btid) with
+   fun aty bty ->
+    match (aty, bty) with
     | Int, Int -> Some Eq
     | Float, Float -> Some Eq
     | Bool, Bool -> Some Eq
@@ -29,14 +29,14 @@ type ('a, 'b) uri =
 and 'c var =
   { name : string (* name e.g. int, float, bool, string etc *)
   ; decode : string -> 'c option
-  ; tid : 'c Var_ty.t
+  ; ty : 'c Var_ty.t
   }
 
 let end_ : ('b, 'b) uri = End
 
 let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
 
-let var decode name tid uri = Var ({ decode; name; tid }, uri)
+let var decode name ty uri = Var ({ decode; name; ty }, uri)
 
 let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
  fun uri -> var (fun s -> Some s) "string" Var_ty.String uri
@@ -67,7 +67,7 @@ module Uri_kind = struct
     match (a, b) with
     | KLiteral lit', KLiteral lit -> String.equal lit lit'
     | KVar var', KVar var -> (
-      match Var_ty.eq var.tid var'.tid with
+      match Var_ty.eq var.ty var'.ty with
       | Some Var_ty.Eq -> true
       | None -> false)
     | _ -> false
@@ -164,20 +164,19 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | End, [] -> f
   | Literal (_, uri), decoded_values ->
     exec_route_handler f (uri, decoded_values)
-  | Var ({ tid; _ }, uri), D ({ tid = tid'; _ }, v) :: decoded_values -> (
-    match Var_ty.eq tid tid' with
+  | Var ({ ty; _ }, uri), D ({ ty = ty'; _ }, v) :: decoded_values -> (
+    match Var_ty.eq ty ty' with
     | Some Var_ty.Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false)
   | _, _ -> assert false
 
-let r1 = string (int end_) >- fun (s : string) (i : int) -> s ^ string_of_int i
+let r1 = string (int end_) >- fun s (i : int) -> s ^ string_of_int i
 
 let r2 = lit "home" (lit "about" end_) >- "about"
 
-let r3 = lit "home" (int end_) >- fun (i : int) -> "int " ^ string_of_int i
+let r3 = lit "home" (int end_) >- fun i -> "int " ^ string_of_int i
 
-let r4 =
-  lit "home" (float end_) >- fun (f : float) -> "float " ^ string_of_float f
+let r4 = lit "home" (float end_) >- fun f -> "float " ^ string_of_float f
 
 let router = empty |> add r2 |> add r3 |> add r4 |> add r1
 
