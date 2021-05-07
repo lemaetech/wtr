@@ -1,12 +1,16 @@
 (** Variable type - a type witness for ['c arg] below. *)
 module Ty = struct
-  type _ t = ..
+  type _ ty = ..
 
-  type _ t += Int : int t | Float : float t | Bool : bool t | String : string t
+  type _ ty +=
+    | Int : int ty
+    | Float : float ty
+    | Bool : bool ty
+    | String : string ty
 
   type (_, _) eq = Eq : ('a, 'a) eq
 
-  let eq : type a b. a t -> b t -> (a, b) eq option =
+  let eq : type a b. a ty -> b ty -> (a, b) eq option =
    fun aty bty ->
     match (aty, bty) with
     | Int, Int -> Some Eq
@@ -15,8 +19,6 @@ module Ty = struct
     | String, String -> Some Eq
     | _ -> None
 end
-
-type 'a ty = 'a Ty.t = ..
 
 include Ty
 
@@ -33,7 +35,7 @@ type ('a, 'b) path =
 and 'c arg =
   { name : string (* name e.g. int, float, bool, string etc *)
   ; decode : string -> 'c option
-  ; ty : 'c Ty.t
+  ; ty : 'c Ty.ty
   }
 
 let end_ : ('b, 'b) path = End
