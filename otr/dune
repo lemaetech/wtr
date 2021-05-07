@@ -1,0 +1,4 @@
+(library
+ (name otr)
+ (public_name otr)
+ (libraries core_kernel))
