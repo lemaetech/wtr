@@ -141,22 +141,21 @@ let rec match' t path =
     | path_token :: path_tokens ->
       let continue = ref true in
       let index = ref 0 in
-      let matched_comp = ref None in
+      let matched_node = ref None in
       while !continue && !index < Array.length t.path do
-        let p = t.path.(!index) in
-        match p with
+        match t.path.(!index) with
         | KVar var, t' -> (
           match var.decode path_token with
           | Some v ->
-            matched_comp := Some (D (var, v) :: decoded_values, t');
+            matched_node := Some (t', D (var, v) :: decoded_values);
             continue := false
           | None -> incr index)
         | KLiteral lit, t' when String.equal lit path_token ->
-          matched_comp := Some (decoded_values, t');
+          matched_node := Some (t', decoded_values);
           continue := false
         | _ -> incr index
       done;
-      Option.bind !matched_comp (fun (decoded_values, t') ->
+      Option.bind !matched_node (fun (t', decoded_values) ->
           (loop [@tailcall]) t' decoded_values path_tokens)
   in
   String.split_on_char '/' path
