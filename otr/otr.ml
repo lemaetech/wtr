@@ -20,14 +20,14 @@ type 'a ty = 'a Ty.t = ..
 
 include Ty
 
-(** [('a, 'b) uri] represents a uniform resource identifier. The variant members
-    describe the uri path component types. *)
-type ('a, 'b) uri =
-  | End : ('b, 'b) uri
-  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
+(** [('a, 'b) path] represents a uniform resource identifier. The variant
+    members describe the path path component types. *)
+type ('a, 'b) path =
+  | End : ('b, 'b) path
+  | Literal : string * ('a, 'b) path -> ('a, 'b) path
       (** Uri literal string component eg. 'home' in '/home' *)
-  | Var : 'c var * ('a, 'b) uri -> ('c -> 'a, 'b) uri
-      (** Uri variable component, i.e. the value is determined during runtime,
+  | Var : 'c var * ('a, 'b) path -> ('c -> 'a, 'b) path
+      (** Uri variable component, i.e. the value is determined dpathng runtime,
           eg. ':int' in '/home/:int' *)
 
 and 'c var =
@@ -36,29 +36,30 @@ and 'c var =
   ; ty : 'c Ty.t
   }
 
-let end_ : ('b, 'b) uri = End
+let end_ : ('b, 'b) path = End
 
-let lit : string -> ('a, 'b) uri -> ('a, 'b) uri = fun s uri -> Literal (s, uri)
+let lit : string -> ('a, 'b) path -> ('a, 'b) path =
+ fun s path -> Literal (s, path)
 
-let var decode name ty uri = Var ({ decode; name; ty }, uri)
+let var decode name ty path = Var ({ decode; name; ty }, path)
 
-let string : ('a, 'b) uri -> (string -> 'a, 'b) uri =
- fun uri -> var (fun s -> Some s) "string" Ty.String uri
+let string : ('a, 'b) path -> (string -> 'a, 'b) path =
+ fun path -> var (fun s -> Some s) "string" Ty.String path
 
-let int : ('a, 'b) uri -> (int -> 'a, 'b) uri =
- fun uri -> var int_of_string_opt "int" Ty.Int uri
+let int : ('a, 'b) path -> (int -> 'a, 'b) path =
+ fun path -> var int_of_string_opt "int" Ty.Int path
 
-let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
- fun uri -> var float_of_string_opt "float" Ty.Float uri
+let float : ('a, 'b) path -> (float -> 'a, 'b) path =
+ fun path -> var float_of_string_opt "float" Ty.Float path
 
-let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
- fun uri -> var bool_of_string_opt "bool" Ty.Bool uri
+let bool : ('a, 'b) path -> (bool -> 'a, 'b) path =
+ fun path -> var bool_of_string_opt "bool" Ty.Bool path
 
-type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
+type 'c route = Route : ('a, 'c) path * 'a -> 'c route
 
-let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
+let ( >- ) : ('a, 'b) path -> 'a -> 'b route = fun path f -> Route (path, f)
 
-(** [uri_kind] Existential which encodes uri kind/type. *)
+(** [path_kind] Existential which encodes path kind/type. *)
 module Uri_kind = struct
   type t =
     | KLiteral : string -> t
@@ -73,12 +74,12 @@ module Uri_kind = struct
       | None -> false)
     | _ -> false
 
-  (* [of_uri uri] converts [uri] to [kind list]. This is done to get around OCaml
-     type inference issue when using [uri] type in the [add] function below. *)
-  let rec of_uri : type a b. (a, b) uri -> t list = function
+  (* [of_path path] converts [path] to [kind list]. This is done to get around OCaml
+     type inference issue when using [path] type in the [add] function below. *)
+  let rec of_path : type a b. (a, b) path -> t list = function
     | End -> []
-    | Literal (lit, uri) -> KLiteral lit :: of_uri uri
-    | Var (var, uri) -> KVar var :: of_uri uri
+    | Literal (lit, path) -> KLiteral lit :: of_path path
+    | Var (var, path) -> KVar var :: of_path path
 end
 
 (** ['a t] is a node in a trie based router. *)
@@ -91,26 +92,26 @@ let update_path t path = { t with path }
 
 let empty : 'a node = { route = None; path = [] }
 
-let add t (Route (uri, _) as route) =
+let add t (Route (path, _) as route) =
   let rec loop t = function
     | [] -> { t with route = Some route }
-    | uri_kind :: uri_kinds ->
+    | path_kind :: path_kinds ->
       List.find_opt
-        (fun (uri_kind', _) -> Uri_kind.equal uri_kind uri_kind')
+        (fun (path_kind', _) -> Uri_kind.equal path_kind path_kind')
         t.path
       |> (function
            | Some _ ->
              List.map
-               (fun (uri_kind', t') ->
-                 if Uri_kind.equal uri_kind uri_kind' then
-                   (uri_kind', loop t' uri_kinds)
+               (fun (path_kind', t') ->
+                 if Uri_kind.equal path_kind path_kind' then
+                   (path_kind', loop t' path_kinds)
                  else
-                   (uri_kind', t'))
+                   (path_kind', t'))
                t.path
-           | None -> (uri_kind, loop empty uri_kinds) :: t.path)
+           | None -> (path_kind, loop empty path_kinds) :: t.path)
       |> update_path t
   in
-  loop t (Uri_kind.of_uri uri)
+  loop t (Uri_kind.of_path path)
 
 type 'a t =
   { route : 'a route option
@@ -124,20 +125,20 @@ and compile : 'a node -> 'a t =
   { route = t.route
   ; path =
       List.rev t.path
-      |> List.map (fun (uri_kind, t) -> (uri_kind, compile t))
+      |> List.map (fun (path_kind, t) -> (path_kind, compile t))
       |> Array.of_list
   }
 
 type decoded_value = D : 'c var * 'c -> decoded_value
 
-let rec match' t uri =
+let rec match' t path =
   let rec loop t decoded_values = function
     | [] ->
       Option.map
-        (fun (Route (uri, f)) ->
-          exec_route_handler f (uri, List.rev decoded_values))
+        (fun (Route (path, f)) ->
+          exec_route_handler f (path, List.rev decoded_values))
         t.route
-    | uri_token :: uri_tokens ->
+    | path_token :: path_tokens ->
       let continue = ref true in
       let index = ref 0 in
       let matched_comp = ref None in
@@ -145,31 +146,31 @@ let rec match' t uri =
         let p = t.path.(!index) in
         match p with
         | KVar var, t' -> (
-          match var.decode uri_token with
+          match var.decode path_token with
           | Some v ->
             matched_comp := Some (D (var, v) :: decoded_values, t');
             continue := false
           | None -> incr index)
-        | KLiteral lit, t' when String.equal lit uri_token ->
+        | KLiteral lit, t' when String.equal lit path_token ->
           matched_comp := Some (decoded_values, t');
           continue := false
         | _ -> incr index
       done;
       Option.bind !matched_comp (fun (decoded_values, t') ->
-          (loop [@tailcall]) t' decoded_values uri_tokens)
+          (loop [@tailcall]) t' decoded_values path_tokens)
   in
-  String.split_on_char '/' uri
+  String.split_on_char '/' path
   |> List.filter (fun tok -> not (String.equal "" tok))
   |> loop t []
 
-and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
+and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
  fun f -> function
   | End, [] -> f
-  | Literal (_, uri), decoded_values ->
-    exec_route_handler f (uri, decoded_values)
-  | Var ({ ty; _ }, uri), D ({ ty = ty'; _ }, v) :: decoded_values -> (
+  | Literal (_, path), decoded_values ->
+    exec_route_handler f (path, decoded_values)
+  | Var ({ ty; _ }, path), D ({ ty = ty'; _ }, v) :: decoded_values -> (
     match Ty.eq ty ty' with
-    | Some Ty.Eq -> exec_route_handler (f v) (uri, decoded_values)
+    | Some Ty.Eq -> exec_route_handler (f v) (path, decoded_values)
     | None -> assert false)
   | _, _ -> assert false
 
