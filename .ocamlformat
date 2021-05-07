@@ -1,4 +1,4 @@
-profile=conventional
+profile=compact
 break-infix-before-func
 break-infix=fit-or-vertical
 break-separators=before

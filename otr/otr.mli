@@ -5,13 +5,9 @@ module Arg : sig
   type 'a t
 
   val create : name:string -> decode:(string -> 'a option) -> 'a t
-
   val int : int t
-
   val float : float t
-
   val bool : bool t
-
   val string : string t
 end
 
