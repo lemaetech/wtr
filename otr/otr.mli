@@ -1,6 +1,6 @@
 (** {2 Router} *)
 
-(** ['a t] represents a a Trie based router. *)
+(** ['a t] represents a Trie based router. *)
 type 'a t
 
 (** [('a, 'b) uri] represents a uniform resource identifier, eg. /home/about/,
