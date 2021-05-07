@@ -67,7 +67,7 @@ module Uri_kind = struct
       | None -> false)
     | _ -> false
 
-  (* [kind uri] converts [uri] to [kind list]. This is done to get around OCaml
+  (* [of_uri uri] converts [uri] to [kind list]. This is done to get around OCaml
      type inference issue when using [uri] type in the [add] function below. *)
   let rec of_uri : type a b. (a, b) uri -> t list = function
     | End -> []
