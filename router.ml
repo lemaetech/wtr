@@ -88,9 +88,7 @@ type 'a t =
   ; path : (Uri_kind.t * 'a t) list
   }
 
-let empty_with route = { route; path = [] }
-
-let empty = empty_with None
+let empty = { route = None; path = [] }
 
 let compile : 'a t -> 'a t = fun t -> { t with path = List.rev t.path }
 
