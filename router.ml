@@ -116,8 +116,7 @@ type decoded_value = D : 'c var * 'c -> decoded_value
 
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
-  let rec loop t decoded_values uri_tokens =
-    match uri_tokens with
+  let rec loop t decoded_values = function
     | [] ->
       Option.map t.route ~f:(fun (Route (uri, f)) ->
           exec_route_handler f (uri, List.rev decoded_values))
