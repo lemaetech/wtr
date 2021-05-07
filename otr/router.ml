@@ -84,17 +84,13 @@ let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
 (** ['a t] is a node in a trie based router. *)
 type 'a t =
-  { route : 'a route option (* ; literals : 'a t String.Map.t *)
+  { route : 'a route option
   ; path : (Uri_kind.t * 'a t) list
   }
 
-type 'a t_compiled = 'a t
+let empty : 'a t = { route = None; path = [] }
 
-let empty = { route = None; path = [] }
-
-let compile : 'a t -> 'a t_compiled = fun t -> { t with path = List.rev t.path }
-
-let add (Route (uri, _) as route) t =
+let add (Route (uri, _) as route) (t : 'a t) =
   let rec loop t = function
     | [] -> { t with route = Some route }
     | uri_kind :: uri_kinds ->
@@ -114,11 +110,25 @@ let add (Route (uri, _) as route) t =
   in
   loop t (Uri_kind.of_uri uri)
 
+type 'a t_compiled =
+  { route : 'a route option
+  ; path : (Uri_kind.t * 'a t_compiled) array
+  }
+
+let rec compile : 'a t -> 'a t_compiled =
+ fun t ->
+  { route = t.route
+  ; path =
+      Stdlib.List.rev t.path
+      |> Stdlib.List.map (fun (uri_kind, t) -> (uri_kind, compile t))
+      |> Stdlib.Array.of_list
+  }
+
 type decoded_value = D : 'c var * 'c -> decoded_value
 
 let rec match' : 'b t_compiled -> string -> 'b option =
  fun t uri ->
-  let rec loop t decoded_values = function
+  let rec loop (t : 'b t_compiled) decoded_values = function
     | [] ->
       Stdlib.Option.map
         (fun (Route (uri, f)) ->
@@ -128,8 +138,8 @@ let rec match' : 'b t_compiled -> string -> 'b option =
       let continue = ref true in
       let index = ref 0 in
       let matched_comp = ref None in
-      while !continue && !index < Stdlib.List.length t.path do
-        let p = Stdlib.List.nth t.path !index in
+      while !continue && !index < Stdlib.Array.length t.path do
+        let p = t.path.(!index) in
         match p with
         | KVar var, t' -> (
           match var.decode uri_token with
