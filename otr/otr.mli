@@ -3,10 +3,6 @@
 (** ['a t] represents a Trie based router. *)
 type 'a t
 
-(** [('a, 'b) uri] represents a uniform resource identifier, eg. /home/about/,
-    /home/contact, etc. *)
-type ('a, 'b) uri
-
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
     the handler. *)
 type 'c route
@@ -18,10 +14,11 @@ val create : 'a route list -> 'a t
     the computed value. [None] is returned is [uri] is not matched. *)
 val match' : 'a t -> string -> 'a option
 
-(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
-val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
-
 (** {2 URI} *)
+
+(** [('a, 'b) uri] represents a uniform resource identifier, eg. /home/about/,
+    /home/contact, etc. *)
+type ('a, 'b) uri
 
 val end_ : ('b, 'b) uri
 
@@ -44,3 +41,8 @@ type _ ty +=
 
 val var :
   (string -> 'c option) -> string -> 'c ty -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+
+(** {2 Route} *)
+
+(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
+val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
