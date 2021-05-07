@@ -116,7 +116,7 @@ let add (Route (uri, _) as route) t =
 
 type decoded_value = D : 'c var * 'c -> decoded_value
 
-let rec match' : 'b t -> string -> 'b option =
+let rec match' : 'b t_compiled -> string -> 'b option =
  fun t uri ->
   let rec loop t decoded_values = function
     | [] ->
