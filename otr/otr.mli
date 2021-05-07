@@ -35,15 +35,9 @@ val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
 (** ['a t] represents a a Trie based router. *)
 type 'a t
 
-(** [add route t] adds a [route] to a router [t]. *)
-val add : 'a route -> 'a t -> 'a t
-
-(** Represents a routers that is ready to be matched. *)
-type 'a t_compiled
-
-(** [compile t] returns a compiled router ready for matching. *)
-val compile : 'a t -> 'a t_compiled
+(** [create routes] creates a router from a list of [route]s. *)
+val create : 'a route list -> 'a t
 
 (** [match t uri] matches a [route] to [uri], executes its handler and returns
     the computed value. [None] is returned is [uri] is not matched. *)
-val match' : 'a t_compiled -> string -> 'a option
+val match' : 'a t -> string -> 'a option

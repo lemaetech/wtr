@@ -54,8 +54,6 @@ let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
  fun uri -> var bool_of_string_opt "bool" Var_ty.Bool uri
 
-(** ['c route] is a uri and its handler. ['c] represents the value returned by
-    the handler. *)
 type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
 let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
@@ -84,14 +82,14 @@ module Uri_kind = struct
 end
 
 (** ['a t] is a node in a trie based router. *)
-type 'a t =
+type 'a node =
   { route : 'a route option
-  ; path : (Uri_kind.t * 'a t) list
+  ; path : (Uri_kind.t * 'a node) list
   }
 
 let update_path t path = { t with path }
 
-let empty : 'a t = { route = None; path = [] }
+let empty : 'a node = { route = None; path = [] }
 
 let add (Route (uri, _) as route) t =
   let rec loop t = function
@@ -114,12 +112,12 @@ let add (Route (uri, _) as route) t =
   in
   loop t (Uri_kind.of_uri uri)
 
-type 'a t_compiled =
+type 'a t =
   { route : 'a route option
-  ; path : (Uri_kind.t * 'a t_compiled) array
+  ; path : (Uri_kind.t * 'a t) array
   }
 
-let rec compile : 'a t -> 'a t_compiled =
+let rec compile : 'a node -> 'a t =
  fun t ->
   { route = t.route
   ; path =
@@ -127,6 +125,9 @@ let rec compile : 'a t -> 'a t_compiled =
       |> List.map (fun (uri_kind, t) -> (uri_kind, compile t))
       |> Array.of_list
   }
+
+let create routes =
+  List.fold_left (fun router route -> add route router) empty routes |> compile
 
 type decoded_value = D : 'c var * 'c -> decoded_value
 
