@@ -174,15 +174,13 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
     | None -> assert false)
   | _, _ -> assert false
 
-let r1 = string (int end_) >- fun s (i : int) -> s ^ string_of_int i
-
-let r2 = lit "home" (lit "about" end_) >- "about"
-
-let r3 = lit "home" (int end_) >- fun i -> "int " ^ string_of_int i
-
-let r4 = lit "home" (float end_) >- fun f -> "float " ^ string_of_float f
-
-let router = create [ r2; r3; r4; r1 ]
+let router =
+  create
+    [ lit "home" (lit "about" end_) >- "about"
+    ; (lit "home" (int end_) >- fun i -> "int " ^ string_of_int i)
+    ; (string (int end_) >- fun s i -> s ^ string_of_int i)
+    ; (lit "home" (float end_) >- fun f -> "float " ^ string_of_float f)
+    ]
 
 let _m = match' router "/home/100001.1"
 
