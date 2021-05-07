@@ -162,21 +162,22 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
 
 let r1 = string (int end_) >- fun (s : string) (i : int) -> s ^ string_of_int i
 
-let r2 = lit "home" (lit "about" end_) >- ""
+let r2 = lit "home" (lit "about" end_) >- "about"
 
-let r3 = lit "home" (int end_) >- fun (i : int) -> string_of_int i
+let r3 = lit "home" (int end_) >- fun (i : int) -> "int " ^ string_of_int i
 
-let r4 = lit "home" (float end_) >- fun (f : float) -> string_of_float f
+let r4 =
+  lit "home" (float end_) >- fun (f : float) -> "float " ^ string_of_float f
 
-let router = empty |> add r1 |> add r2 |> add r3 |> add r4
+let router = empty |> add r2 |> add r3 |> add r4 |> add r1
 
 let router = compile router
 
 let _m = match' router "/home/100001.1"
 
-let _m = match' router "/home/100001"
+let _m1 = match' router "/home/100001"
 
-let _m1 = match' router "/home/about"
+let _m2 = match' router "/home/about"
 
 (** This should give error (we added an extra () var in handler) but it doesn't.
     It only errors when adding to the router.*)
