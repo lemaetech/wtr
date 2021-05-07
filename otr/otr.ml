@@ -90,7 +90,7 @@ let update_path t path = { t with path }
 
 let empty : 'a t = { route = None; path = [] }
 
-let add (Route (uri, _) as route) (t : 'a t) =
+let add (Route (uri, _) as route) t =
   let rec loop t = function
     | [] -> { t with route = Some route }
     | uri_kind :: uri_kinds ->
@@ -127,8 +127,7 @@ let rec compile : 'a t -> 'a t_compiled =
 
 type decoded_value = D : 'c var * 'c -> decoded_value
 
-let rec match' : 'b t_compiled -> string -> 'b option =
- fun t uri ->
+let rec match' t uri =
   let rec loop t decoded_values = function
     | [] ->
       Option.map
