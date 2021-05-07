@@ -50,6 +50,13 @@ let float : ('a, 'b) uri -> (float -> 'a, 'b) uri =
 let bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri =
  fun uri -> var bool_of_string_opt "bool" Var_ty.Bool uri
 
+(** ['c route] is a uri and its handler. ['c] represents the value returned by
+    the handler. *)
+type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
+
+(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
+let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
+
 (** [uri_kind] Existential which encodes uri kind/type. *)
 module Uri_kind = struct
   type t =
@@ -72,13 +79,6 @@ module Uri_kind = struct
     | Literal (lit, uri) -> KLiteral lit :: of_uri uri
     | Var (var, uri) -> KVar var :: of_uri uri
 end
-
-(** ['c route] is a uri and its handler. ['c] represents the value returned by
-    the handler. *)
-type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
-
-(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
-let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
 (** ['a t] is a node in a trie based router. *)
 type 'a t =
