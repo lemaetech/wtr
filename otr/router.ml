@@ -120,24 +120,30 @@ let rec match' : 'b t_compiled -> string -> 'b option =
  fun t uri ->
   let rec loop t decoded_values = function
     | [] ->
-      Option.map t.route ~f:(fun (Route (uri, f)) ->
-          exec_route_handler f (uri, List.rev decoded_values))
+      Stdlib.Option.map
+        (fun (Route (uri, f)) ->
+          exec_route_handler f (uri, Stdlib.List.rev decoded_values))
+        t.route
     | uri_token :: uri_tokens ->
-      List.fold_until t.path ~init:None
-        ~f:
-          (fun _ -> function
-            | KVar var, t' -> (
-              match var.decode uri_token with
-              | Some v -> Stop (Some (D (var, v) :: decoded_values, t'))
-              | None -> Continue None)
-            | KLiteral lit, t' ->
-              if String.equal lit uri_token then
-                Stop (Some (decoded_values, t'))
-              else
-                Continue None)
-        ~finish:(fun _ -> None)
-      |> Option.bind ~f:(fun (decoded_values, t') ->
-             (loop [@tailcall]) t' decoded_values uri_tokens)
+      let continue = ref true in
+      let index = ref 0 in
+      let matched_comp = ref None in
+      while !continue && !index < Stdlib.List.length t.path do
+        let p = Stdlib.List.nth t.path !index in
+        match p with
+        | KVar var, t' -> (
+          match var.decode uri_token with
+          | Some v ->
+            matched_comp := Some (D (var, v) :: decoded_values, t');
+            continue := false
+          | None -> incr index)
+        | KLiteral lit, t' when String.equal lit uri_token ->
+          matched_comp := Some (decoded_values, t');
+          continue := false
+        | _ -> incr index
+      done;
+      Stdlib.Option.bind !matched_comp (fun (decoded_values, t') ->
+          (loop [@tailcall]) t' decoded_values uri_tokens)
   in
   let uri_tokens =
     String.rstrip uri ~drop:(function

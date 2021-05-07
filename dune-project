@@ -6,6 +6,8 @@
 
 (generate_opam_files true)
 
+(implicit_transitive_deps true)
+
 (source
  (github lemaetech/otr))
 
