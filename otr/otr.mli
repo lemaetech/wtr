@@ -18,6 +18,9 @@ val float : ('a, 'b) uri -> (float -> 'a, 'b) uri
 
 val bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri
 
+val var :
+  (string -> 'c option) -> string -> 'c ty -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+
 (** {2 Route} *)
 
 (** ['c route] is a uri and its handler. ['c] represents the value returned by
