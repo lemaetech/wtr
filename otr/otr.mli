@@ -5,9 +5,13 @@ module Arg : sig
   type 'a t
 
   val create : name:string -> decode:(string -> 'a option) -> 'a t
+
   val int : int t
+
   val float : float t
+
   val bool : bool t
+
   val string : string t
 end
 
@@ -20,12 +24,12 @@ type 'a t
     by the handler. *)
 type 'c route
 
-val create : 'a route list -> 'a t
 (** [create routes] creates a router from a list of [route]s. *)
+val create : 'a route list -> 'a t
 
-val match' : 'a t -> string -> 'a option
 (** [match t path] matches a [route] to [path], executes its handler and returns
     the computed value. [None] is returned is [path] is not matched. *)
+val match' : 'a t -> string -> 'a option
 
 (** {2 URI} *)
 
@@ -35,5 +39,5 @@ type ('a, 'b) path
 
 (** {2 Route} *)
 
-val ( >- ) : ('a, 'b) path -> 'a -> 'b route
 (** [p >- route_handler] creates a route from path [p] and [route_handler]. *)
+val ( >- ) : ('a, 'b) path -> 'a -> 'b route
