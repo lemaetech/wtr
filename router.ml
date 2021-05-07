@@ -92,6 +92,8 @@ let empty_with route = { route; path = [] }
 
 let empty = empty_with None
 
+let compile : 'a t -> 'a t = fun t -> { t with path = List.rev t.path }
+
 let add (Route (uri, _) as route) t =
   let rec loop t = function
     | [] -> { t with route = Some route }
@@ -113,8 +115,6 @@ let add (Route (uri, _) as route) t =
   loop t (uri_kind uri)
 
 type decoded_value = D : 'c var * 'c -> decoded_value
-
-let compile : 'a t -> 'a t = fun t -> { t with path = List.rev t.path }
 
 let rec match' : 'b t -> string -> 'b option =
  fun t uri ->
