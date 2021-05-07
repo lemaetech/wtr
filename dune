@@ -4,7 +4,7 @@
 
 (library
  (name router)
- (libraries core)
+ (libraries core_kernel)
  (modules router))
 
 (executable
