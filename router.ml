@@ -88,9 +88,11 @@ type 'a t =
   ; path : (Uri_kind.t * 'a t) list
   }
 
+type 'a t_compiled = 'a t
+
 let empty = { route = None; path = [] }
 
-let compile : 'a t -> 'a t = fun t -> { t with path = List.rev t.path }
+let compile : 'a t -> 'a t_compiled = fun t -> { t with path = List.rev t.path }
 
 let add (Route (uri, _) as route) t =
   let rec loop t = function
