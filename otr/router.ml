@@ -1,5 +1,3 @@
-open! Core_kernel
-
 (** Variable type. *)
 module Var_ty = struct
   type _ t = ..
@@ -88,25 +86,28 @@ type 'a t =
   ; path : (Uri_kind.t * 'a t) list
   }
 
+let update_path t path = { t with path }
+
 let empty : 'a t = { route = None; path = [] }
 
 let add (Route (uri, _) as route) (t : 'a t) =
   let rec loop t = function
     | [] -> { t with route = Some route }
     | uri_kind :: uri_kinds ->
-      let path =
-        List.find t.path ~f:(fun (uri_kind', _) ->
-            Uri_kind.equal uri_kind uri_kind')
-        |> function
-        | Some _ ->
-          List.map t.path ~f:(fun (uri_kind', t') ->
-              if Uri_kind.equal uri_kind uri_kind' then
-                (uri_kind', loop t' uri_kinds)
-              else
-                (uri_kind', t'))
-        | None -> (uri_kind, loop empty uri_kinds) :: t.path
-      in
-      { t with path }
+      List.find_opt
+        (fun (uri_kind', _) -> Uri_kind.equal uri_kind uri_kind')
+        t.path
+      |> (function
+           | Some _ ->
+             List.map
+               (fun (uri_kind', t') ->
+                 if Uri_kind.equal uri_kind uri_kind' then
+                   (uri_kind', loop t' uri_kinds)
+                 else
+                   (uri_kind', t'))
+               t.path
+           | None -> (uri_kind, loop empty uri_kinds) :: t.path)
+      |> update_path t
   in
   loop t (Uri_kind.of_uri uri)
 
@@ -119,26 +120,26 @@ let rec compile : 'a t -> 'a t_compiled =
  fun t ->
   { route = t.route
   ; path =
-      Stdlib.List.rev t.path
-      |> Stdlib.List.map (fun (uri_kind, t) -> (uri_kind, compile t))
-      |> Stdlib.Array.of_list
+      List.rev t.path
+      |> List.map (fun (uri_kind, t) -> (uri_kind, compile t))
+      |> Array.of_list
   }
 
 type decoded_value = D : 'c var * 'c -> decoded_value
 
 let rec match' : 'b t_compiled -> string -> 'b option =
  fun t uri ->
-  let rec loop (t : 'b t_compiled) decoded_values = function
+  let rec loop t decoded_values = function
     | [] ->
-      Stdlib.Option.map
+      Option.map
         (fun (Route (uri, f)) ->
-          exec_route_handler f (uri, Stdlib.List.rev decoded_values))
+          exec_route_handler f (uri, List.rev decoded_values))
         t.route
     | uri_token :: uri_tokens ->
       let continue = ref true in
       let index = ref 0 in
       let matched_comp = ref None in
-      while !continue && !index < Stdlib.Array.length t.path do
+      while !continue && !index < Array.length t.path do
         let p = t.path.(!index) in
         match p with
         | KVar var, t' -> (
@@ -152,17 +153,12 @@ let rec match' : 'b t_compiled -> string -> 'b option =
           continue := false
         | _ -> incr index
       done;
-      Stdlib.Option.bind !matched_comp (fun (decoded_values, t') ->
+      Option.bind !matched_comp (fun (decoded_values, t') ->
           (loop [@tailcall]) t' decoded_values uri_tokens)
   in
-  let uri_tokens =
-    String.rstrip uri ~drop:(function
-      | '/' -> true
-      | _ -> false)
-    |> String.split ~on:'/'
-  in
-  let uri_tokens = List.slice uri_tokens 1 (List.length uri_tokens) in
-  loop t [] uri_tokens
+  String.split_on_char '/' uri
+  |> List.filter (fun tok -> not (String.equal "" tok))
+  |> loop t []
 
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
