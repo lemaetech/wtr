@@ -20,12 +20,12 @@ type 'a t
     by the handler. *)
 type 'c route
 
-(** [create routes] creates a router from a list of [route]s. *)
 val create : 'a route list -> 'a t
+(** [create routes] creates a router from a list of [route]s. *)
 
+val match' : 'a t -> string -> 'a option
 (** [match t path] matches a [route] to [path], executes its handler and returns
     the computed value. [None] is returned is [path] is not matched. *)
-val match' : 'a t -> string -> 'a option
 
 (** {2 URI} *)
 
@@ -35,5 +35,5 @@ type ('a, 'b) path
 
 (** {2 Route} *)
 
-(** [p >- route_handler] creates a route from path [p] and [route_handler]. *)
 val ( >- ) : ('a, 'b) path -> 'a -> 'b route
+(** [p >- route_handler] creates a route from path [p] and [route_handler]. *)
