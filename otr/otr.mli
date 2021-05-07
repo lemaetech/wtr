@@ -1,3 +1,20 @@
+(** {2 Arg} *)
+
+(** Path argument *)
+module Arg : sig
+  type 'a t
+
+  val create : name:string -> decode:(string -> 'a option) -> 'a t
+
+  val int : int t
+
+  val float : float t
+
+  val bool : bool t
+
+  val string : string t
+end
+
 (** {2 Router} *)
 
 (** ['a t] represents a Trie based router. *)
@@ -19,32 +36,6 @@ val match' : 'a t -> string -> 'a option
 (** [('a, 'b) path] represents a HTTP URI path, eg. /home/about/, /home/contact,
     etc. *)
 type ('a, 'b) path
-
-val end_ : ('b, 'b) path
-
-val string : ('a, 'b) path -> (string -> 'a, 'b) path
-
-val int : ('a, 'b) path -> (int -> 'a, 'b) path
-
-val float : ('a, 'b) path -> (float -> 'a, 'b) path
-
-val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
-
-(** Variable type witness. *)
-type _ ty = ..
-
-type _ ty +=
-  | Int : int ty
-  | Float : float ty
-  | Bool : bool ty
-  | String : string ty
-
-val arg :
-     (string -> 'c option)
-  -> string
-  -> 'c ty
-  -> ('a, 'b) path
-  -> ('c -> 'a, 'b) path
 
 (** {2 Route} *)
 
