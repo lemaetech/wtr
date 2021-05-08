@@ -199,6 +199,7 @@ module Private = struct
   let string = Arg.string
 end
 
+(* Toplevel tests. *)
 let router =
   Private.(
     create
