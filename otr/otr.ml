@@ -101,13 +101,13 @@ let update_path t path = { t with path }
 
 let empty : 'a node = { route = None; path = [] }
 
-let add t (Route (path, _) as route) =
-  let rec loop t = function
-    | [] -> { t with route = Some route }
+let add node (Route (path, _) as route) =
+  let rec loop node = function
+    | [] -> { node with route = Some route }
     | path_kind :: path_kinds ->
       List.find_opt
         (fun (path_kind', _) -> Path_type.equal path_kind path_kind')
-        t.path
+        node.path
       |> (function
            | Some _ ->
              List.map
@@ -116,11 +116,11 @@ let add t (Route (path, _) as route) =
                    (path_kind', loop t' path_kinds)
                  else
                    (path_kind', t'))
-               t.path
-           | None -> (path_kind, loop empty path_kinds) :: t.path)
-      |> update_path t
+               node.path
+           | None -> (path_kind, loop empty path_kinds) :: node.path)
+      |> update_path node
   in
-  loop t (Path_type.of_path path)
+  loop node (Path_type.of_path path)
 
 type 'a t =
   { route : 'a route option
