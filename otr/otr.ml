@@ -54,21 +54,22 @@ type 'a arg = 'a Arg.t
 let create_arg = Arg.create
 
 (** [('a, 'b) path] represents a uniform resource identifier. The variant
-    members describe the path component types. *)
+    members describe the path component types.
+
+    - Literal Uri path literal string component eg. 'home' in '/home'
+    - Arg Uri path argument component, i.e. the value is determined during
+      runtime, eg. ':int' in '/home/:int' *)
 type ('a, 'b) path =
   | Nil : ('b, 'b) path
   | Literal : string * ('a, 'b) path -> ('a, 'b) path
-      (** Uri path literal string component eg. 'home' in '/home' *)
   | Arg : 'c Arg.t * ('a, 'b) path -> ('c -> 'a, 'b) path
-      (** Uri path argument component, i.e. the value is determined during
-          runtime, eg. ':int' in '/home/:int' *)
 
 type 'c route = Route : ('a, 'c) path * 'a -> 'c route
 
 let ( >- ) : ('a, 'b) path -> 'a -> 'b route = fun path f -> Route (path, f)
 
-(** Defines existential to encode path component type. *)
 module Path_type = struct
+  (** Defines existential to encode path component type. *)
   type t =
     | PLiteral : string -> t
     | PVar : 'c Arg.t -> t
