@@ -49,22 +49,19 @@ module Arg = struct
   let string = create ~name:"string" ~decode:(fun a -> Some a)
 end
 
+type 'a arg = 'a Arg.t
+
+let create_arg = Arg.create
+
 (** [('a, 'b) path] represents a uniform resource identifier. The variant
     members describe the path component types. *)
 type ('a, 'b) path =
-  | End : ('b, 'b) path
+  | Nil : ('b, 'b) path
   | Literal : string * ('a, 'b) path -> ('a, 'b) path
       (** Uri path literal string component eg. 'home' in '/home' *)
   | Arg : 'c Arg.t * ('a, 'b) path -> ('c -> 'a, 'b) path
       (** Uri path argument component, i.e. the value is determined during
           runtime, eg. ':int' in '/home/:int' *)
-
-let[@warning "-32"] end_ : ('b, 'b) path = End
-
-let[@warning "-32"] lit : string -> ('a, 'b) path -> ('a, 'b) path =
- fun s path -> Literal (s, path)
-
-let[@warning "-32"] arg a p = Arg (a, p)
 
 type 'c route = Route : ('a, 'c) path * 'a -> 'c route
 
@@ -88,7 +85,7 @@ module Path_type = struct
   (* [of_path path] converts [path] to [kind list]. This is done to get around OCaml
      type inference issue when using [path] type in the [add] function below. *)
   let rec of_path : type a b. (a, b) path -> t list = function
-    | End -> []
+    | Nil -> []
     | Literal (lit, path) -> PLiteral lit :: of_path path
     | Arg (arg, path) -> PVar arg :: of_path path
 end
@@ -175,7 +172,7 @@ let rec match' t path =
 
 and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
  fun f -> function
-  | End, [] -> f
+  | Nil, [] -> f
   | Literal (_, path), decoded_values ->
     exec_route_handler f (path, decoded_values)
   | Arg ({ id; _ }, path), D ({ id = id'; _ }, v) :: decoded_values -> (
@@ -184,16 +181,34 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
     | None -> assert false)
   | _, _ -> assert false
 
-(* let router = *)
-(*   create *)
-(*     [ lit "home" (lit "about" end_) >- "about" *)
-(*     ; (lit "home" (int end_) >- fun i -> "int " ^ string_of_int i) *)
-(*     ; (string (int end_) >- fun s i -> s ^ string_of_int i) *)
-(*     ; (lit "home" (float end_) >- fun f -> "float " ^ string_of_float f) *)
-(*     ] *)
+module Private = struct
+  let nil : ('b, 'b) path = Nil
 
-(* let _m = match' router "/home/100001.1" *)
+  let lit : string -> ('a, 'b) path -> ('a, 'b) path =
+   fun s path -> Literal (s, path)
 
-(* let _m1 = match' router "/home/100001" *)
+  let arg a p = Arg (a, p)
 
-(* let _m2 = match' router "/home/about" *)
+  let int = Arg.int
+
+  let float = Arg.float
+
+  let bool = Arg.bool
+
+  let string = Arg.string
+end
+
+let router =
+  Private.(
+    create
+      [ lit "home" (lit "about" nil) >- "about"
+      ; (lit "home" (arg int nil) >- fun i -> "int " ^ string_of_int i)
+      ; (arg string (arg int nil) >- fun s i -> s ^ string_of_int i)
+      ; (lit "home" (arg float nil) >- fun f -> "float " ^ string_of_float f)
+      ])
+
+let _m = match' router "/home/100001.1"
+
+let _m1 = match' router "/home/100001"
+
+let _m2 = match' router "/home/about"
