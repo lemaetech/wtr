@@ -23,4 +23,5 @@
  (description "A typed router for OCaml web applications.")
  (depends
   (ocaml
-   (>= 4.11.1))))
+   (>= 4.11.1))
+  ppxlib))
