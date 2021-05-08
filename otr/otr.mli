@@ -27,6 +27,7 @@ val ( >- ) : ('a, 'b) path -> 'a -> 'b route
 
 (**/**)
 
+(** Only to be used by PPX *)
 module Private : sig
   (** Path components *)
 
