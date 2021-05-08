@@ -185,8 +185,7 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
 module Private = struct
   let nil : ('b, 'b) path = Nil
 
-  let lit : string -> ('a, 'b) path -> ('a, 'b) path =
-   fun s path -> Literal (s, path)
+  let lit s path = Literal (s, path)
 
   let arg a p = Arg (a, p)
 
