@@ -30,7 +30,6 @@ val ( >- ) : ('a, 'b) path -> 'a -> 'b route
 (** Only to be used by PPX *)
 module Private : sig
   (** Path components *)
-
   val nil : ('b, 'b) path
 
   val lit : string -> ('a, 'b) path -> ('a, 'b) path

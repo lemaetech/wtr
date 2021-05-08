@@ -183,7 +183,7 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
   | _, _ -> assert false
 
 module Private = struct
-  let nil : ('b, 'b) path = Nil
+  let nil = Nil
 
   let lit s path = Literal (s, path)
 
