@@ -97,11 +97,7 @@ type 'a node =
   ; path : (Path_type.t * 'a node) list
   }
 
-let update_path t path = { t with path }
-
-let empty : 'a node = { route = None; path = [] }
-
-let add node (Route (path, _) as route) =
+let rec add node (Route (path, _) as route) =
   let rec loop node = function
     | [] -> { node with route = Some route }
     | path_kind :: path_kinds ->
@@ -121,6 +117,10 @@ let add node (Route (path, _) as route) =
       |> update_path node
   in
   loop node (Path_type.of_path path)
+
+and update_path t path = { t with path }
+
+and empty : 'a node = { route = None; path = [] }
 
 type 'a t =
   { route : 'a route option
