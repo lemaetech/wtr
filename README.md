@@ -1,5 +1,5 @@
 # Otr - OCaml Typed Router 
-*(Under development)*
+*(Unreleased)*
 
 A typed router for OCaml web applications.
 
@@ -10,20 +10,25 @@ let router =
       [ {%otr|/home/about|} >- "about page"
       ; ([%otr "/home/:int/"]
         >- fun i -> "Product Page. Product Id : " ^ string_of_int i)
+      ; ([%otr "/home/:float/"]
+        >- fun f -> "Float page. number : " ^ string_of_float f)
       ; ([%otr "/contact/*/:int"]
         >- fun name number ->
         "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number)
-      ; ([%otr "/home/:float/"]
-        >- fun f -> "Float page. number : " ^ string_of_float f)
       ])
 
+(* Should output below: 
+1: Float page. number : 100001.1
+2: Product Page. Product Id : 100001
+3: about page
+*)
 let () =
   List.iteri
     (fun i -> function
-      | Some s -> Printf.printf "%d: %s\n" i s
-      | None -> Printf.printf "%d: None\n" i)
-    [ Otr.match' router "/home/100001.1"
-    ; Otr.match' router "/home/100001"
+      | Some s -> Printf.printf "%d: %s\n" (i + 1) s
+      | None -> Printf.printf "%d: None\n" (i + 1))
+    [ Otr.match' router "/home/100001.1/"
+    ; Otr.match' router "/home/100001/"
     ; Otr.match' router "/home/about"
     ]
 
