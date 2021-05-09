@@ -11,6 +11,13 @@ let router =
         "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number)
       ])
 
+(* Should output below: 
+
+1: Float page. number : 100001.1
+2: Product Page. Product Id : 100001
+3: about page
+
+*)
 let () =
   List.iteri
     (fun i -> function
