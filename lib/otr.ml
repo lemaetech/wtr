@@ -44,9 +44,9 @@ module Arg = struct
 
   let float = create ~name:"float" ~decode:float_of_string_opt
 
-  let bool = create ~name:"bool" ~decode:bool_of_string_opt
-
   let string = create ~name:"string" ~decode:(fun a -> Some a)
+
+  let bool = create ~name:"bool" ~decode:bool_of_string_opt
 end
 
 type 'a arg = 'a Arg.t
@@ -61,6 +61,8 @@ let create_arg = Arg.create
       runtime, eg. ':int' in '/home/:int' *)
 type ('a, 'b) path =
   | Nil : ('b, 'b) path
+  | Full_splat : ('b, 'b) path
+  | Trailing_slash : ('b, 'b) path
   | Literal : string * ('a, 'b) path -> ('a, 'b) path
   | Arg : 'c Arg.t * ('a, 'b) path -> ('c -> 'a, 'b) path
 
@@ -71,13 +73,17 @@ let ( >- ) : ('a, 'b) path -> 'a -> 'b route = fun path f -> Route (path, f)
 module Path_type = struct
   (** Defines existential to encode path component type. *)
   type t =
+    | PTrailing_slash : t
+    | PFull_splat : t
     | PLiteral : string -> t
-    | PVar : 'c Arg.t -> t
+    | PArg : 'c Arg.t -> t
 
   let equal a b =
     match (a, b) with
+    | PTrailing_slash, PTrailing_slash -> true
+    | PFull_splat, PFull_splat -> true
     | PLiteral lit', PLiteral lit -> String.equal lit lit'
-    | PVar arg', PVar arg -> (
+    | PArg arg', PArg arg -> (
       match Arg.eq arg.id arg'.id with
       | Some Arg.Eq -> true
       | None -> false)
@@ -87,8 +93,10 @@ module Path_type = struct
      type inference issue when using [path] type in the [add] function below. *)
   let rec of_path : type a b. (a, b) path -> t list = function
     | Nil -> []
+    | Trailing_slash -> [ PTrailing_slash ]
+    | Full_splat -> [ PFull_splat ]
     | Literal (lit, path) -> PLiteral lit :: of_path path
-    | Arg (arg, path) -> PVar arg :: of_path path
+    | Arg (arg, path) -> PArg arg :: of_path path
 end
 
 (** ['a t] is a node in a trie based router. *)
@@ -97,11 +105,7 @@ type 'a node =
   ; path : (Path_type.t * 'a node) list
   }
 
-let update_path t path = { t with path }
-
-let empty : 'a node = { route = None; path = [] }
-
-let add node (Route (path, _) as route) =
+let rec add node (Route (path, _) as route) =
   let rec loop node = function
     | [] -> { node with route = Some route }
     | path_kind :: path_kinds ->
@@ -122,6 +126,10 @@ let add node (Route (path, _) as route) =
   in
   loop node (Path_type.of_path path)
 
+and empty : 'a node = { route = None; path = [] }
+
+and update_path t path = { t with path }
+
 type 'a t =
   { route : 'a route option
   ; path : (Path_type.t * 'a t) array
@@ -140,7 +148,7 @@ and compile : 'a node -> 'a t =
 
 type decoded_value = D : 'c Arg.t * 'c -> decoded_value
 
-let rec match' t path =
+let rec match' t uri_path =
   let rec loop t decoded_values = function
     | [] ->
       Option.map
@@ -151,25 +159,47 @@ let rec match' t path =
       let continue = ref true in
       let index = ref 0 in
       let matched_node = ref None in
+      let full_splat_matched = ref false in
       while !continue && !index < Array.length t.path do
-        match t.path.(!index) with
-        | PVar arg, t' -> (
-          match arg.decode path_token with
-          | Some v ->
-            matched_node := Some (t', D (arg, v) :: decoded_values);
+        Path_type.(
+          match t.path.(!index) with
+          | PArg arg, t' -> (
+            match arg.decode path_token with
+            | Some v ->
+              matched_node := Some (t', D (arg, v) :: decoded_values);
+              continue := false
+            | None -> incr index)
+          | PLiteral lit, t' when String.equal lit path_token ->
+            matched_node := Some (t', decoded_values);
             continue := false
-          | None -> incr index)
-        | PLiteral lit, t' when String.equal lit path_token ->
-          matched_node := Some (t', decoded_values);
-          continue := false
-        | _ -> incr index
+          | PTrailing_slash, t' when String.equal "" path_token ->
+            matched_node := Some (t', decoded_values);
+            continue := false
+          | PFull_splat, t' ->
+            matched_node := Some (t', decoded_values);
+            continue := false;
+            full_splat_matched := true
+          | _ -> incr index)
       done;
       Option.bind !matched_node (fun (t', decoded_values) ->
-          (loop [@tailcall]) t' decoded_values path_tokens)
+          if !full_splat_matched then
+            (loop [@tailcall]) t' decoded_values []
+          else
+            (loop [@tailcall]) t' decoded_values path_tokens)
   in
-  String.split_on_char '/' path
-  |> List.filter (fun tok -> not (String.equal "" tok))
-  |> loop t []
+  loop t [] (uri_tokens uri_path)
+
+and uri_tokens s =
+  let uri = Uri.of_string s in
+  let path_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
+  Uri.query uri
+  |> List.map (fun (k, v) ->
+         if List.length v > 0 then
+           [ k; List.hd v ]
+         else
+           [ k ])
+  |> List.concat
+  |> List.append path_tokens
 
 and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
  fun f -> function
@@ -184,6 +214,10 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
 
 module Private = struct
   let nil = Nil
+
+  let trailing_slash = Trailing_slash
+
+  let full_splat = Full_splat
 
   let lit s path = Literal (s, path)
 

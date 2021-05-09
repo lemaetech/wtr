@@ -1,0 +1,5 @@
+(executable
+ (name demo)
+ (libraries otr)
+ (preprocess
+  (pps otr.ppx)))

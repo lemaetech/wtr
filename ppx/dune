@@ -1,0 +1,7 @@
+(library
+ (name otr_ppx)
+ (public_name otr.ppx)
+ (kind ppx_rewriter)
+ (libraries otr uri ppxlib)
+ (preprocess
+  (pps ppxlib.metaquot)))

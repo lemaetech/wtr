@@ -1,3 +1,4 @@
 (library
  (name otr)
+ (libraries uri)
  (public_name otr))

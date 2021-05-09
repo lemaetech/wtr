@@ -1,9 +1,3 @@
-# Otr - OCaml Typed Router 
-*(Under development)*
-
-A typed router for OCaml web applications.
-
-```ocaml
 let router =
   Otr.(
     create
@@ -26,5 +20,3 @@ let () =
     ; Otr.match' router "/home/100001"
     ; Otr.match' router "/home/about"
     ]
-
-```

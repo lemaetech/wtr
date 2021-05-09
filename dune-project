@@ -6,7 +6,7 @@
 
 (generate_opam_files true)
 
-(implicit_transitive_deps true)
+(implicit_transitive_deps false)
 
 (source
  (github lemaetech/otr))
@@ -23,4 +23,6 @@
  (description "A typed router for OCaml web applications.")
  (depends
   (ocaml
-   (>= 4.11.1))))
+   (>= 4.11.1))
+  uri
+  ppxlib))
