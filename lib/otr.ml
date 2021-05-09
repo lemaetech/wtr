@@ -204,6 +204,8 @@ and uri_tokens s =
 and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
  fun f -> function
   | Nil, [] -> f
+  | Full_splat, [] -> f
+  | Trailing_slash, [] -> f
   | Literal (_, path), decoded_values ->
     exec_route_handler f (path, decoded_values)
   | Arg ({ id; _ }, path), D ({ id = id'; _ }, v) :: decoded_values -> (
