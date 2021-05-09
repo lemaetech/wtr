@@ -19,11 +19,10 @@ let router =
 
 *)
 let () =
-  List.iteri
-    (fun i -> function
-      | Some s -> Printf.printf "%d: %s\n" (i + 1) s
-      | None -> Printf.printf "%d: None\n" (i + 1))
-    [ Otr.match' router "/home/100001.1/"
-    ; Otr.match' router "/home/100001/"
-    ; Otr.match' router "/home/about"
-    ]
+  [ Otr.match' router "/home/100001.1/"
+  ; Otr.match' router "/home/100001/"
+  ; Otr.match' router "/home/about"
+  ]
+  |> List.iteri (fun i -> function
+       | Some s -> Printf.printf "%d: %s\n" (i + 1) s
+       | None -> Printf.printf "%d: None\n" (i + 1))
