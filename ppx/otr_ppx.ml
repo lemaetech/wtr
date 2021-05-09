@@ -5,13 +5,11 @@ let ( let* ) r f = Result.bind r f
 
 let ( >>= ) = ( let* )
 
-let ( let+ ) r f = Result.map f r
-
 let rec decode_otr_expression ~loc otr =
   (let* uri = decode_uri otr in
+   let* query_components = decode_query_tokens uri in
    let* path_components = decode_path_tokens uri in
-   let+ query_components = decode_query_tokens uri in
-   path_components @ query_components)
+   validate_tokens (path_components @ query_components))
   |> function
   | Ok otr_tokens -> otr_expression ~loc otr_tokens
   | Error msg -> Location.raise_errorf ~loc "otr: %s" msg
@@ -20,33 +18,7 @@ and decode_uri otr =
   if String.trim otr |> String.length > 0 then
     Ok (Uri.of_string otr)
   else
-    Error "Path is empty"
-
-and decode_path_tokens uri =
-  let valid_start_token uri =
-    let path = Uri.path uri |> String.split_on_char '/' in
-    match List.hd path with
-    | "" -> Ok (List.tl path)
-    | _
-    | (exception _) ->
-      Error "Path specification must start with '/'"
-  in
-  let valid_end_token path =
-    let trailing_slash_count =
-      List.fold_left
-        (fun acc a ->
-          if String.equal a "" then
-            acc + 1
-          else
-            acc)
-        0 path
-    in
-    if trailing_slash_count > 1 then
-      Error "Invalid uri path specification. Only one trailing '/' is allowed"
-    else
-      Ok path
-  in
-  valid_start_token uri >>= valid_end_token
+    Error "Empty uri path specification"
 
 and decode_query_tokens uri =
   let exception E of string in
@@ -54,7 +26,8 @@ and decode_query_tokens uri =
     Uri.query uri
     |> List.map (fun (k, v) ->
            if List.length v != 1 then
-             raise (E (Printf.sprintf "Invalid query specification %s" k))
+             raise
+               (E (Printf.sprintf "Invalid query specification for key: %s" k))
            else
              [ k; List.hd v ])
     |> List.concat
@@ -62,9 +35,60 @@ and decode_query_tokens uri =
   with
   | E msg -> Error msg
 
+and decode_path_tokens uri = Ok (Uri.path uri |> String.split_on_char '/')
+
+and validate_tokens tokens =
+  let valid_start_token tokens =
+    match List.hd tokens with
+    | "" -> Ok (List.tl tokens)
+    | _
+    | (exception _) ->
+      Error "Uri path specification must start with '/'"
+  in
+  let valid_end_slash path =
+    let _, l2 = split_on (fun x -> String.equal "" x) path in
+    if List.length l2 > 0 then
+      Error
+        "Invalid uri path specification. No tokens allowed after trailing '/' \
+         token"
+    else
+      Ok path
+  in
+  let valid_full_splat path =
+    let _, l2 = split_on (fun x -> String.equal "**" x) path in
+    if List.length l2 > 0 then
+      Error
+        "Invalid uri path specification. No tokens allowed after full splat \
+         (**) token"
+    else
+      Ok path
+  in
+  valid_start_token tokens >>= valid_end_slash >>= valid_full_splat
+
+and findi f l =
+  let rec loop n = function
+    | [] -> None
+    | x :: t ->
+      if f x then
+        Some n
+      else
+        loop (n + 1) t
+  in
+  loop 0 l
+
+and split_on f l =
+  match findi f l with
+  | Some n ->
+    (List.filteri (fun i _ -> i < n) l, List.filteri (fun i _ -> i > n) l)
+  | None -> (l, [])
+
 and otr_expression ~loc = function
   | [] -> [%expr Otr.Private.nil]
   | [ "" ] -> [%expr Otr.Private.slash_end]
+  | [ "**" ] -> [%expr Otr.Private.full_splat]
+  | "**" :: _ ->
+    Location.raise_errorf
+      "otr: query specification not allowed after '**' in path."
   | "" :: _ ->
     Location.raise_errorf
       "otr: query specification not allowed after trailing '/' in path."
