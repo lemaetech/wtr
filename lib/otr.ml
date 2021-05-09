@@ -148,7 +148,7 @@ and compile : 'a node -> 'a t =
 
 type decoded_value = D : 'c Arg.t * 'c -> decoded_value
 
-let rec match' t path =
+let rec match' t uri_path =
   let rec loop t decoded_values = function
     | [] ->
       Option.map
@@ -187,9 +187,19 @@ let rec match' t path =
           else
             (loop [@tailcall]) t' decoded_values path_tokens)
   in
-  String.split_on_char '/' path
-  |> List.filter (fun tok -> not (String.equal "" tok))
-  |> loop t []
+  loop t [] (uri_tokens uri_path)
+
+and uri_tokens s =
+  let uri = Uri.of_string s in
+  let path_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
+  Uri.query uri
+  |> List.map (fun (k, v) ->
+         if List.length v > 0 then
+           [ k; List.hd v ]
+         else
+           [ k ])
+  |> List.concat
+  |> List.append path_tokens
 
 and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
  fun f -> function
