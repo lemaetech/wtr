@@ -65,6 +65,9 @@ and decode_query_tokens uri =
 and otr_expression ~loc = function
   | [] -> [%expr Otr.Private.nil]
   | [ "" ] -> [%expr Otr.Private.slash_end]
+  | "" :: _ ->
+    Location.raise_errorf
+      "otr: query specification not allowed after trailing '/' in path."
   | "*" :: components ->
     [%expr
       Otr.Private.arg Otr.Private.string [%e otr_expression ~loc components]]
@@ -83,19 +86,24 @@ and otr_expression ~loc = function
     | "bool" ->
       [%expr
         Otr.Private.arg Otr.Private.bool [%e otr_expression ~loc components]]
-    | custom_arg
-      when Char.(uppercase_ascii custom_arg.[0] |> equal custom_arg.[0]) ->
+    | custom_arg when capitalized custom_arg ->
       let longident_loc = { txt = Longident.parse custom_arg; loc } in
       [%expr
         Otr.Private.arg
           [%e Ast_builder.pexp_ident ~loc longident_loc]
           [%e otr_expression ~loc components]]
-    | x -> Location.raise_errorf ~loc "otr: Unrecognized component: %s" x)
+    | x ->
+      Location.raise_errorf ~loc
+        "otr: Invalid custom argument name '%s'. Custom argument component \
+         name must be a valid module name."
+        x)
   | comp :: components ->
     [%expr
       Otr.Private.lit
         [%e Ast_builder.estring ~loc comp]
         [%e otr_expression ~loc components]]
+
+and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 
 let extend ~loc ~path:_ otr = decode_otr_expression ~loc otr
 
