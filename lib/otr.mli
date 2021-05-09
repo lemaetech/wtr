@@ -32,6 +32,8 @@ module Private : sig
   (** Path components *)
   val nil : ('b, 'b) path
 
+  val slash_end : ('b, 'b) path
+
   val lit : string -> ('a, 'b) path -> ('a, 'b) path
 
   val arg : 'a arg -> ('b, 'c) path -> ('a -> 'b, 'c) path

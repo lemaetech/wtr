@@ -61,6 +61,7 @@ let create_arg = Arg.create
       runtime, eg. ':int' in '/home/:int' *)
 type ('a, 'b) path =
   | Nil : ('b, 'b) path
+  | Slash_end : ('b, 'b) path
   | Literal : string * ('a, 'b) path -> ('a, 'b) path
   | Arg : 'c Arg.t * ('a, 'b) path -> ('c -> 'a, 'b) path
 
@@ -71,11 +72,13 @@ let ( >- ) : ('a, 'b) path -> 'a -> 'b route = fun path f -> Route (path, f)
 module Path_type = struct
   (** Defines existential to encode path component type. *)
   type t =
+    | PSlash_end : t
     | PLiteral : string -> t
     | PVar : 'c Arg.t -> t
 
   let equal a b =
     match (a, b) with
+    | PSlash_end, PSlash_end -> true
     | PLiteral lit', PLiteral lit -> String.equal lit lit'
     | PVar arg', PVar arg -> (
       match Arg.eq arg.id arg'.id with
@@ -87,6 +90,7 @@ module Path_type = struct
      type inference issue when using [path] type in the [add] function below. *)
   let rec of_path : type a b. (a, b) path -> t list = function
     | Nil -> []
+    | Slash_end -> [ PSlash_end ]
     | Literal (lit, path) -> PLiteral lit :: of_path path
     | Arg (arg, path) -> PVar arg :: of_path path
 end
@@ -184,6 +188,8 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
 
 module Private = struct
   let nil = Nil
+
+  let slash_end = Slash_end
 
   let lit s path = Literal (s, path)
 
