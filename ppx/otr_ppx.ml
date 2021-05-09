@@ -15,6 +15,7 @@ let rec decode_otr_expression ~loc otr =
   | Error msg -> Location.raise_errorf ~loc "otr: %s" msg
 
 and decode_uri otr =
+  let otr = String.trim otr in
   if String.trim otr |> String.length > 0 then
     Ok (Uri.of_string otr)
   else
