@@ -38,14 +38,14 @@ and decode_query_tokens uri =
 and decode_path_tokens uri = Ok (Uri.path uri |> String.split_on_char '/')
 
 and validate_tokens tokens =
-  let valid_start_token tokens =
+  let validate_start tokens =
     match List.hd tokens with
     | "" -> Ok (List.tl tokens)
     | _
     | (exception _) ->
       Error "Uri path specification must start with '/'"
   in
-  let valid_end_slash path =
+  let validate_end_slash path =
     let _, l2 = split_on (fun x -> String.equal "" x) path in
     if List.length l2 > 0 then
       Error
@@ -54,7 +54,7 @@ and validate_tokens tokens =
     else
       Ok path
   in
-  let valid_full_splat path =
+  let validate_full_splat path =
     let _, l2 = split_on (fun x -> String.equal "**" x) path in
     if List.length l2 > 0 then
       Error
@@ -63,7 +63,7 @@ and validate_tokens tokens =
     else
       Ok path
   in
-  valid_start_token tokens >>= valid_end_slash >>= valid_full_splat
+  validate_start tokens >>= validate_end_slash >>= validate_full_splat
 
 and findi f l =
   let rec loop n = function
@@ -86,12 +86,6 @@ and otr_expression ~loc = function
   | [] -> [%expr Otr.Private.nil]
   | [ "" ] -> [%expr Otr.Private.slash_end]
   | [ "**" ] -> [%expr Otr.Private.full_splat]
-  | "**" :: _ ->
-    Location.raise_errorf
-      "otr: query specification not allowed after '**' in path."
-  | "" :: _ ->
-    Location.raise_errorf
-      "otr: query specification not allowed after trailing '/' in path."
   | "*" :: components ->
     [%expr
       Otr.Private.arg Otr.Private.string [%e otr_expression ~loc components]]
