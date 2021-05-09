@@ -44,9 +44,9 @@ module Arg = struct
 
   let float = create ~name:"float" ~decode:float_of_string_opt
 
-  let bool = create ~name:"bool" ~decode:bool_of_string_opt
-
   let string = create ~name:"string" ~decode:(fun a -> Some a)
+
+  let bool = create ~name:"bool" ~decode:bool_of_string_opt
 end
 
 type 'a arg = 'a Arg.t
