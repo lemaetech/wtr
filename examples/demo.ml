@@ -11,8 +11,6 @@ let router =
         "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number)
       ])
 
-(* let p = [%otr "/contact/*/:bool"] *)
-
 let () =
   List.iteri
     (fun i -> function
