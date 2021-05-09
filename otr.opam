@@ -11,6 +11,7 @@ bug-reports: "https://github.com/lemaetech/otr/issues"
 depends: [
   "dune" {>= "2.8"}
   "ocaml" {>= "4.11.1"}
+  "uri"
   "ppxlib"
   "odoc" {with-doc}
 ]

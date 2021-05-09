@@ -6,7 +6,7 @@
 
 (generate_opam_files true)
 
-(implicit_transitive_deps true)
+(implicit_transitive_deps false)
 
 (source
  (github lemaetech/otr))
@@ -24,4 +24,5 @@
  (depends
   (ocaml
    (>= 4.11.1))
+  uri
   ppxlib))
