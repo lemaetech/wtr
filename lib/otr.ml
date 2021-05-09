@@ -62,7 +62,7 @@ let create_arg = Arg.create
 type ('a, 'b) path =
   | Nil : ('b, 'b) path
   | Full_splat : ('b, 'b) path
-  | Slash_end : ('b, 'b) path
+  | Trailing_slash : ('b, 'b) path
   | Literal : string * ('a, 'b) path -> ('a, 'b) path
   | Arg : 'c Arg.t * ('a, 'b) path -> ('c -> 'a, 'b) path
 
@@ -73,14 +73,15 @@ let ( >- ) : ('a, 'b) path -> 'a -> 'b route = fun path f -> Route (path, f)
 module Path_type = struct
   (** Defines existential to encode path component type. *)
   type t =
-    | PSlash_end : t
+    | PTrailing_slash : t
     | PFull_splat : t
     | PLiteral : string -> t
     | PArg : 'c Arg.t -> t
 
   let equal a b =
     match (a, b) with
-    | PSlash_end, PSlash_end -> true
+    | PTrailing_slash, PTrailing_slash -> true
+    | PFull_splat, PFull_splat -> true
     | PLiteral lit', PLiteral lit -> String.equal lit lit'
     | PArg arg', PArg arg -> (
       match Arg.eq arg.id arg'.id with
@@ -92,7 +93,7 @@ module Path_type = struct
      type inference issue when using [path] type in the [add] function below. *)
   let rec of_path : type a b. (a, b) path -> t list = function
     | Nil -> []
-    | Slash_end -> [ PSlash_end ]
+    | Trailing_slash -> [ PTrailing_slash ]
     | Full_splat -> [ PFull_splat ]
     | Literal (lit, path) -> PLiteral lit :: of_path path
     | Arg (arg, path) -> PArg arg :: of_path path
@@ -125,9 +126,9 @@ let rec add node (Route (path, _) as route) =
   in
   loop node (Path_type.of_path path)
 
-and update_path t path = { t with path }
-
 and empty : 'a node = { route = None; path = [] }
+
+and update_path t path = { t with path }
 
 type 'a t =
   { route : 'a route option
@@ -158,21 +159,33 @@ let rec match' t path =
       let continue = ref true in
       let index = ref 0 in
       let matched_node = ref None in
+      let full_splat_matched = ref false in
       while !continue && !index < Array.length t.path do
-        match t.path.(!index) with
-        | PArg arg, t' -> (
-          match arg.decode path_token with
-          | Some v ->
-            matched_node := Some (t', D (arg, v) :: decoded_values);
+        Path_type.(
+          match t.path.(!index) with
+          | PArg arg, t' -> (
+            match arg.decode path_token with
+            | Some v ->
+              matched_node := Some (t', D (arg, v) :: decoded_values);
+              continue := false
+            | None -> incr index)
+          | PLiteral lit, t' when String.equal lit path_token ->
+            matched_node := Some (t', decoded_values);
             continue := false
-          | None -> incr index)
-        | PLiteral lit, t' when String.equal lit path_token ->
-          matched_node := Some (t', decoded_values);
-          continue := false
-        | _ -> incr index
+          | PTrailing_slash, t' when String.equal "" path_token ->
+            matched_node := Some (t', decoded_values);
+            continue := false
+          | PFull_splat, t' ->
+            matched_node := Some (t', decoded_values);
+            continue := false;
+            full_splat_matched := true
+          | _ -> incr index)
       done;
       Option.bind !matched_node (fun (t', decoded_values) ->
-          (loop [@tailcall]) t' decoded_values path_tokens)
+          if !full_splat_matched then
+            (loop [@tailcall]) t' decoded_values []
+          else
+            (loop [@tailcall]) t' decoded_values path_tokens)
   in
   String.split_on_char '/' path
   |> List.filter (fun tok -> not (String.equal "" tok))
@@ -192,7 +205,7 @@ and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
 module Private = struct
   let nil = Nil
 
-  let slash_end = Slash_end
+  let trailing_slash = Trailing_slash
 
   let full_splat = Full_splat
 

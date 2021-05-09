@@ -34,7 +34,7 @@ module Private : sig
 
   val full_splat : ('b, 'b) path
 
-  val slash_end : ('b, 'b) path
+  val trailing_slash : ('b, 'b) path
 
   val lit : string -> ('a, 'b) path -> ('a, 'b) path
 

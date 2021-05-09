@@ -84,7 +84,7 @@ and split_on f l =
 
 and otr_expression ~loc = function
   | [] -> [%expr Otr.Private.nil]
-  | [ "" ] -> [%expr Otr.Private.slash_end]
+  | [ "" ] -> [%expr Otr.Private.trailing_slash]
   | [ "**" ] -> [%expr Otr.Private.full_splat]
   | "*" :: components ->
     [%expr
