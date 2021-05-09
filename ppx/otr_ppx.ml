@@ -105,7 +105,7 @@ and otr_expression ~loc = function
       [%expr
         Otr.Private.arg Otr.Private.bool [%e otr_expression ~loc components]]
     | custom_arg when capitalized custom_arg ->
-      let longident_loc = { txt = Longident.parse custom_arg; loc } in
+      let longident_loc = { txt = Longident.parse (custom_arg ^ ".t"); loc } in
       [%expr
         Otr.Private.arg
           [%e Ast_builder.pexp_ident ~loc longident_loc]
