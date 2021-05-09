@@ -231,19 +231,3 @@ module Private = struct
 
   let string = Arg.string
 end
-
-(* Toplevel tests. *)
-let router =
-  Private.(
-    create
-      [ lit "home" (lit "about" nil) >- "about"
-      ; (lit "home" (arg int nil) >- fun i -> "int " ^ string_of_int i)
-      ; (arg string (arg int nil) >- fun s i -> s ^ string_of_int i)
-      ; (lit "home" (arg float nil) >- fun f -> "float " ^ string_of_float f)
-      ])
-
-let _m = match' router "/home/100001.1"
-
-let _m1 = match' router "/home/100001"
-
-let _m2 = match' router "/home/about"
