@@ -12,6 +12,17 @@ and starts_with_slash path =
   try List.hd path = "" with
   | _ -> false
 
+and query_components ~loc uri =
+  Uri.query uri
+  |> List.map (fun (k, v) ->
+         if List.length v != 1 then
+           Location.raise_errorf ~loc "Invalid query specifiction %s" k
+         else
+           [ k; List.hd v ])
+  |> List.concat
+
+and to_atr_ast uri_components = uri_components
+
 let transform_otr ~loc ~path:_ otr =
   if String.trim otr |> String.length > 0 then
     parse ~loc otr
