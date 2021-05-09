@@ -11,6 +11,8 @@ let router =
         >- fun f -> "Float page. number : " ^ string_of_float f)
       ])
 
+let p = [%otr "/contact/*/:int"]
+
 let () =
   List.iteri
     (fun i -> function
