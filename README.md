@@ -4,6 +4,7 @@
 A typed router for OCaml web applications.
 
 ```ocaml
+
 let router =
   Otr.(
     create
@@ -18,18 +19,19 @@ let router =
       ])
 
 (* Should output below: 
+
 1: Float page. number : 100001.1
 2: Product Page. Product Id : 100001
 3: about page
+
 *)
 let () =
-  List.iteri
-    (fun i -> function
-      | Some s -> Printf.printf "%d: %s\n" (i + 1) s
-      | None -> Printf.printf "%d: None\n" (i + 1))
-    [ Otr.match' router "/home/100001.1/"
-    ; Otr.match' router "/home/100001/"
-    ; Otr.match' router "/home/about"
-    ]
+  [ Otr.match' router "/home/100001.1/"
+  ; Otr.match' router "/home/100001/"
+  ; Otr.match' router "/home/about"
+  ]
+  |> List.iteri (fun i -> function
+       | Some s -> Printf.printf "%d: %s\n" (i + 1) s
+       | None -> Printf.printf "%d: None\n" (i + 1))
 
 ```
