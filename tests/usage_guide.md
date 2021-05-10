@@ -21,23 +21,30 @@ like below.
 ```
 ## Specifying a uri to be matched
 
-`('a, 'b) Otr.path` specifies the uri to match. It is created using a ppx in the form of `{%otr| |}`. The following creates a uri path which matches `/home/about` exactly,
+A uri to be matched by a router is created using a ppx in the form of `{%otr| |}`. The following creates a uri path which matches `/home/about` exactly,
 
 ```ocaml
 # let r = {%otr| /home/about |};;
 val r : ('_weak1, '_weak1) Otr.path = <abstr>
 ```
 
-In addition to the literal values, we can also specify uri path argument
-captures. Uri argument path capture start with charater `:` followed by the
-name of the capture.
+Uri path can contain argument captures. They specify the data type of the decoding operation. The specification starts with `:` followed by the capture name.
 
-The path below captures an `integer` value after matching literal `home`.
+The path below captures an decoded value of OCaml type `int` after matching literal `home`.
 
 ```ocaml
 # let r = {%otr| /home/:int |};;
 val r : (int -> '_weak2, '_weak2) Otr.path = <abstr>
 ```
+
+Lastly, the uri to be matched can also specify query params to be matched.
+Query param captures and literals needs to be specified after `=` character.
+
+```ocaml
+# let r = {%otr| /home/about?a=:int&b=val |};;
+val r : (int -> '_weak3, '_weak3) Otr.path = <abstr>
+```
+
 ### Standard argument captures
     
 `otr` provides the following captures as a default:
@@ -52,7 +59,7 @@ A sample usage:
 
 ```ocaml
 # let r = {%otr| /home/:int/:float/:bool/:string |};;
-val r : (int -> float -> bool -> string -> '_weak3, '_weak3) Otr.path =
+val r : (int -> float -> bool -> string -> '_weak4, '_weak4) Otr.path =
   <abstr>
 ```
 ### User defined argument captures 
@@ -81,7 +88,7 @@ deinfed as such,
 module Fruit : sig type t = Apple | Orange | Pineapple val t : t Otr.arg end
 
 # let r = {%otr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak4, '_weak4) Otr.path = <abstr>
+val r : (Fruit.t -> '_weak5, '_weak5) Otr.path = <abstr>
 ```
 
 ## Creating a route
