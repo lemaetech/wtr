@@ -18,15 +18,29 @@ like below.
  (libraries otr)
  (preprocess
   (pps otr.ppx)))
-
 ```
+## Specifying literal uri path
 
-## Using `otr.ppx`
-
-Otr provides a ppx called `otr.ppx` in order to facilitate specifying uri route path and query components.
+The following creates a uri path which matches `/home/about` exactly,
 
 ```ocaml
 # let r = {%otr| /home/about |};;
 val r : ('_weak1, '_weak1) Otr.path = <abstr>
+```
 
+```ocaml
+# let router = Otr.(create [r >- "about page"]);;
+val router : string Otr.t = <abstr>
+
+# Otr.match' router "/home/about";;
+- : string option = Some "about page"
+
+# Otr.match' router "/home/about/";;
+- : string option = None
+
+# Otr.match' router "/home/About";;
+- : string option = None
+
+# Otr.match' router "/Home/about";;
+- : string option = None
 ```
