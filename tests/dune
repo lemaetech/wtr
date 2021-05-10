@@ -1,5 +1,6 @@
 (test
  (name tests)
  (libraries otr)
+ (modules tests)
  (preprocess
   (pps otr.ppx)))

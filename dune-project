@@ -4,6 +4,8 @@
 
 (version 1.0.0)
 
+(using mdx 0.1)
+
 (generate_opam_files true)
 
 (implicit_transitive_deps false)
@@ -25,4 +27,5 @@
   (ocaml
    (>= 4.11.1))
   uri
+  (mdx :with-test)
   ppxlib))
