@@ -12,7 +12,12 @@ A typed router for OCaml web applications.
   - `float`
   - `bool`
   - `string` 
-- Provides a ppx for API ergonomics. If you know how to type URI path in a browser location, then you already know how to use `otr`.
+- Route URI path is specified via a `ppxlib` based modern ppx -`otr.ppx`. If you know how to type URI path in a browser location, then you already know how to use `otr`.
+- Minimal learning overhead. `Otr` is centered around just four API calls and a ppx - `otr.ppx`. 
+  - `{%otr| /home/products/:int |}` - creates a `path` and and infix function `>-` creates a `route`. 
+  - `Otr.create` - creates a router from a list of `route` values
+  - `Otr.match'` - matches a given uri path in a router.
+  - `Otr.create_arg` - allows you to associate, capture and convert uri components to a user defined datatype. *Note* User defined capture variable are OCaml module names.
 
 __A Demo of the features__
 
