@@ -27,4 +27,5 @@
   (ocaml
    (>= 4.11.1))
   uri
+  (mdx :with-test)
   ppxlib))
