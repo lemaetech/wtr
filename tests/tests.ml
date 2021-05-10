@@ -1,15 +1,32 @@
 open! Otr
 
 let router =
-  Private.(
+  Otr.(
     create
-      [ lit "home" (lit "about" nil) >- "about"
-      ; (lit "home" (arg int nil) >- fun i -> "int " ^ string_of_int i)
-      ; (arg string (arg int nil) >- fun s i -> s ^ string_of_int i)
-      ; (lit "home" (arg float nil) >- fun f -> "float " ^ string_of_float f)
+      [ {%otr| /home/about |} >- "about page"
+      ; ([%otr "/home/:int/"]
+        >- fun i -> "Product Page. Product Id : " ^ string_of_int i)
+      ; ([%otr "/home/:float/"]
+        >- fun f -> "Float page. number : " ^ string_of_float f)
+      ; ([%otr "/contact/*/:int"]
+        >- fun name number ->
+        "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number)
+      ; {%otr| /home/products/** |} >- "full splat page"
       ])
 
 let () =
-  assert (Some "float 100001.1" = match' router "/home/100001.1");
-  assert (Some "int 100001" = match' router "/home/100001");
-  assert (Some "about" = match' router "/home/about")
+  assert (Some "Float page. number : 100001.1" = match' router "/home/100001.1/");
+  assert (None = match' router "/home/100001.1");
+  assert (
+    Some "Product Page. Product Id : 100001" = match' router "/home/100001/");
+  assert (Some "about page" = match' router "/home/about");
+  assert (None = match' router "/home/about/");
+  assert (
+    Some "Contact page. Hi, bikal. Number 123456"
+    = match' router "/contact/bikal/123456");
+  assert (
+    Some "full splat page"
+    = match' router "/home/products/asdfasdf\nasdfasdfasd");
+  assert (Some "full splat page" = match' router "/home/products/");
+  assert (None = match' router "/home/products");
+  assert (None = match' router "/home/")
