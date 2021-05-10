@@ -1,7 +1,7 @@
 # Otr - OCaml Typed Router 
 *(Unreleased)*
 
-A typed router for OCaml web applications. Here is what otr is and can do:
+A typed router for OCaml web applications. 
 
 - A trie based router.
 - Route handlers are type-checked during compilation.
@@ -52,9 +52,12 @@ let () =
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%d: %s\n" (i + 1) s
        | None -> Printf.printf "%d: None\n" (i + 1))
+```
+__Running the demo__
+```dune exec examples/demo.exe```
 
-(* Should output below: 
-
+It should print below in the terminal.
+```
 1: Float page. number : 100001.1
 2: Product Page. Product Id : 100001
 3: about page
@@ -62,7 +65,5 @@ let () =
 5: Product detail - dyson350. Section: 2. Display questions? false
 6: Product detail 2 - dyson350. Section: 2.
 7: None
-
-*)
 
 ```
