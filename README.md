@@ -5,18 +5,22 @@ A typed router for OCaml web applications.
 
 ```ocaml
 
+open! Otr
+
+let prod_page i = "Product Page. Product Id : " ^ string_of_int i
+
+let float_page f = "Float page. number : " ^ string_of_float f
+
+let contact_page name number =
+  "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number
+
 let router =
-  Otr.(
-    create
-      [ {%otr|/home/about|} >- "about page"
-      ; ([%otr "/home/:int/"]
-        >- fun i -> "Product Page. Product Id : " ^ string_of_int i)
-      ; ([%otr "/home/:float/"]
-        >- fun f -> "Float page. number : " ^ string_of_float f)
-      ; ([%otr "/contact/*/:int"]
-        >- fun name number ->
-        "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number)
-      ])
+  create
+    [ {%otr| /home/about     |} >- "about page"
+    ; {%otr| /home/:int/     |} >- prod_page
+    ; {%otr| /home/:float/   |} >- float_page
+    ; {%otr| /contact/*/:int |} >- contact_page
+    ]
 
 (* Should output below: 
 
