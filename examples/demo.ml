@@ -1,19 +1,7 @@
 open! Otr
+open! Printf
 
-let prod_page i = "Product Page. Product Id : " ^ string_of_int i
-
-let float_page f = "Float page. number : " ^ string_of_float f
-
-let contact_page name number =
-  "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number
-
-let product_detail name section_id q =
-  Printf.sprintf "Product detail - %s. Section: %d. Display questions? %b" name
-    section_id q
-
-let product2 name section_id =
-  Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id
-
+(* User defined data type. *)
 module Fruit = struct
   type t =
     | Apple
@@ -28,23 +16,36 @@ module Fruit = struct
       | _ -> None)
 end
 
-let fruit_page = function
-  | Fruit.Apple -> "Apples are juicy!"
-  | Orange -> "Orange is a citrus fruit."
-  | Pineapple -> "Pineapple has scaly skin"
-
-let router =
+(* create a router *)
+let rec router () =
   create
     [ {%otr| /home/about                           |} >- "about page"
     ; {%otr| /home/:int/                           |} >- prod_page
     ; {%otr| /home/:float/                         |} >- float_page
     ; {%otr| /contact/*/:int                       |} >- contact_page
-    ; {%otr| /product/:string?section=:int&q=:bool |} >- product_detail
+    ; {%otr| /product/:string?section=:int&q=:bool |} >- product1
     ; {%otr| /product/:string?section=:int&q1=yes  |} >- product2
     ; {%otr| /fruit/:Fruit                         |} >- fruit_page
     ]
 
+(* route handlers. *)
+and prod_page i = "Product Page. Product Id : " ^ string_of_int i
+
+and float_page f = "Float page. number : " ^ string_of_float f
+
+and contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
+
+and product1 name id q = sprintf "Product1 %s. Id: %d. q = %b" name id q
+
+and product2 name id = sprintf "Product2 %s. Id: %d." name id
+
+and fruit_page = function
+  | Fruit.Apple -> "Apples are juicy!"
+  | Orange -> "Orange is a citrus fruit."
+  | Pineapple -> "Pineapple has scaly skin"
+
 let () =
+  let router = router () in
   [ Otr.match' router "/home/100001.1/"
   ; Otr.match' router "/home/100001/"
   ; Otr.match' router "/home/about"
@@ -66,9 +67,9 @@ let () =
   1: Float page. number : 100001.1
   2: Product Page. Product Id : 100001
   3: about page
-  4: Product detail - dyson350. Section: 233. Display questions? true
-  5: Product detail - dyson350. Section: 2. Display questions? false
-  6: Product detail 2 - dyson350. Section: 2.
+  4: Product1 dyson350. Id: 233. q = true
+  5: Product1 dyson350. Id: 2. q = false
+  6: Product2 dyson350. Id: 2.
   7: None
   8: Apples are juicy!
   9: Orange is a citrus fruit.
