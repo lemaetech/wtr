@@ -1,6 +1,6 @@
-all: 
+doc: 
 	dune b @doc 
-	cp -R _build/default/_doc/_html/* docs/ 
+	cp -f -R  _build/default/_doc/_html/* docs/ 
 
-.PHONY: all
+.PHONY: doc
 

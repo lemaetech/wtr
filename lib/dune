@@ -2,3 +2,7 @@
  (name otr)
  (libraries uri)
  (public_name otr))
+
+(documentation
+ (package otr)
+ (mld_files index))
