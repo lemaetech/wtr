@@ -44,3 +44,29 @@ val router : string Otr.t = <abstr>
 # Otr.match' router "/Home/about";;
 - : string option = None
 ```
+## Creating a route - uri path and its handler 
+
+A `'c route` in `otr` consists of a uri path and its handler. Route can be created via an infix function `Otr.(>-)`. The function signature is as below.
+
+```ocaml
+# Otr.(>-);;
+- : ('a, 'b) Otr.path -> 'a -> 'b Otr.route = <fun>
+```
+Parameter `'a` above denotes a route handler. A route handler is dependent on what is specified in its corresponding uri path. 
+
+An `Otr.path` value where only literal values are specified results in a
+handler which immediately returns a value. 
+
+```ocaml
+# let r = Otr.({%otr| /home/about |} >- "about page");;
+val r : string Otr.route = <abstr>
+```
+
+Where as an`Otr.path` where argument captures are specified results in a handler
+which is a ocaml function.
+
+```ocaml
+# let r = Otr.({%otr| /home/;int |} >- fun (i: int) -> Printf.sprintf "int: %d" i);;
+val r : (int -> string) Otr.route = <abstr>
+```
+
