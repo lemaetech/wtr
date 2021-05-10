@@ -12,7 +12,7 @@ A typed router for OCaml web applications.
   - `float`
   - `bool`
   - `string` 
-- Provides a ppx for API ergonomics. Specify uri path as it appears in the browser, eg. `/home/about`, `/home/:int`.
+- Provides a ppx for API ergonomics. If you know how to type URI path in a browser location then you already know how to use `otr` already.
 
 __A Demo of the features__
 
