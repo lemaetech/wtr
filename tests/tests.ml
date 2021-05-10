@@ -19,6 +19,13 @@ let router =
         ^ name
         ^ ". Call me later: "
         ^ string_of_bool call_me_later)
+      ; ({%otr| /product/:string?section=:int&q=:bool |}
+        >- fun name section_id q ->
+        Printf.sprintf "Product detail - %s. Section: %d. Display questions? %b"
+          name section_id q)
+      ; ({%otr| /product/:string?section=:int&q1=yes |}
+        >- fun name section_id ->
+        Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id)
       ])
 
 let () =
@@ -43,4 +50,14 @@ let () =
     = match' router "/contact/bikal/true");
   assert (
     Some "Contact Page2. Name bob. Call me later: false"
-    = match' router "/contact/bob/false")
+    = match' router "/contact/bob/false");
+  assert (
+    Some "Product detail - dyson350. Section: 233. Display questions? true"
+    = match' router "/product/dyson350?section=233&q=true");
+  assert (
+    Some "Product detail - dyson350. Section: 2. Display questions? false"
+    = match' router "/product/dyson350?section=2&q=false");
+  assert (None = match' router "/product/dyson350?section=2&q1=no");
+  assert (
+    Some "Product detail 2 - dyson350. Section: 2."
+    = match' router "/product/dyson350?section=2&q1=yes")
