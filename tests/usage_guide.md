@@ -66,7 +66,7 @@ Whereas an`Otr.path` where argument captures are specified results in a handler
 which is a ocaml function.
 
 ```ocaml
-# let r = Otr.({%otr| /home/;int |} >- fun (i: int) -> Printf.sprintf "int: %d" i);;
+# let r = Otr.({%otr| /home/:int |} >- fun (i: int) -> Printf.sprintf "int: %d" i);;
 val r : (int -> string) Otr.route = <abstr>
 ```
 
