@@ -30,7 +30,7 @@ val r : ('_weak1, '_weak1) Otr.path = <abstr>
 
 Uri path can contain argument captures. They specify the data type of the decoding operation. The specification starts with `:` followed by the capture name.
 
-The path below captures an decoded value of OCaml type `int` after matching literal `home`.
+The path below captures a decoded value of OCaml type `int` after matching literal `home`.
 
 ```ocaml
 # let r = {%otr| /home/:int |};;
@@ -38,7 +38,7 @@ val r : (int -> '_weak2, '_weak2) Otr.path = <abstr>
 ```
 
 Lastly, the uri to be matched can also specify query params to be matched.
-Query param captures and literals needs to be specified after `=` character.
+Query param captures and literals needs to be specified after the `=` character.
 
 ```ocaml
 # let r = {%otr| /home/about?a=:int&b=val |};;
@@ -117,7 +117,7 @@ which is a ocaml function.
 val r : string Otr.route = <abstr>
 ```
 
-# Creating and matching a router
+## Creating and matching a router
 
 A route is created by applying function a list of `route` values to `Otr.create`. The function signature of `Otr.create` is as follows:
 
