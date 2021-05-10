@@ -87,4 +87,5 @@ let () =
   assert (Some "Pineapple has scaly skin" = match' router "/fruit/pineapple");
   assert (Some "Orange is a citrus fruit." = match' router "/fruit/orange");
   assert (None = match' router "/fruit/guava");
-  assert (Some "404 Not found" = match' router "/")
+  assert (Some "404 Not found" = match' router "/");
+  assert (None = match' router "")
