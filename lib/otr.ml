@@ -53,6 +53,12 @@ type 'a arg = 'a Arg.t
 
 let create_arg = Arg.create
 
+module type Arg = sig
+  type t
+
+  val t : t arg
+end
+
 (** [('a, 'b) path] represents a uniform resource identifier. The variant
     members describe the path component types.
 

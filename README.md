@@ -30,6 +30,25 @@ let product_detail name section_id q =
 let product2 name section_id =
   Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id
 
+module Fruit = struct
+  type t =
+    | Apple
+    | Orange
+    | Pineapple
+
+  let t : t Otr.arg =
+    Otr.create_arg ~name:"fruit" ~decode:(function
+      | "apple" -> Some Apple
+      | "orange" -> Some Orange
+      | "pineapple" -> Some Pineapple
+      | _ -> None)
+end
+
+let fruit_page = function
+  | Fruit.Apple -> "Apples are juicy!"
+  | Orange -> "Orange is a citrus fruit."
+  | Pineapple -> "Pineapple has scaly skin"
+
 let router =
   create
     [ {%otr| /home/about                           |} >- "about page"
@@ -38,6 +57,7 @@ let router =
     ; {%otr| /contact/*/:int                       |} >- contact_page
     ; {%otr| /product/:string?section=:int&q=:bool |} >- product_detail
     ; {%otr| /product/:string?section=:int&q1=yes  |} >- product2
+    ; {%otr| /fruit/:Fruit                         |} >- fruit_page
     ]
 
 let () =
@@ -48,22 +68,31 @@ let () =
   ; Otr.match' router "/product/dyson350?section=2&q=false"
   ; Otr.match' router "/product/dyson350?section=2&q1=yes"
   ; Otr.match' router "/product/dyson350?section=2&q1=no"
+  ; Otr.match' router "/fruit/apple"
+  ; Otr.match' router "/fruit/orange"
+  ; Otr.match' router "/fruit/pineapple"
+  ; Otr.match' router "/fruit/guava"
   ]
   |> List.iteri (fun i -> function
-       | Some s -> Printf.printf "%d: %s\n" (i + 1) s
-       | None -> Printf.printf "%d: None\n" (i + 1))
+       | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
+       | None -> Printf.printf "%3d: None\n" (i + 1))
+
 ```
 __Running the demo__
 ```dune exec examples/demo.exe```
 
 It should print below in the terminal.
 ```
-1: Float page. number : 100001.1
-2: Product Page. Product Id : 100001
-3: about page
-4: Product detail - dyson350. Section: 233. Display questions? true
-5: Product detail - dyson350. Section: 2. Display questions? false
-6: Product detail 2 - dyson350. Section: 2.
-7: None
+  1: Float page. number : 100001.1
+  2: Product Page. Product Id : 100001
+  3: about page
+  4: Product detail - dyson350. Section: 233. Display questions? true
+  5: Product detail - dyson350. Section: 2. Display questions? false
+  6: Product detail 2 - dyson350. Section: 2.
+  7: None
+  8: Apples are juicy!
+  9: Orange is a citrus fruit.
+ 10: Pineapple has scaly skin
+ 11: None
 
 ```

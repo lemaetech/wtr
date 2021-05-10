@@ -1,5 +1,24 @@
 open! Otr
 
+module Fruit = struct
+  type t =
+    | Apple
+    | Orange
+    | Pineapple
+
+  let t : t Otr.arg =
+    Otr.create_arg ~name:"fruit" ~decode:(function
+      | "apple" -> Some Apple
+      | "orange" -> Some Orange
+      | "pineapple" -> Some Pineapple
+      | _ -> None)
+end
+
+let fruit_page = function
+  | Fruit.Apple -> "Apples are juicy!"
+  | Orange -> "Orange is a citrus fruit."
+  | Pineapple -> "Pineapple has scaly skin"
+
 let router =
   Otr.(
     create
@@ -26,6 +45,7 @@ let router =
       ; ({%otr| /product/:string?section=:int&q1=yes |}
         >- fun name section_id ->
         Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id)
+      ; {%otr| /fruit/:Fruit                         |} >- fruit_page
       ])
 
 let () =
@@ -60,4 +80,9 @@ let () =
   assert (None = match' router "/product/dyson350?section=2&q1=no");
   assert (
     Some "Product detail 2 - dyson350. Section: 2."
-    = match' router "/product/dyson350?section=2&q1=yes")
+    = match' router "/product/dyson350?section=2&q1=yes");
+  (* User defined arg *)
+  assert (Some "Apples are juicy!" = match' router "/fruit/apple");
+  assert (Some "Pineapple has scaly skin" = match' router "/fruit/pineapple");
+  assert (Some "Orange is a citrus fruit." = match' router "/fruit/orange");
+  assert (None = match' router "/fruit/guava")
