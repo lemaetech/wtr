@@ -21,7 +21,7 @@ A typed router for OCaml web applications.
   - `Otr.create` - creates a router from a list of `route` values
   - `Otr.match'` - matches a given uri path in a router.
   - `Otr.create_arg` - allows you to associate, capture and convert uri components to a user defined datatype. *Note* User defined capture variables are OCaml module names. 
-    *see `Fruit` module in demo below.*
+    *see `Fruit` module in the demo below.*
 
 __A Demo of the features__
 
