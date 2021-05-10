@@ -25,7 +25,7 @@ let rec decode_otr_expression ~loc otr =
 
 and decode_uri otr =
   let otr = String.trim otr in
-  if String.trim otr |> String.length > 0 then
+  if String.length otr > 0 then
     Ok (Uri.of_string otr)
   else
     Error "Empty uri path specification"

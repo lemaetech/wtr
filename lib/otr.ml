@@ -202,7 +202,11 @@ let rec match' t uri_path =
           else
             (loop [@tailcall]) t' decoded_values path_tokens)
   in
-  loop t [] (uri_tokens uri_path)
+  let uri_path = String.trim uri_path in
+  if String.length uri_path > 0 then
+    loop t [] (uri_tokens uri_path)
+  else
+    None
 
 and uri_tokens s =
   let uri = Uri.of_string s in
