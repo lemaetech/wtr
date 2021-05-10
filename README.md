@@ -6,8 +6,12 @@ A typed router for OCaml web applications.
 - A trie based router.
 - Route handlers are type-checked during compilation.
 - Supports matching and capturing URI path components, eg `/home/about/:int`.
-- Supports matching and capturing on query parameters, eg `/home/about?q=:int&q1=hello`.
-- Supports converting URI to OCaml data types as well and custom defined data types. For now conversion to `int`, `float`, `bool`, and `string` are supported. 
+- Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
+- Supports converting captured URI components to OCaml and custom user defined data types. OCaml data types supported are:
+  - `int`
+  - `float`
+  - `bool`
+  - `string` 
 - Provides a ppx for API ergonomics. Specify uri path as it appears in the browser, eg. `/home/about`, `/home/:int`.
 
 __A Demo of the features__
