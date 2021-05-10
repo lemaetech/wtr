@@ -19,31 +19,71 @@ like below.
  (preprocess
   (pps otr.ppx)))
 ```
-## Specifying literal uri path
+## Specifying a uri to be matched
 
-The following creates a uri path which matches `/home/about` exactly,
+`('a, 'b) Otr.path` specifies the uri to match. It is created using a ppx in the form of `{%otr| |}`. The following creates a uri path which matches `/home/about` exactly,
 
 ```ocaml
 # let r = {%otr| /home/about |};;
 val r : ('_weak1, '_weak1) Otr.path = <abstr>
 ```
 
+In addition to the literal values, we can also specify uri path argument
+captures. Uri argument path capture start with charater `:` followed by the
+name of the capture.
+
+The path below captures an `integer` value after matching literal `home`.
+
 ```ocaml
-# let router = Otr.(create [r >- "about page"]);;
-val router : string Otr.t = <abstr>
-
-# Otr.match' router "/home/about";;
-- : string option = Some "about page"
-
-# Otr.match' router "/home/about/";;
-- : string option = None
-
-# Otr.match' router "/home/About";;
-- : string option = None
-
-# Otr.match' router "/Home/about";;
-- : string option = None
+# let r = {%otr| /home/:int |};;
+val r : (int -> '_weak2, '_weak2) Otr.path = <abstr>
 ```
+### Standard argument captures
+    
+`otr` provides the following captures as a default:
+- `int`
+- `int32`
+- `int64`
+- `float`
+- `bool`
+- `string`
+
+A sample usage:
+
+```ocaml
+# let r = {%otr| /home/:int/:float/:bool/:string |};;
+val r : (int -> float -> bool -> string -> '_weak3, '_weak3) Otr.path =
+  <abstr>
+```
+### User defined argument captures 
+
+In addition to the standard argument captures, otr allows a user to define
+custom user defined argument captures. User defined argument captures are
+defined in a module. The argument capture name is a fully qualified module
+name. 
+
+A sample user defined capture which defines `:Fruit` argument capture can be
+deinfed as such,
+```ocaml
+# module Fruit = struct
+    type t =
+      | Apple
+      | Orange
+      | Pineapple
+
+    let t : t Otr.arg =
+      Otr.create_arg ~name:"fruit" ~decode:(function
+        | "apple" -> Some Apple
+        | "orange" -> Some Orange
+        | "pineapple" -> Some Pineapple
+        | _ -> None)
+  end;;
+module Fruit : sig type t = Apple | Orange | Pineapple val t : t Otr.arg end
+
+# let r = {%otr| /home/:Fruit |};;
+val r : (Fruit.t -> '_weak4, '_weak4) Otr.path = <abstr>
+```
+
 ## Creating a route
 
 A `'c Otr.route` value is created by applying an infix function `Otr.(>-)` to a uri path and its handler. `>-` has the following signature.
@@ -70,3 +110,38 @@ which is a ocaml function.
 val r : string Otr.route = <abstr>
 ```
 
+# Creating and matching a router
+
+A route is created by applying function a list of `route` values to `Otr.create`. The function signature of `Otr.create` is as follows:
+
+```ocaml
+# Otr.create;;
+- : 'a Otr.route list -> 'a Otr.t = <fun>
+```
+
+```ocaml
+# let router = Otr.(create [{%otr| /home/about |} >- "about page"]);;
+val router : string Otr.t = <abstr>
+```
+Matching is peformed by applying a `router` and a `uri` value. `Otr.match`
+returns `Some a` if the given `uri` matches one of the routes in `router`. `a`
+represents the value computed by the route handler.
+
+```ocaml
+# Otr.match';;
+- : 'a Otr.t -> string -> 'a option = <fun>
+```
+
+```ocaml
+# Otr.match' router "/home/about";;
+- : string option = Some "about page"
+
+# Otr.match' router "/home/about/";;
+- : string option = None
+
+# Otr.match' router "/home/About";;
+- : string option = None
+
+# Otr.match' router "/Home/about";;
+- : string option = None
+```
