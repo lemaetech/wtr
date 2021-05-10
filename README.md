@@ -16,10 +16,12 @@ A typed router for OCaml web applications.
 - Route URI components are specified via a `ppxlib` based modern ppx -`otr.ppx`. If you know how to type URI path in a browser location, then you already know how to use `otr`.
 - Minimal learning overhead. `Otr` is centered around just four API calls and a ppx - `otr.ppx`. 
   - `{%otr| /home/products/:int |}` - creates a `path` and an infix function `>-` creates a `route` given a route handler.
-  - Route handler is just a normal OCaml function if URI component capture is specified. Or it is just a normal OCaml value if URI argument capture is specified. *See `/home/about` route in the demo below.*
+  - Route handler is just a normal OCaml function if URI component capture is specified. Or it is just a normal OCaml value if URI argument capture is specified. 
+    *see `/home/about` route in the demo below.*
   - `Otr.create` - creates a router from a list of `route` values
   - `Otr.match'` - matches a given uri path in a router.
-  - `Otr.create_arg` - allows you to associate, capture and convert uri components to a user defined datatype. *Note* User defined capture variables are OCaml module names, *see* `Fruit` module in demo below.
+  - `Otr.create_arg` - allows you to associate, capture and convert uri components to a user defined datatype. *Note* User defined capture variables are OCaml module names. 
+    *see `Fruit` module in demo below.*
 
 __A Demo of the features__
 
