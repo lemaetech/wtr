@@ -62,7 +62,7 @@ handler which immediately returns a value.
 val r : string Otr.route = <abstr>
 ```
 
-Where as an`Otr.path` where argument captures are specified results in a handler
+Whereas an`Otr.path` where argument captures are specified results in a handler
 which is a ocaml function.
 
 ```ocaml
