@@ -3,7 +3,7 @@
 
 A typed router for OCaml web applications. 
 
-- A trie based router.
+- A trie based router. Route matching is efficient and fast.
 - Route handlers are type-checked during compilation.
 - Supports matching and capturing URI path components, eg `/home/about/:int`.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
