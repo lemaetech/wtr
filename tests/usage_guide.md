@@ -44,9 +44,9 @@ val router : string Otr.t = <abstr>
 # Otr.match' router "/Home/about";;
 - : string option = None
 ```
-## Creating a route - uri path and its handler 
+## Creating a route
 
-A `'c route` in `otr` consists of a uri path and its handler. Route can be created via an infix function `Otr.(>-)`. The function signature is as below.
+A `'c Otr.route` value is created by applying an infix function `Otr.(>-)` to a uri path and its handler. `>-` has the following signature.
 
 ```ocaml
 # Otr.(>-);;
