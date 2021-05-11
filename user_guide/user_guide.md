@@ -62,6 +62,7 @@ Error: otr: Uri path specification must start with '/'
 Line 1, characters 9-35:
 Error: otr: Invalid uri path specification. No tokens allowed after trailing
        '/' token
+
 # let r = {%otr| /home/about/**/abc |};;
 Line 1, characters 9-37:
 Error: otr: Invalid uri path specification. No tokens allowed after full
@@ -134,6 +135,19 @@ Otr comes with a few built-in decoders:
 
 Built-in decoder names start with *lowercase* letter.
 
+Some examples of decoder usages:
+
+```ocaml
+# let r = {%otr| /home/:int/:float/:bool |};;
+val r : (int -> float -> bool -> '_weak13, '_weak13) Otr.uri = <abstr>
+```
+You can use decoder components in Query *value* component position:
+
+```ocaml
+# let r = [%otr "/home/contact?name=:string&number=:int"];;
+val r : (string -> int -> '_weak14, '_weak14) Otr.uri = <abstr>
+```
+
 ##### User Defined Decoder 
 
 In addition to the built-in decoders, we can also define and use a user defined decoder. User defined decoder are specified as a module which conforms to the following signature:
@@ -171,7 +185,7 @@ Here is how we can use the `Fruit` decoder:
 
 ```ocaml
 # let r = {%otr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak13, '_weak13) Otr.uri = <abstr>
+val r : (Fruit.t -> '_weak15, '_weak15) Otr.uri = <abstr>
 ```
 
 #### Full splat
@@ -182,7 +196,7 @@ Here, Otr matches `/home/about`, `/home/contact` and `/home/product/product2` ur
 
 ```ocaml
 # let full_splat = [%otr "/home/**"];;
-val full_splat : ('_weak14, '_weak14) Otr.uri = <abstr>
+val full_splat : ('_weak16, '_weak16) Otr.uri = <abstr>
 ```
 
 ## Creating a route
