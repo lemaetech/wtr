@@ -7,7 +7,7 @@ otr```.
 
 Otr consists of the following two libraries:
 - `otr` main library
-- `otr.ppx` ppx library used to author `('a, 'b) Otr.path` type values. 
+- `otr.ppx` ppx library which provides the ppx extension `{%otr||}`.
 
 A sample dune file for an executable called `demo` which uses `otr` may look
 like below.
@@ -19,13 +19,32 @@ like below.
  (preprocess
   (pps otr.ppx)))
 ```
-## Specifying a uri to be matched
+## Specifying a uri
 
-A uri to be matched by a router is created using a ppx in the form of `{%otr| |}`. The following creates a uri path which matches `/home/about` exactly,
+A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. Uri consits of two main 
+components
+
+* Path
+
+  A uri starts with a path component which is denoted by a `/` character. It 
+
+* Query  
+delimited via the forward slash character `/` in the uri path and via the characters `&` and `=` 
+in the query components of the uri.
+
+The path components in the uri must always start with `/`. The query components start with `?` character after the path components. 
+
+
+```ocaml
+# let uri = {%otr| /home/products/a?count=a&size=200 |};;
+val uri : ('_weak1, '_weak1) Otr.uri = <abstr>
+```
+
+The uri which represents `/home/about` has exactly two literal path components, `home` and `about`. 
 
 ```ocaml
 # let r = {%otr| /home/about |};;
-val r : ('_weak1, '_weak1) Otr.path = <abstr>
+val r : ('_weak2, '_weak2) Otr.uri = <abstr>
 ```
 
 Uri path can contain argument captures. They specify the data type of the decoding operation. The specification starts with `:` followed by the capture name.
@@ -34,7 +53,7 @@ The path below captures a decoded value of OCaml type `int` after matching liter
 
 ```ocaml
 # let r = {%otr| /home/:int |};;
-val r : (int -> '_weak2, '_weak2) Otr.path = <abstr>
+val r : (int -> '_weak3, '_weak3) Otr.uri = <abstr>
 ```
 
 Lastly, the uri to be matched can also specify query params to be matched.
@@ -42,7 +61,7 @@ Query param captures and literals needs to be specified after the `=` character.
 
 ```ocaml
 # let r = {%otr| /home/about?a=:int&b=val |};;
-val r : (int -> '_weak3, '_weak3) Otr.path = <abstr>
+val r : (int -> '_weak4, '_weak4) Otr.uri = <abstr>
 ```
 
 ### Standard argument captures
@@ -59,7 +78,7 @@ A sample usage:
 
 ```ocaml
 # let r = {%otr| /home/:int/:float/:bool/:string |};;
-val r : (int -> float -> bool -> string -> '_weak4, '_weak4) Otr.path =
+val r : (int -> float -> bool -> string -> '_weak5, '_weak5) Otr.uri =
   <abstr>
 ```
 ### User defined argument captures 
@@ -88,7 +107,7 @@ deinfed as such,
 module Fruit : sig type t = Apple | Orange | Pineapple val t : t Otr.arg end
 
 # let r = {%otr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak5, '_weak5) Otr.path = <abstr>
+val r : (Fruit.t -> '_weak6, '_weak6) Otr.uri = <abstr>
 ```
 
 ## Creating a route
@@ -97,7 +116,7 @@ A `'c Otr.route` value is created by applying an infix function `Otr.(>-)` to a 
 
 ```ocaml
 # Otr.(>-);;
-- : ('a, 'b) Otr.path -> 'a -> 'b Otr.route = <fun>
+- : ('a, 'b) Otr.uri -> 'a -> 'b Otr.route = <fun>
 ```
 Parameter `'a` above denotes a route handler. A route handler is dependent on what is specified in its corresponding uri path. 
 

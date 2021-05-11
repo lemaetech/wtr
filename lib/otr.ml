@@ -68,25 +68,25 @@ module type Arg = sig
   val t : t arg
 end
 
-(** [('a, 'b) path] represents a uniform resource identifier. The variant
-    members describe the path component types.
+(** [('a, 'b) uri] represents a uniform resource identifier. The variant members
+    describe the uri component types.
 
     - Literal Uri path literal string component eg. 'home' in '/home'
     - Arg Uri path argument component, i.e. the value is determined during
       runtime, eg. ':int' in '/home/:int' *)
-type ('a, 'b) path =
-  | Nil : ('b, 'b) path
-  | Full_splat : ('b, 'b) path
-  | Trailing_slash : ('b, 'b) path
-  | Literal : string * ('a, 'b) path -> ('a, 'b) path
-  | Arg : 'c Arg.t * ('a, 'b) path -> ('c -> 'a, 'b) path
+type ('a, 'b) uri =
+  | Nil : ('b, 'b) uri
+  | Full_splat : ('b, 'b) uri
+  | Trailing_slash : ('b, 'b) uri
+  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
+  | Arg : 'c Arg.t * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
-type 'c route = Route : ('a, 'c) path * 'a -> 'c route
+type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
-let ( >- ) : ('a, 'b) path -> 'a -> 'b route = fun path f -> Route (path, f)
+let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
 
-module Path_type = struct
-  (** Defines existential to encode path component type. *)
+module Uri_type = struct
+  (** Defines existential to encode uri component type. *)
   type t =
     | PTrailing_slash : t
     | PFull_splat : t
@@ -104,20 +104,20 @@ module Path_type = struct
       | None -> false)
     | _ -> false
 
-  (* [of_path path] converts [path] to [kind list]. This is done to get around OCaml
-     type inference issue when using [path] type in the [add] function below. *)
-  let rec of_path : type a b. (a, b) path -> t list = function
+  (* [of_uri uri] converts [uri] to [kind list]. This is done to get around OCaml
+     type inference issue when using [uri] type in the [add] function below. *)
+  let rec of_uri : type a b. (a, b) uri -> t list = function
     | Nil -> []
     | Trailing_slash -> [ PTrailing_slash ]
     | Full_splat -> [ PFull_splat ]
-    | Literal (lit, path) -> PLiteral lit :: of_path path
-    | Arg (arg, path) -> PArg arg :: of_path path
+    | Literal (lit, uri) -> PLiteral lit :: of_uri uri
+    | Arg (arg, uri) -> PArg arg :: of_uri uri
 end
 
 (** ['a t] is a node in a trie based router. *)
 type 'a node =
   { route : 'a route option
-  ; path : (Path_type.t * 'a node) list
+  ; uri_types : (Uri_type.t * 'a node) list
   }
 
 let rec add node (Route (path, _) as route) =
@@ -125,29 +125,29 @@ let rec add node (Route (path, _) as route) =
     | [] -> { node with route = Some route }
     | path_kind :: path_kinds ->
       List.find_opt
-        (fun (path_kind', _) -> Path_type.equal path_kind path_kind')
-        node.path
+        (fun (path_kind', _) -> Uri_type.equal path_kind path_kind')
+        node.uri_types
       |> (function
            | Some _ ->
              List.map
                (fun (path_kind', t') ->
-                 if Path_type.equal path_kind path_kind' then
+                 if Uri_type.equal path_kind path_kind' then
                    (path_kind', loop t' path_kinds)
                  else
                    (path_kind', t'))
-               node.path
-           | None -> (path_kind, loop empty path_kinds) :: node.path)
+               node.uri_types
+           | None -> (path_kind, loop empty path_kinds) :: node.uri_types)
       |> update_path node
   in
-  loop node (Path_type.of_path path)
+  loop node (Uri_type.of_uri path)
 
-and empty : 'a node = { route = None; path = [] }
+and empty : 'a node = { route = None; uri_types = [] }
 
-and update_path t path = { t with path }
+and update_path t uri_types = { t with uri_types }
 
 type 'a t =
   { route : 'a route option
-  ; path : (Path_type.t * 'a t) array
+  ; uri_types : (Uri_type.t * 'a t) array
   }
 
 let rec create routes = List.fold_left add empty routes |> compile
@@ -155,15 +155,15 @@ let rec create routes = List.fold_left add empty routes |> compile
 and compile : 'a node -> 'a t =
  fun t ->
   { route = t.route
-  ; path =
-      List.rev t.path
-      |> List.map (fun (path_kind, t) -> (path_kind, compile t))
+  ; uri_types =
+      List.rev t.uri_types
+      |> List.map (fun (uri_kind, t) -> (uri_kind, compile t))
       |> Array.of_list
   }
 
 type decoded_value = D : 'c Arg.t * 'c -> decoded_value
 
-let rec match' t uri_path =
+let rec match' t uri =
   let rec loop t decoded_values = function
     | [] ->
       Option.map
@@ -175,9 +175,9 @@ let rec match' t uri_path =
       let index = ref 0 in
       let matched_node = ref None in
       let full_splat_matched = ref false in
-      while !continue && !index < Array.length t.path do
-        Path_type.(
-          match t.path.(!index) with
+      while !continue && !index < Array.length t.uri_types do
+        Uri_type.(
+          match t.uri_types.(!index) with
           | PArg arg, t' -> (
             match arg.decode path_token with
             | Some v ->
@@ -202,15 +202,15 @@ let rec match' t uri_path =
           else
             (loop [@tailcall]) t' decoded_values path_tokens)
   in
-  let uri_path = String.trim uri_path in
-  if String.length uri_path > 0 then
-    loop t [] (uri_tokens uri_path)
+  let uri = String.trim uri in
+  if String.length uri > 0 then
+    loop t [] (uri_tokens uri)
   else
     None
 
 and uri_tokens s =
   let uri = Uri.of_string s in
-  let path_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
+  let uri_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
   Uri.query uri
   |> List.map (fun (k, v) ->
          if List.length v > 0 then
@@ -218,18 +218,18 @@ and uri_tokens s =
          else
            [ k ])
   |> List.concat
-  |> List.append path_tokens
+  |> List.append uri_tokens
 
-and exec_route_handler : type a b. a -> (a, b) path * decoded_value list -> b =
+and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
   | Nil, [] -> f
   | Full_splat, [] -> f
   | Trailing_slash, [] -> f
-  | Literal (_, path), decoded_values ->
-    exec_route_handler f (path, decoded_values)
-  | Arg ({ id; _ }, path), D ({ id = id'; _ }, v) :: decoded_values -> (
+  | Literal (_, uri), decoded_values ->
+    exec_route_handler f (uri, decoded_values)
+  | Arg ({ id; _ }, uri), D ({ id = id'; _ }, v) :: decoded_values -> (
     match Arg.eq id id' with
-    | Some Arg.Eq -> exec_route_handler (f v) (path, decoded_values)
+    | Some Arg.Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false)
   | _, _ -> assert false
 
@@ -240,7 +240,7 @@ module Private = struct
 
   let full_splat = Full_splat
 
-  let lit s path = Literal (s, path)
+  let lit s uri = Literal (s, uri)
 
   let arg a p = Arg (a, p)
 

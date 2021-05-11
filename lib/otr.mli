@@ -7,20 +7,20 @@
  *
 *-------------------------------------------------------------------------*)
 
-(** {2 URI path} *)
+(** {2 URI uri} *)
 
-(** [('a, 'b) path] represents a HTTP URI path, eg. /home/about/, /home/contact,
+(** [('a, 'b) uri] represents a HTTP URI uri, eg. /home/about/, /home/contact,
     etc. *)
-type ('a, 'b) path
+type ('a, 'b) uri
 
 (** {2 Route} *)
 
-(** ['c route] is a [path] and its handler. ['c] represents the value returned
-    by the handler. *)
+(** ['c route] is a [uri] and its handler. ['c] represents the value returned by
+    the handler. *)
 type 'c route
 
-(** [p >- route_handler] creates a route from path [p] and [route_handler]. *)
-val ( >- ) : ('a, 'b) path -> 'a -> 'b route
+(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
+val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
 
 (** {2 Router} *)
 
@@ -30,16 +30,16 @@ type 'a t
 (** [create routes] creates a router from a list of [route]s. *)
 val create : 'a route list -> 'a t
 
-(** [match t path] matches a [route] to [path], executes its handler and returns
-    the computed value. [None] is returned if [path] is not matched. *)
+(** [match t uri] matches a [route] to [uri], executes its handler and returns
+    the computed value. [None] is returned if [uri] is not matched. *)
 val match' : 'a t -> string -> 'a option
 
-(** {2 URI path argument} *)
+(** {2 URI argument} *)
 
-(** Path argument *)
+(** Represents a uri argument, such as [:int, :float, :bool] etc.*)
 type 'a arg
 
-(** [create_arg ~name ~decode] creates a user specified argument path component. *)
+(** [create_arg ~name ~decode] creates a user specified argument uri component. *)
 val create_arg : name:string -> decode:(string -> 'a option) -> 'a arg
 
 (** All user defined args conform to the module signature Arg.
@@ -71,16 +71,16 @@ end
 
 (** Only to be used by PPX *)
 module Private : sig
-  (** Path components *)
-  val nil : ('b, 'b) path
+  (** uri components *)
+  val nil : ('b, 'b) uri
 
-  val full_splat : ('b, 'b) path
+  val full_splat : ('b, 'b) uri
 
-  val trailing_slash : ('b, 'b) path
+  val trailing_slash : ('b, 'b) uri
 
-  val lit : string -> ('a, 'b) path -> ('a, 'b) path
+  val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
 
-  val arg : 'a arg -> ('b, 'c) path -> ('a -> 'b, 'c) path
+  val arg : 'a arg -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
 
   (** Args *)
   val int : int arg
