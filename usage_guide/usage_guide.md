@@ -21,12 +21,12 @@ like below.
 ```
 ## Specifying a uri
 
-A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. Uri consits of two main 
-components
+A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It consits of two main 
+components,
 
 * Path
 
-  A uri starts with a path component which is denoted by a `/` character. It 
+  A uri starts with a path component and is denoted by a `/` character. It 
 
 * Query  
 delimited via the forward slash character `/` in the uri path and via the characters `&` and `=` 
