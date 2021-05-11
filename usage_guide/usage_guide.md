@@ -44,7 +44,7 @@ A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It alway
 
 * Query  
   
-  Starts with a `?` character followed by one or more of a pair of key values. The key values are specified as `key=value` and are delimited with a `&` character, such as `?key=value&key2=value2`. Key and values are called the *query components*.
+  Follows a uri path component and starts with a `?` character followed by one or more of a pair of key values. The key values are specified as `key=value` and are delimited with a `&` character, such as `?key=value&key2=value2`. Key and values are called the *query components*.
 
   Query components always follow uri path component.
 
