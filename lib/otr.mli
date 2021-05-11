@@ -9,8 +9,9 @@
 
 (** {2 URI} *)
 
-(** [('a, 'b) uri] represents a URI both the path and query, e.g. /home/about/,
-    /home/contact, /home/contact?name=a&no=123 etc.
+(** [('a, 'b) uri] represents a URI both the path and query, e.g.
+    [/home/about/,
+    /home/contact, /home/contact?name=a&no=123] etc.
 
     A uri is created via usage of [otr.ppx]. *)
 type ('a, 'b) uri
