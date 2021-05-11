@@ -25,7 +25,10 @@ A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It alway
 
 * Path
 
-  Starts with `/` and may or may not end with `/`. The following are all examples of valid uri path:
+  Starts with `/` and may or may not end with `/`. 
+  `/` delimits path components such that a path `/home/about` has two path components `home` and `about`.
+  
+  The following are all examples of valid uri path:
 
 ```ocaml
   # let about_page_uri = {%otr| /home/about |};;
@@ -37,24 +40,20 @@ A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It alway
   # let contact_uri = {%otr| /home/contact/ |};;
   val contact_uri : ('_weak3, '_weak3) Otr.uri = <abstr>
 ```
-
-  `/` delimits path components such that a path `/home/about` has two path components `home` and `about`.
+  __Note__ Two path with same path components but with one ending on `/` and the other not ending with `/` are not the same, i.e. `/home/about` and `/home/about/` are not equal to each other.
 
 * Query  
-delimited via the forward slash character `/` in the uri path and via the characters `&` and `=` 
-in the query components of the uri.
+  
+  Starts with a `?` character followed by one or more of a pair of key values. The key values are specified as `key=value` and are delimited with a `&` character, such as `?key=value&key2=value2`. Key and values are called the *query components*.
 
-The path components in the uri must always start with `/`. The query components start with `?` character after the path components. 
+  Query components always follow uri path component.
 
-
+Some examples of uri values:
+  
 ```ocaml
 # let uri = {%otr| /home/products/a?count=a&size=200 |};;
 val uri : ('_weak4, '_weak4) Otr.uri = <abstr>
-```
 
-The uri which represents `/home/about` has exactly two literal path components, `home` and `about`. 
-
-```ocaml
 # let r = {%otr| /home/about |};;
 val r : ('_weak5, '_weak5) Otr.uri = <abstr>
 ```
