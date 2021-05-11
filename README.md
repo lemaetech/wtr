@@ -58,9 +58,8 @@ and fruit_page = function
   | Fruit.Apple -> "Apples are juicy!"
   | Orange -> "Orange is a citrus fruit."
   | Pineapple -> "Pineapple has scaly skin"
-```
-```ocaml
-# let () =
+
+let () =
   let router = router () in
   [ Otr.match' router "/home/100001.1/"; Otr.match' router "/home/100001/"
   ; Otr.match' router "/home/about"
@@ -73,17 +72,6 @@ and fruit_page = function
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) );;
-  1: Float page. number : 100001.1
-  2: Product Page. Product Id : 100001
-  3: about page
-  4: Product1 dyson350. Id: 233. q = true
-  5: Product1 dyson350. Id: 2. q = false
-  6: Product2 dyson350. Id: 2.
-  7: None
-  8: Apples are juicy!
-  9: Orange is a citrus fruit.
- 10: Pineapple has scaly skin
- 11: None
 ```
 
 It should print below in the terminal.
