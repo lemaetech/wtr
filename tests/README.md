@@ -1,6 +1,6 @@
 # Otr - OCaml Typed Router 
 
-[User Guide](https://github.com/lemaetech/otr/blob/main/docs/user_guide.md) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[Otr API](https://lemaetech.co.uk/otr/otr/Otr/index.html)
+[User Guide](https://github.com/lemaetech/otr/blob/main/tests/user_guide.md) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[Otr API](https://lemaetech.co.uk/otr/otr/Otr/index.html)
 
 ## Overview 
 
