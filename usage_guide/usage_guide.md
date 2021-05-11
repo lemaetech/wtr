@@ -125,7 +125,7 @@ Otr comes with a few built-in decoders:
 - `float` - decodes OCaml *float* values
 - `bool` - decodes OCaml *bool* values
 - `string` - decodes OCaml *string* values
-- `\*` - same as `string` decoder
+- `*` - same as `string` decoder
 
 Built-in decoder names start with *lowercase* letter.
 
