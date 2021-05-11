@@ -70,7 +70,7 @@ Error: otr: Invalid uri path specification. No tokens allowed after full
 
 ### Path
 
-Starts with `/` and may or may not end with `/`. Text following `/` is called a *path component*, i.e. a path `/home/about` has two path components `home` and `about`.
+Starts with `/` and may or may not end with `/`. Text following `/` is called a *path component*, i.e. a uri `/home/about` has two path components `home` and `about`.
 
 Some examples of valid uri path:
 
