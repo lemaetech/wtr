@@ -1,19 +1,19 @@
 # Otr - OCaml typed router
 
-* [Getting started](#getting-started)
-* [Specifying a Uri](#specifying-a-uri)
-  + [TLDR - Quickly see some samples](#tldr---quickly-see-some-samples)
-  + [Pretty Printing a URI](#pretty-printint-a-uri)
-  + [Compile time validation:](#compile-time-validation-)
-  + [Path](#path)
-  + [Query](#query)
-  + [Uri Components](#uri-components)
-    - [Literal](#literal)
-    - [Decoder](#decoder)
-      * [User Defined Decoder](#user-defined-decoder)
-    - [Full splat](#full-splat)
-* [Creating a route](#creating-a-route)
-* [Creating and matching a router](#creating-and-matching-a-router)
+  * [Getting started](#getting-started)
+  * [Specifying a Uri](#specifying-a-uri)
+    + [TLDR - Quickly see some samples](#tldr---quickly-see-some-samples)
+    + [Pretty Printing a URI](#pretty-printing-a-uri)
+    + [Compile time validation](#compile-time-validation)
+    + [Path](#path)
+    + [Query](#query)
+    + [Uri Components](#uri-components)
+      - [Literal](#literal)
+      - [Decoder](#decoder)
+        * [User Defined Decoder](#user-defined-decoder)
+      - [Full splat](#full-splat)
+  * [Creating a route](#creating-a-route)
+  * [Creating and matching a router](#creating-and-matching-a-router)
 
 ## Getting started 
 
@@ -83,7 +83,7 @@ val r : (int -> '_weak7, '_weak7) Otr.uri = <abstr>
 - : unit = ()
 ```
 
-### Compile time validation:
+### Compile time validation
 
 ```ocaml
 # let r = {%otr| home/about/ |};;
