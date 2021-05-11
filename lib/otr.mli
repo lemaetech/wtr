@@ -34,15 +34,15 @@ val create : 'a route list -> 'a t
     the computed value. [None] is returned if [uri] is not matched. *)
 val match' : 'a t -> string -> 'a option
 
-(** {2 URI argument} *)
+(** {2 URI Decoder} *)
 
-(** Represents a uri argument, such as [:int, :float, :bool] etc.*)
-type 'a arg
+(** Represents a uri component decoder, such as [:int, :float, :bool] etc.*)
+type 'a decoder
 
-(** [create_arg ~name ~decode] creates a user specified argument uri component. *)
-val create_arg : name:string -> decode:(string -> 'a option) -> 'a arg
+(** [create_decoder ~name ~decode] creates a user defined decoder uri component. *)
+val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 
-(** All user defined args conform to the module signature Arg.
+(** All user defined decoders conform to the module signature decoder.
 
     For e.g.
 
@@ -53,18 +53,18 @@ val create_arg : name:string -> decode:(string -> 'a option) -> 'a arg
           | Orange
           | Pineapple
 
-        let t : t Otr.arg =
-          Otr.create_arg ~name:"fruit" ~decode:(function
+        let t : t Otr.decoder =
+          Otr.create_decoder ~name:"fruit" ~decode:(function
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
             | _ -> None)
       end
     ]} *)
-module type Arg = sig
+module type Decoder = sig
   type t
 
-  val t : t arg
+  val t : t decoder
 end
 
 (**/**)
@@ -80,16 +80,16 @@ module Private : sig
 
   val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
 
-  val arg : 'a arg -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
+  val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
 
-  (** Args *)
-  val int : int arg
+  (** decoders *)
+  val int : int decoder
 
-  val float : float arg
+  val float : float decoder
 
-  val bool : bool arg
+  val bool : bool decoder
 
-  val string : string arg
+  val string : string decoder
 end
 
 (**/**)

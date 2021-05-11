@@ -145,6 +145,10 @@ module type Decoder = sig
   val t : t Otr.arg
 end
 ```
+```mdx-error
+Line 4, characters 15-22:
+Error: Unbound type constructor Otr.arg
+```
 User defined decoder names correspond to a *module name*.
 
 Here is how we can define a user defined decoder called `Fruit`. Note the decoder name and the module name match. 
@@ -163,14 +167,16 @@ Here is how we can define a user defined decoder called `Fruit`. Note the decode
         | "pineapple" -> Some Pineapple
         | _ -> None)
   end;;
-module Fruit : sig type t = Apple | Orange | Pineapple val t : t Otr.arg end
+Line 7, characters 15-22:
+Error: Unbound type constructor Otr.arg
 ```
 
 Here is how we can use the `Fruit` decoder:
 
 ```ocaml
 # let r = {%otr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak13, '_weak13) Otr.uri = <abstr>
+Line 1, characters 9-31:
+Error: Unbound module Fruit
 ```
 
 #### Full splat
@@ -181,7 +187,7 @@ Here, Otr matches `/home/about`, `/home/contact` and `/home/product/product2` ur
 
 ```ocaml
 # let full_splat = [%otr "/home/**"];;
-val full_splat : ('_weak14, '_weak14) Otr.uri = <abstr>
+val full_splat : ('_weak13, '_weak13) Otr.uri = <abstr>
 ```
 
 ## Creating a route

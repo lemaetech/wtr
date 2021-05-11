@@ -6,8 +6,8 @@ module Fruit = struct
     | Orange
     | Pineapple
 
-  let t : t Otr.arg =
-    Otr.create_arg ~name:"fruit" ~decode:(function
+  let t : t Otr.decoder =
+    Otr.create_decoder ~name:"fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -82,7 +82,8 @@ let () =
   assert (
     Some "Product detail 2 - dyson350. Section: 2."
     = match' router "/product/dyson350?section=2&q1=yes");
-  (* User defined arg *)
+
+  (* User defined decoders *)
   assert (Some "Apples are juicy!" = match' router "/fruit/apple");
   assert (Some "Pineapple has scaly skin" = match' router "/fruit/pineapple");
   assert (Some "Orange is a citrus fruit." = match' router "/fruit/orange");
