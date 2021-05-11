@@ -1,5 +1,6 @@
 # Otr - OCaml Typed Router 
-*(Unreleased)*
+
+## Overview 
 
 A typed router for OCaml web applications. 
 
@@ -16,7 +17,7 @@ A typed router for OCaml web applications.
   - `Otr.match'` - matches a given uri path in a router.
   - `Otr.create_decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
 
-__A Demo of the features__
+## Otr Demo
 
 ```ocaml
 open! Otr
@@ -74,7 +75,8 @@ let () =
        | None -> Printf.printf "%3d: None\n" (i + 1) );;
 ```
 
-It should print below in the terminal.
+### Output of the Demo
+
 ```
   1: Float page. number : 100001.1
   2: Product Page. Product Id : 100001
