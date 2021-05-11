@@ -39,7 +39,7 @@ A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It alway
   # let contact_uri = {%otr| /home/contact/ |};;
   val contact_uri : ('_weak3, '_weak3) Otr.uri = <abstr>
 ```
-    __Note__ Two path with same path components but with one ending on `/` and the other not ending with `/` are not the same, i.e. `/home/about` and `/home/about/` are not equal to each other.
+  __Note__ Two path with same path components but with one ending on `/` and the other not ending with `/` are not the same, i.e. `/home/about` and `/home/about/` are not equal to each other.
 
 * Query  
   
