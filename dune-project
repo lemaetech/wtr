@@ -25,7 +25,9 @@
  (description "A typed router for OCaml web applications")
  (depends
   (ocaml
-   (>= 4.11.1))
-  uri
+   (>= 4.12.0))
+  (uri
+   (>= 4.2.0))
   (mdx :with-test)
-  ppxlib))
+  (ppxlib
+   (>= 0.22.0))))
