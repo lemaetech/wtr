@@ -98,26 +98,28 @@ and otr_expression ~loc = function
   | [ "**" ] -> [%expr Otr.Private.full_splat]
   | "*" :: components ->
     [%expr
-      Otr.Private.arg Otr.Private.string [%e otr_expression ~loc components]]
+      Otr.Private.decoder Otr.Private.string [%e otr_expression ~loc components]]
   | comp :: components when Char.equal comp.[0] ':' -> (
     let comp = String.sub comp 1 (String.length comp - 1) in
     match comp with
     | "int" ->
       [%expr
-        Otr.Private.arg Otr.Private.int [%e otr_expression ~loc components]]
+        Otr.Private.decoder Otr.Private.int [%e otr_expression ~loc components]]
     | "float" ->
       [%expr
-        Otr.Private.arg Otr.Private.float [%e otr_expression ~loc components]]
+        Otr.Private.decoder Otr.Private.float
+          [%e otr_expression ~loc components]]
     | "string" ->
       [%expr
-        Otr.Private.arg Otr.Private.string [%e otr_expression ~loc components]]
+        Otr.Private.decoder Otr.Private.string
+          [%e otr_expression ~loc components]]
     | "bool" ->
       [%expr
-        Otr.Private.arg Otr.Private.bool [%e otr_expression ~loc components]]
+        Otr.Private.decoder Otr.Private.bool [%e otr_expression ~loc components]]
     | custom_arg when capitalized custom_arg ->
       let longident_loc = { txt = Longident.parse (custom_arg ^ ".t"); loc } in
       [%expr
-        Otr.Private.arg
+        Otr.Private.decoder
           [%e Ast_builder.pexp_ident ~loc longident_loc]
           [%e otr_expression ~loc components]]
     | x ->

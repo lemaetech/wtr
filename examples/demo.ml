@@ -8,8 +8,8 @@ module Fruit = struct
     | Orange
     | Pineapple
 
-  let t : t Otr.arg =
-    Otr.create_arg ~name:"fruit" ~decode:(function
+  let t : t Otr.decoder =
+    Otr.create_decoder ~name:"fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple

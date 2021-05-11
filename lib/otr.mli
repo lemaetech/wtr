@@ -7,20 +7,20 @@
  *
 *-------------------------------------------------------------------------*)
 
-(** {2 URI path} *)
+(** {2 URI uri} *)
 
-(** [('a, 'b) path] represents a HTTP URI path, eg. /home/about/, /home/contact,
+(** [('a, 'b) uri] represents a HTTP URI uri, eg. /home/about/, /home/contact,
     etc. *)
-type ('a, 'b) path
+type ('a, 'b) uri
 
 (** {2 Route} *)
 
-(** ['c route] is a [path] and its handler. ['c] represents the value returned
-    by the handler. *)
+(** ['c route] is a [uri] and its handler. ['c] represents the value returned by
+    the handler. *)
 type 'c route
 
-(** [p >- route_handler] creates a route from path [p] and [route_handler]. *)
-val ( >- ) : ('a, 'b) path -> 'a -> 'b route
+(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
+val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
 
 (** {2 Router} *)
 
@@ -30,19 +30,19 @@ type 'a t
 (** [create routes] creates a router from a list of [route]s. *)
 val create : 'a route list -> 'a t
 
-(** [match t path] matches a [route] to [path], executes its handler and returns
-    the computed value. [None] is returned if [path] is not matched. *)
+(** [match t uri] matches a [route] to [uri], executes its handler and returns
+    the computed value. [None] is returned if [uri] is not matched. *)
 val match' : 'a t -> string -> 'a option
 
-(** {2 URI path argument} *)
+(** {2 URI Decoder} *)
 
-(** Path argument *)
-type 'a arg
+(** Represents a uri component decoder, such as [:int, :float, :bool] etc.*)
+type 'a decoder
 
-(** [create_arg ~name ~decode] creates a user specified argument path component. *)
-val create_arg : name:string -> decode:(string -> 'a option) -> 'a arg
+(** [create_decoder ~name ~decode] creates a user defined decoder uri component. *)
+val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 
-(** All user defined args conform to the module signature Arg.
+(** All user defined decoders conform to the module signature decoder.
 
     For e.g.
 
@@ -53,43 +53,43 @@ val create_arg : name:string -> decode:(string -> 'a option) -> 'a arg
           | Orange
           | Pineapple
 
-        let t : t Otr.arg =
-          Otr.create_arg ~name:"fruit" ~decode:(function
+        let t : t Otr.decoder =
+          Otr.create_decoder ~name:"fruit" ~decode:(function
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
             | _ -> None)
       end
     ]} *)
-module type Arg = sig
+module type Decoder = sig
   type t
 
-  val t : t arg
+  val t : t decoder
 end
 
 (**/**)
 
 (** Only to be used by PPX *)
 module Private : sig
-  (** Path components *)
-  val nil : ('b, 'b) path
+  (** uri components *)
+  val nil : ('b, 'b) uri
 
-  val full_splat : ('b, 'b) path
+  val full_splat : ('b, 'b) uri
 
-  val trailing_slash : ('b, 'b) path
+  val trailing_slash : ('b, 'b) uri
 
-  val lit : string -> ('a, 'b) path -> ('a, 'b) path
+  val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
 
-  val arg : 'a arg -> ('b, 'c) path -> ('a -> 'b, 'c) path
+  val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
 
-  (** Args *)
-  val int : int arg
+  (** decoders *)
+  val int : int decoder
 
-  val float : float arg
+  val float : float decoder
 
-  val bool : bool arg
+  val bool : bool decoder
 
-  val string : string arg
+  val string : string decoder
 end
 
 (**/**)
