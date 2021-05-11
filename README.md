@@ -7,21 +7,14 @@ A typed router for OCaml web applications.
 - Route handlers are type-checked during compilation.
 - Supports matching and capturing URI path components, eg `/home/about/:int`.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
-- Supports converting captured URI components to OCaml and custom user defined data types. OCaml data types supported are:
-  - `int`
-  - `float`
-  - `bool`
-  - `string` 
-- Capture arguments are prefixed with `:`. For example in `/home/:int/about` or `/home?a=:int&b=:bool`, capture arguments are `:int` and `:bool`.
-- Route URI components are specified via a `ppxlib` based modern ppx -`otr.ppx`. If you know how to type URI path in a browser location, then you already know how to use `otr`.
+- Supports converting captured URI components to OCaml and custom user defined data types.
+- `otr.ppx` is used to specify uri values. If you know how to type URI path in a browser location, then you already know how to use `otr`.
 - Minimal learning overhead. `Otr` is centered around just four API calls and a ppx - `otr.ppx`. 
   - `{%otr| /home/products/:int |}` - creates a `path` and an infix function `>-` creates a `route` given a route handler.
-  - Route handler is just a normal OCaml function if URI component capture is specified. Or it is just a normal OCaml value if URI argument capture is specified. 
-    *see `/home/about` route in the demo below.*
+  - Route handler is just a normal OCaml function.
   - `Otr.create` - creates a router from a list of `route` values
   - `Otr.match'` - matches a given uri path in a router.
-  - `Otr.create_arg` - allows you to associate, capture and convert uri components to a user defined datatype. *Note* User defined capture variables are OCaml module names. 
-    *see `Fruit` module in the demo below.*
+  - `Otr.create_decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
 
 __A Demo of the features__
 
