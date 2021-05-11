@@ -1,19 +1,19 @@
 # Otr - OCaml typed router
 
-  * [Getting started](#getting-started)
-  * [Specifying a Uri](#specifying-a-uri)
-    + [TLDR - Quickly see some samples](#tldr---quickly-see-some-samples)
-    + [Pretty Printing a URI](#pretty-printing-a-uri)
-    + [Compile time validation](#compile-time-validation)
-    + [Path](#path)
-    + [Query](#query)
-    + [Uri Components](#uri-components)
-      - [Literal](#literal)
-      - [Decoder](#decoder)
-        * [User Defined Decoder](#user-defined-decoder)
-      - [Full splat](#full-splat)
-  * [Creating a route](#creating-a-route)
-  * [Creating and matching a router](#creating-and-matching-a-router)
+* [Getting started](#getting-started)
+* [Specifying a Uri](#specifying-a-uri)
+  + [TLDR - Quickly see some samples](#tldr---quickly-see-some-samples)
+  + [Pretty Printing a URI](#pretty-printing-a-uri)
+  + [Compile time validation](#compile-time-validation)
+  + [Path](#path)
+  + [Query](#query)
+  + [Uri Components](#uri-components)
+    - [Literal](#literal)
+    - [Decoder](#decoder)
+      * [User Defined Decoder](#user-defined-decoder)
+    - [Full splat](#full-splat)
+* [Creating a route](#creating-a-route)
+* [Creating and matching a router](#creating-and-matching-a-router)
 
 ## Getting started 
 
@@ -22,7 +22,7 @@ otr```.
 
 Otr consists of the following two libraries:
 - `otr` main library
-- `otr.ppx` ppx library which provides the ppx extension `{%otr||}`.
+- `otr.ppx` ppx library which provides the ppx extension `{\%otr| |}`.
 
 A sample dune file for an executable called `demo` which uses `otr` may look
 like below.
