@@ -1,4 +1,0 @@
-(mdx
- (files user_guide.md)
- (packages otr)
- (preludes prelude.ml))
