@@ -12,8 +12,7 @@
 (** [('a, 'b) uri] represents a URI both the path and query, e.g. /home/about/,
     /home/contact, /home/contact?name=a&no=123 etc.
 
-    A uri is created via usage of [otr.ppx]. It can be specified using either
-    [{%otr\| /home/about \|}] or [\[%otr "/home/about"\]]. *)
+    A uri is created via usage of [otr.ppx]. *)
 type ('a, 'b) uri
 
 (** [pp_uri fmt uri] pretty prints [uri] on to [fmt]. *)
