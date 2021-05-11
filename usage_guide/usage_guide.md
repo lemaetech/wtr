@@ -25,8 +25,7 @@ A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It alway
 
 * Path
 
-  Starts with `/` and may or may not end with `/`. 
-  `/` delimits path components such that a path `/home/about` has two path components `home` and `about`.
+  Starts with `/` and may or may not end with `/`. Text following `/` is called a *path component*, i.e. a path `/home/about` has two path components `home` and `about`.
   
   The following are all examples of valid uri path:
 
