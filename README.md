@@ -23,7 +23,7 @@ A typed router for OCaml web applications.
 open! Otr
 open! Printf
 
-(* User defined data type. *)
+(* User defined decoder. *)
 module Fruit = struct
   type t =
     | Apple
