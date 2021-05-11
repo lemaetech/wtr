@@ -1,5 +1,18 @@
 # Otr - OCaml typed router
 
+* [Getting started](#getting-started)
+* [Specifying a Uri](#specifying-a-uri)
+  + [TLDR](#tldr)
+  + [Path](#path)
+  + [Query](#query)
+  + [Uri Components](#uri-components)
+    - [Literal](#literal)
+    - [Decoder](#decoder)
+      * [User Defined Decoder](#user-defined-decoder)
+    - [Full splat](#full-splat)
+* [Creating a route](#creating-a-route)
+* [Creating and matching a router](#creating-and-matching-a-router)
+
 ## Getting started 
 
 Otr is published in opam. You can install it by invoking ```opam install
@@ -23,7 +36,7 @@ like below.
 
 A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
 
-### TLDR 
+### TLDR
 
 Some examples of specifying routes:
 
