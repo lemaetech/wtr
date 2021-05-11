@@ -36,7 +36,7 @@ like below.
 ```
 ## Specifying a Uri
 
-A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
+A uri is created using a ppx in the form of `{\%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
 
 ### TLDR - Quickly see some samples
 
