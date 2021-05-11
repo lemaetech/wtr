@@ -41,8 +41,7 @@ val product_detail_uri : ('_weak2, '_weak2) Otr.uri = <abstr>
 # let contact_uri = {%otr| /home/contact/ |};;
 val contact_uri : ('_weak3, '_weak3) Otr.uri = <abstr>
 ```
-
-## Query  
+### Query  
   
 Follows a uri path component and starts with a `?` character followed by one or more of a pair of key values. The key values are specified as `key=value` and are delimited with a `&` character, such as `?key=value&key2=value2`. Key and values are called the *query components*.
 
