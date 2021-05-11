@@ -3,6 +3,7 @@
 * [Getting started](#getting-started)
 * [Specifying a Uri](#specifying-a-uri)
   + [TLDR - Quickly see some samples](#tldr---quickly-see-some-samples)
+  + [Pretty Printing a URI](#pretty-printint-a-uri)
   + [Compile time validation:](#compile-time-validation-)
   + [Path](#path)
   + [Query](#query)
@@ -63,6 +64,23 @@ val r : ('_weak6, '_weak6) Otr.uri = <abstr>
 
 # let r = {%otr| /home/:int/** |};;
 val r : (int -> '_weak7, '_weak7) Otr.uri = <abstr>
+```
+
+### Pretty Printing a URI
+
+`Otr.pp_uri` function can be used to pretty printing a `uri` value.
+
+```ocaml
+# Otr.pp_uri;;
+- : Format.formatter -> ('a, 'b) Otr.uri -> unit = <fun>
+
+# Otr.pp_uri Format.std_formatter [%otr "/home/about"];;
+/home/about
+- : unit = ()
+
+# Otr.pp_uri Format.std_formatter [%otr "/home/:int/:string"];;
+/home/:int/:string
+- : unit = ()
 ```
 
 ### Compile time validation:

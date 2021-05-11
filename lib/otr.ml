@@ -81,6 +81,15 @@ type ('a, 'b) uri =
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
   | Decoder : 'c Decoder.t * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
+let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
+ fun fmt -> function
+  | Nil -> Format.fprintf fmt "%!"
+  | Full_splat -> Format.fprintf fmt "/**%!"
+  | Trailing_slash -> Format.fprintf fmt "/%!"
+  | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
+  | Decoder (decoder, uri) ->
+    Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
+
 type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
 let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)

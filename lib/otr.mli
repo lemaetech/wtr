@@ -5,13 +5,19 @@
  * License,  v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
-*-------------------------------------------------------------------------*)
+ *-------------------------------------------------------------------------*)
 
-(** {2 URI uri} *)
+(** {2 URI} *)
 
-(** [('a, 'b) uri] represents a HTTP URI uri, eg. /home/about/, /home/contact,
-    etc. *)
+(** [('a, 'b) uri] represents a URI both the path and query, e.g. /home/about/,
+    /home/contact, /home/contact?name=a&no=123 etc.
+
+    A uri is created via usage of [otr.ppx]. It can be specified using either
+    [{%otr\| /home/about \|}] or [\[%otr "/home/about"\]]. *)
 type ('a, 'b) uri
+
+(** [pp_uri fmt uri] pretty prints [uri] on to [fmt]. *)
+val pp_uri : Format.formatter -> ('a, 'b) uri -> unit
 
 (** {2 Route} *)
 
@@ -39,9 +45,6 @@ val match' : 'a t -> string -> 'a option
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc.*)
 type 'a decoder
 
-(** [create_decoder ~name ~decode] creates a user defined decoder uri component. *)
-val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
-
 (** All user defined decoders conform to the module signature decoder.
 
     For e.g.
@@ -66,6 +69,10 @@ module type Decoder = sig
 
   val t : t decoder
 end
+
+(** [create_decoder ~name ~decode] creates a user defined decoder uri component.
+    [name] is used during the pretty printing of [uri]. *)
+val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 
 (**/**)
 
