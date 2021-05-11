@@ -1,5 +1,7 @@
 # Otr - OCaml Typed Router 
 
+[User Guide](https://github.com/lemaetech/otr/blob/main/docs/user_guide.md) [Otr API](https://lemaetech.co.uk/otr/otr/Otr/index.html)
+
 ## Overview 
 
 A typed router for OCaml web applications. 
