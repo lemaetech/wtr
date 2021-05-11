@@ -29,7 +29,7 @@ A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It alway
   
   Some examples of valid uri path:
 
-  __Note__ Two path with same path components but with one ending on `/` and the other not ending with `/` are not the same, i.e. `/home/about` and `/home/about/` are not equal to each other.
+  __Note__ Two paths with same path components but with one ending on `/` and the other not ending with `/` are not the same, i.e. `/home/about` and `/home/about/` are not equal to each other.
 
 ```ocaml
   # let about_page_uri = {%otr| /home/about |};;
