@@ -21,8 +21,8 @@
 
 (package
  (name otr)
- (synopsis "A typed router for OCaml web applications.")
- (description "A typed router for OCaml web applications.")
+ (synopsis "A typed router for OCaml web applications")
+ (description "A typed router for OCaml web applications")
  (depends
   (ocaml
    (>= 4.11.1))
