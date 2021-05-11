@@ -89,5 +89,4 @@ let () =
   9: Orange is a citrus fruit.
  10: Pineapple has scaly skin
  11: None
-
 ```
