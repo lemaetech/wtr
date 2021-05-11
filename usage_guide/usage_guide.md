@@ -19,9 +19,49 @@ like below.
  (preprocess
   (pps otr.ppx)))
 ```
-## Specifying a uri
+## Specifying a Uri
 
 A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
+
+### TLDR 
+
+Some examples of specifying routes:
+
+```ocaml
+# let r = {%otr| /home/about?a=:int&b=val |};;
+val r : (int -> '_weak1, '_weak1) Otr.uri = <abstr>
+
+# let r = {%otr| /home/:int/:float/:bool/:string |};;
+val r : (int -> float -> bool -> string -> '_weak2, '_weak2) Otr.uri =
+  <abstr>
+
+# let r = {%otr| /home/about |};;
+val r : ('_weak3, '_weak3) Otr.uri = <abstr>
+
+# let r = {%otr| /home/about/ |};;
+val r : ('_weak4, '_weak4) Otr.uri = <abstr>
+
+# (* Splat *)
+# let r = {%otr| /home/about/** |};;
+val r : ('_weak5, '_weak5) Otr.uri = <abstr>
+```
+
+Compile time validation:
+
+```ocaml
+# let r = {%otr| home/about/ |};;
+Line 1, characters 9-30:
+Error: otr: Uri path specification must start with '/'
+
+# let r = {%otr| /home/about/?a=b |};;
+Line 1, characters 9-35:
+Error: otr: Invalid uri path specification. No tokens allowed after trailing
+       '/' token
+# let r = {%otr| /home/about/**/abc |};;
+Line 1, characters 9-37:
+Error: otr: Invalid uri path specification. No tokens allowed after full
+       splat (**) token
+```
 
 ### Path
 
@@ -31,13 +71,13 @@ Some examples of valid uri path:
 
 ```ocaml
 # let about_page_uri = {%otr| /home/about |};;
-val about_page_uri : ('_weak1, '_weak1) Otr.uri = <abstr>
+val about_page_uri : ('_weak6, '_weak6) Otr.uri = <abstr>
 
 # let product_detail_uri = {%otr| /product/product1/details |};;
-val product_detail_uri : ('_weak2, '_weak2) Otr.uri = <abstr>
+val product_detail_uri : ('_weak7, '_weak7) Otr.uri = <abstr>
 
 # let contact_uri = {%otr| /home/contact/ |};;
-val contact_uri : ('_weak3, '_weak3) Otr.uri = <abstr>
+val contact_uri : ('_weak8, '_weak8) Otr.uri = <abstr>
 ```
 
 Two paths with the same path components, such as `/home/about` and `/home/about/`, but with the only difference being the trailing `/` are not equal to each other. As such `otr` matches them differently.
@@ -58,55 +98,52 @@ Uri values creation examples:
   
 ```ocaml
 # let uri = {%otr| /home/products/a?count=a&size=200 |};;
-val uri : ('_weak4, '_weak4) Otr.uri = <abstr>
+val uri : ('_weak9, '_weak9) Otr.uri = <abstr>
 
 # let r = {%otr| /home/about |};;
-val r : ('_weak5, '_weak5) Otr.uri = <abstr>
+val r : ('_weak10, '_weak10) Otr.uri = <abstr>
 ```
 
-Uri path can contain argument captures. They specify the data type of the decoding operation. The specification starts with `:` followed by the capture name.
+### Uri Components
 
-The path below captures a decoded value of OCaml type `int` after matching literal `home`.
+Both the *path component* and *query component* can be generally referred to as *uri component*. A *uri component* can be either a *literal* or an *argument*.
+
+#### Literal 
+
+A literal is matched by `otr` exactly as it is given, eg. otr matches uri '/home/about' as `home` and then `about`. 
+
+#### Decoder
+  
+A decoder component starts with character **:** followed by a decoder name. It specifies the data decoding computation at the specified position.
+
+For example, in uri `/home/:int` Otr first matches the literal 'home' at position 1, followed by an attempt to decode value at position 2 with `int` decoder. If the decoding operation is successful then the component at position 2 is matched, else it is considered not matched. 
+
+Otr comes with a few built-in decoders:
+- `int` - decodes OCaml *int* values
+- `int32` - decodes OCaml *int32* values
+- `int64` - decodes OCaml *int64* values
+- `float` - decodes OCaml *float* values
+- `bool` - decodes OCaml *bool* values
+- `string` - decodes OCaml *string* values
+- `\*` - same as `string` decoder
+
+Built-in decoder names start with *lowercase* letter.
+
+#### User Defined Decoder 
+
+In addition to the built-in decoders, we can also define and use a user defined decoder. User defined decoder are specified as a module which conforms to the following signature:
 
 ```ocaml
-# let r = {%otr| /home/:int |};;
-val r : (int -> '_weak6, '_weak6) Otr.uri = <abstr>
+module type Decoder = sig
+  type t
+
+  val t : t Otr.arg
+end
 ```
+User defined decoder names correspond to a *module name*.
 
-Lastly, the uri to be matched can also specify query params to be matched.
-Query param captures and literals needs to be specified after the `=` character.
+Here is how we can define a user defined decoder called `Fruit`. Note the decoder name and the module name match. 
 
-```ocaml
-# let r = {%otr| /home/about?a=:int&b=val |};;
-val r : (int -> '_weak7, '_weak7) Otr.uri = <abstr>
-```
-
-### Standard argument captures
-    
-`otr` provides the following captures as a default:
-- `int`
-- `int32`
-- `int64`
-- `float`
-- `bool`
-- `string`
-
-A sample usage:
-
-```ocaml
-# let r = {%otr| /home/:int/:float/:bool/:string |};;
-val r : (int -> float -> bool -> string -> '_weak8, '_weak8) Otr.uri =
-  <abstr>
-```
-### User defined argument captures 
-
-In addition to the standard argument captures, otr allows a user to define
-custom user defined argument captures. User defined argument captures are
-defined in a module. The argument capture name is a fully qualified module
-name. 
-
-A sample user defined capture which defines `:Fruit` argument capture can be
-deinfed as such,
 ```ocaml
 # module Fruit = struct
     type t =
@@ -122,10 +159,15 @@ deinfed as such,
         | _ -> None)
   end;;
 module Fruit : sig type t = Apple | Orange | Pineapple val t : t Otr.arg end
-
-# let r = {%otr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak9, '_weak9) Otr.uri = <abstr>
 ```
+
+Here is how we can use the `Fruit` decoder:
+
+```ocaml
+# let r = {%otr| /home/:Fruit |};;
+val r : (Fruit.t -> '_weak11, '_weak11) Otr.uri = <abstr>
+```
+
 
 ## Creating a route
 
