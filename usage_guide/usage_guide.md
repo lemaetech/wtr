@@ -41,9 +41,14 @@ val r : ('_weak3, '_weak3) Otr.uri = <abstr>
 # let r = {%otr| /home/about/ |};;
 val r : ('_weak4, '_weak4) Otr.uri = <abstr>
 
-# (* Splat *)
+# let r = {%otr| /home/*/contact |};;
+val r : (string -> '_weak5, '_weak5) Otr.uri = <abstr>
+
 # let r = {%otr| /home/about/** |};;
-val r : ('_weak5, '_weak5) Otr.uri = <abstr>
+val r : ('_weak6, '_weak6) Otr.uri = <abstr>
+
+# let r = {%otr| /home/:int/** |};;
+val r : (int -> '_weak7, '_weak7) Otr.uri = <abstr>
 ```
 
 Compile time validation:
@@ -71,13 +76,13 @@ Some examples of valid uri path:
 
 ```ocaml
 # let about_page_uri = {%otr| /home/about |};;
-val about_page_uri : ('_weak6, '_weak6) Otr.uri = <abstr>
+val about_page_uri : ('_weak8, '_weak8) Otr.uri = <abstr>
 
 # let product_detail_uri = {%otr| /product/product1/details |};;
-val product_detail_uri : ('_weak7, '_weak7) Otr.uri = <abstr>
+val product_detail_uri : ('_weak9, '_weak9) Otr.uri = <abstr>
 
 # let contact_uri = {%otr| /home/contact/ |};;
-val contact_uri : ('_weak8, '_weak8) Otr.uri = <abstr>
+val contact_uri : ('_weak10, '_weak10) Otr.uri = <abstr>
 ```
 
 Two paths with the same path components, such as `/home/about` and `/home/about/`, but with the only difference being the trailing `/` are not equal to each other. As such `otr` matches them differently.
@@ -98,15 +103,15 @@ Uri values creation examples:
   
 ```ocaml
 # let uri = {%otr| /home/products/a?count=a&size=200 |};;
-val uri : ('_weak9, '_weak9) Otr.uri = <abstr>
+val uri : ('_weak11, '_weak11) Otr.uri = <abstr>
 
 # let r = {%otr| /home/about |};;
-val r : ('_weak10, '_weak10) Otr.uri = <abstr>
+val r : ('_weak12, '_weak12) Otr.uri = <abstr>
 ```
 
 ### Uri Components
 
-Both the *path component* and *query component* can be generally referred to as *uri component*. A *uri component* can be either a *literal* or an *argument*.
+Both the *path component* and *query component* can be generally referred to as *uri component*. A *uri component* can be either a *literal*, a *decoder* or a *full splat*.
 
 #### Literal 
 
@@ -129,7 +134,7 @@ Otr comes with a few built-in decoders:
 
 Built-in decoder names start with *lowercase* letter.
 
-#### User Defined Decoder 
+##### User Defined Decoder 
 
 In addition to the built-in decoders, we can also define and use a user defined decoder. User defined decoder are specified as a module which conforms to the following signature:
 
@@ -165,30 +170,38 @@ Here is how we can use the `Fruit` decoder:
 
 ```ocaml
 # let r = {%otr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak11, '_weak11) Otr.uri = <abstr>
+val r : (Fruit.t -> '_weak13, '_weak13) Otr.uri = <abstr>
 ```
 
+#### Full splat
+
+A full splat uri component specifies that Otr should consider the uri matched after it is encountered. The rest of uri values are ignored.
+
+Here, Otr matches `/home/about`, `/home/contact` and `/home/product/product2` urls.
+
+```ocaml
+# let full_splat = [%otr "/home/**"];;
+val full_splat : ('_weak14, '_weak14) Otr.uri = <abstr>
+```
 
 ## Creating a route
 
-A `'c Otr.route` value is created by applying an infix function `Otr.(>-)` to a uri path and its handler. `>-` has the following signature.
+A `'c Otr.route` value is created by applying an infix function `Otr.(>-)` to a uri and its handler. `>-` has the following signature.
 
 ```ocaml
 # Otr.(>-);;
 - : ('a, 'b) Otr.uri -> 'a -> 'b Otr.route = <fun>
 ```
-Parameter `'a` above denotes a route handler. A route handler is dependent on what is specified in its corresponding uri path. 
+Parameter `'a` above denotes a route handler. A route handler is dependent on what is specified in its corresponding uri. 
 
-An `Otr.path` value where only literal values are specified results in a
-handler which immediately returns a value. 
+An `Otr.uri` value where only literal values are specified results in a handler which immediately returns a value. 
 
 ```ocaml
 # let r = Otr.({%otr| /home/about |} >- "about page");;
 val r : string Otr.route = <abstr>
 ```
 
-Whereas an`Otr.path` where argument captures are specified results in a handler
-which is a ocaml function.
+Whereas an`Otr.uri` where decoders are specified results in a handler which is a ocaml function. The parameters of the function match the order in which the decoders are specified.
 
 ```ocaml
 # let r = Otr.({%otr| /home/:int |} >- fun (i: int) -> Printf.sprintf "int: %d" i);;
