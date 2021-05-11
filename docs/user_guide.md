@@ -2,7 +2,8 @@
 
 * [Getting started](#getting-started)
 * [Specifying a Uri](#specifying-a-uri)
-  + [TLDR](#tldr)
+  + [TLDR - Quickly see some samples](#tldr---quickly-see-some-samples)
+  + [Compile time validation:](#compile-time-validation-)
   + [Path](#path)
   + [Query](#query)
   + [Uri Components](#uri-components)
@@ -36,7 +37,7 @@ like below.
 
 A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
 
-### TLDR
+### TLDR - Quickly see some samples
 
 Some examples of specifying routes:
 
@@ -64,7 +65,7 @@ val r : ('_weak6, '_weak6) Otr.uri = <abstr>
 val r : (int -> '_weak7, '_weak7) Otr.uri = <abstr>
 ```
 
-Compile time validation:
+### Compile time validation:
 
 ```ocaml
 # let r = {%otr| home/about/ |};;
