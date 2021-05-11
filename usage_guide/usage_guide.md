@@ -40,7 +40,7 @@ val product_detail_uri : ('_weak2, '_weak2) Otr.uri = <abstr>
 val contact_uri : ('_weak3, '_weak3) Otr.uri = <abstr>
 ```
 
-Two paths with same path components, such as `/home/about` and `/home/about/`, but with the only difference being the trailing `/` are not equal to each other. As such `otr` matches them differently.
+Two paths with the same path components, such as `/home/about` and `/home/about/`, but with the only difference being the trailing `/` are not equal to each other. As such `otr` matches them differently.
 
 ```ocaml
 
