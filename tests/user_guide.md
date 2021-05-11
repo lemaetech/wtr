@@ -22,7 +22,7 @@ otr```.
 
 Otr consists of the following two libraries:
 - `otr` main library
-- `otr.ppx` ppx library which provides the ppx extension `{\%otr| |}`.
+- `otr.ppx` ppx library which provides the ppx extension `{%otr| |}`.
 
 A sample dune file for an executable called `demo` which uses `otr` may look
 like below.
@@ -36,7 +36,7 @@ like below.
 ```
 ## Specifying a Uri
 
-A uri is created using a ppx in the form of `{\%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
+A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
 
 ### TLDR - Quickly see some samples
 
