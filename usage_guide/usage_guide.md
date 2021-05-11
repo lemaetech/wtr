@@ -21,12 +21,24 @@ like below.
 ```
 ## Specifying a uri
 
-A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It consits of two main 
-components,
+A uri is created using a ppx in the form of `{%otr| |}` or `[%otr ""]`. It always starts with a **path** component followed by an optional **query component**.
 
 * Path
 
-  A uri starts with a path component and is denoted by a `/` character. It 
+  Starts with `/` and may or may not end with `/`. The following are all examples of valid uri path:
+
+```ocaml
+  # let about_page_uri = {%otr| /home/about |};;
+  val about_page_uri : ('_weak1, '_weak1) Otr.uri = <abstr>
+
+  # let product_detail_uri = {%otr| /product/product1/details |};;
+  val product_detail_uri : ('_weak2, '_weak2) Otr.uri = <abstr>
+
+  # let contact_uri = {%otr| /home/contact/ |};;
+  val contact_uri : ('_weak3, '_weak3) Otr.uri = <abstr>
+```
+
+  `/` delimits path components such that a path `/home/about` has two path components `home` and `about`.
 
 * Query  
 delimited via the forward slash character `/` in the uri path and via the characters `&` and `=` 
@@ -37,14 +49,14 @@ The path components in the uri must always start with `/`. The query components 
 
 ```ocaml
 # let uri = {%otr| /home/products/a?count=a&size=200 |};;
-val uri : ('_weak1, '_weak1) Otr.uri = <abstr>
+val uri : ('_weak4, '_weak4) Otr.uri = <abstr>
 ```
 
 The uri which represents `/home/about` has exactly two literal path components, `home` and `about`. 
 
 ```ocaml
 # let r = {%otr| /home/about |};;
-val r : ('_weak2, '_weak2) Otr.uri = <abstr>
+val r : ('_weak5, '_weak5) Otr.uri = <abstr>
 ```
 
 Uri path can contain argument captures. They specify the data type of the decoding operation. The specification starts with `:` followed by the capture name.
@@ -53,7 +65,7 @@ The path below captures a decoded value of OCaml type `int` after matching liter
 
 ```ocaml
 # let r = {%otr| /home/:int |};;
-val r : (int -> '_weak3, '_weak3) Otr.uri = <abstr>
+val r : (int -> '_weak6, '_weak6) Otr.uri = <abstr>
 ```
 
 Lastly, the uri to be matched can also specify query params to be matched.
@@ -61,7 +73,7 @@ Query param captures and literals needs to be specified after the `=` character.
 
 ```ocaml
 # let r = {%otr| /home/about?a=:int&b=val |};;
-val r : (int -> '_weak4, '_weak4) Otr.uri = <abstr>
+val r : (int -> '_weak7, '_weak7) Otr.uri = <abstr>
 ```
 
 ### Standard argument captures
@@ -78,7 +90,7 @@ A sample usage:
 
 ```ocaml
 # let r = {%otr| /home/:int/:float/:bool/:string |};;
-val r : (int -> float -> bool -> string -> '_weak5, '_weak5) Otr.uri =
+val r : (int -> float -> bool -> string -> '_weak8, '_weak8) Otr.uri =
   <abstr>
 ```
 ### User defined argument captures 
@@ -107,7 +119,7 @@ deinfed as such,
 module Fruit : sig type t = Apple | Orange | Pineapple val t : t Otr.arg end
 
 # let r = {%otr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak6, '_weak6) Otr.uri = <abstr>
+val r : (Fruit.t -> '_weak9, '_weak9) Otr.uri = <abstr>
 ```
 
 ## Creating a route
