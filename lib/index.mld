@@ -1,8 +1,8 @@
-{0 Otr}
+{0 Wtr}
 
 A typed router for OCaml web applications. 
 
 {2 API}
 
-{!module:Otr}
+{!module:Wtr}
 

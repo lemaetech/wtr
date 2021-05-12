@@ -9,11 +9,11 @@
 
 (** {2 URI} *)
 
-(** [('a, 'b) uri] represents a URI both the path and query, e.g.
+(** [('a, 'b) uri] represents a URI - both the path and query, e.g.
     [/home/about/,
     /home/contact, /home/contact?name=a&no=123] etc.
 
-    A uri is created via usage of [otr.ppx]. *)
+    A uri is created via usage of [wtr.ppx]. *)
 type ('a, 'b) uri
 
 (** [pp_uri fmt uri] pretty prints [uri] on to [fmt]. *)
@@ -56,8 +56,8 @@ type 'a decoder
           | Orange
           | Pineapple
 
-        let t : t Otr.decoder =
-          Otr.create_decoder ~name:"fruit" ~decode:(function
+        let t : t Wtr.decoder =
+          Wtr.create_decoder ~name:"fruit" ~decode:(function
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
