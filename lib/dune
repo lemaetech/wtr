@@ -1,8 +1,8 @@
 (library
- (name otr)
+ (name wtr)
  (libraries uri)
- (public_name otr))
+ (public_name wtr))
 
 (documentation
- (package otr)
+ (package wtr)
  (mld_files index))

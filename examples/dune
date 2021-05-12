@@ -1,5 +1,5 @@
 (executable
  (name demo)
- (libraries otr)
+ (libraries wtr)
  (preprocess
-  (pps otr.ppx)))
+  (pps wtr.ppx)))

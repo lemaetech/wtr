@@ -1,4 +1,4 @@
-open! Otr
+open! Wtr
 open! Printf
 
 (* User defined data type. *)
@@ -8,8 +8,8 @@ module Fruit = struct
     | Orange
     | Pineapple
 
-  let t : t Otr.decoder =
-    Otr.create_decoder ~name:"fruit" ~decode:(function
+  let t : t Wtr.decoder =
+    Wtr.create_decoder ~name:"fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -19,14 +19,14 @@ end
 (* create a router *)
 let rec router () =
   create
-    [ {%otr| /home/about                           |} >- "about page"
-    ; {%otr| /home/:int/                           |} >- prod_page
-    ; {%otr| /home/:float/                         |} >- float_page
-    ; {%otr| /contact/*/:int                       |} >- contact_page
-    ; {%otr| /product/:string?section=:int&q=:bool |} >- product1
-    ; {%otr| /product/:string?section=:int&q1=yes  |} >- product2
-    ; {%otr| /fruit/:Fruit                         |} >- fruit_page
-    ; {%otr| /faq/:int/**                          |} >- faq
+    [ {%wtr| /home/about                           |} >- "about page"
+    ; {%wtr| /home/:int/                           |} >- prod_page
+    ; {%wtr| /home/:float/                         |} >- float_page
+    ; {%wtr| /contact/*/:int                       |} >- contact_page
+    ; {%wtr| /product/:string?section=:int&q=:bool |} >- product1
+    ; {%wtr| /product/:string?section=:int&q1=yes  |} >- product2
+    ; {%wtr| /fruit/:Fruit                         |} >- fruit_page
+    ; {%wtr| /faq/:int/**                          |} >- faq
     ]
 
 (* route handlers. *)
@@ -57,20 +57,20 @@ and faq category_id =
 
 let () =
   let router = router () in
-  [ Otr.match' router "/home/100001.1/"
-  ; Otr.match' router "/home/100001/"
-  ; Otr.match' router "/home/about"
-  ; Otr.match' router "/product/dyson350?section=233&q=true"
-  ; Otr.match' router "/product/dyson350?section=2&q=false"
-  ; Otr.match' router "/product/dyson350?section=2&q1=yes"
-  ; Otr.match' router "/product/dyson350?section=2&q1=no"
-  ; Otr.match' router "/fruit/apple"
-  ; Otr.match' router "/fruit/orange"
-  ; Otr.match' router "/fruit/pineapple"
-  ; Otr.match' router "/fruit/guava"
-  ; Otr.match' router "/faq/1/"
-  ; Otr.match' router "/faq/1/whatever"
-  ; Otr.match' router "/faq/2/whateasdfasdfasdf"
+  [ Wtr.match' router "/home/100001.1/"
+  ; Wtr.match' router "/home/100001/"
+  ; Wtr.match' router "/home/about"
+  ; Wtr.match' router "/product/dyson350?section=233&q=true"
+  ; Wtr.match' router "/product/dyson350?section=2&q=false"
+  ; Wtr.match' router "/product/dyson350?section=2&q1=yes"
+  ; Wtr.match' router "/product/dyson350?section=2&q1=no"
+  ; Wtr.match' router "/fruit/apple"
+  ; Wtr.match' router "/fruit/orange"
+  ; Wtr.match' router "/fruit/pineapple"
+  ; Wtr.match' router "/fruit/guava"
+  ; Wtr.match' router "/faq/1/"
+  ; Wtr.match' router "/faq/1/whatever"
+  ; Wtr.match' router "/faq/2/whateasdfasdfasdf"
   ]
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s

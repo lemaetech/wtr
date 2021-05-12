@@ -14,19 +14,19 @@ let ( let* ) r f = Result.bind r f
 
 let ( >>= ) = ( let* )
 
-let rec decode_otr_expression ~loc otr =
-  (let* uri = decode_uri otr in
+let rec decode_wtr_expression ~loc wtr =
+  (let* uri = decode_uri wtr in
    let* query_components = decode_query_tokens uri in
    let* path_components = decode_path_tokens uri in
    validate_tokens (path_components @ query_components))
   |> function
-  | Ok otr_tokens -> otr_expression ~loc otr_tokens
-  | Error msg -> Location.raise_errorf ~loc "otr: %s" msg
+  | Ok wtr_tokens -> wtr_expression ~loc wtr_tokens
+  | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-and decode_uri otr =
-  let otr = String.trim otr in
-  if String.length otr > 0 then
-    Ok (Uri.of_string otr)
+and decode_uri wtr =
+  let wtr = String.trim wtr in
+  if String.length wtr > 0 then
+    Ok (Uri.of_string wtr)
   else
     Error "Empty uri path specification"
 
@@ -92,60 +92,60 @@ and split_on f l =
     (List.filteri (fun i _ -> i < n) l, List.filteri (fun i _ -> i > n) l)
   | None -> (l, [])
 
-and otr_expression ~loc = function
-  | [] -> [%expr Otr.Private.nil]
-  | [ "" ] -> [%expr Otr.Private.trailing_slash]
-  | [ "**" ] -> [%expr Otr.Private.full_splat]
+and wtr_expression ~loc = function
+  | [] -> [%expr Wtr.Private.nil]
+  | [ "" ] -> [%expr Wtr.Private.trailing_slash]
+  | [ "**" ] -> [%expr Wtr.Private.full_splat]
   | "*" :: components ->
     [%expr
-      Otr.Private.decoder Otr.Private.string [%e otr_expression ~loc components]]
+      Wtr.Private.decoder Wtr.Private.string [%e wtr_expression ~loc components]]
   | comp :: components when Char.equal comp.[0] ':' -> (
     let comp = String.sub comp 1 (String.length comp - 1) in
     match comp with
     | "int" ->
       [%expr
-        Otr.Private.decoder Otr.Private.int [%e otr_expression ~loc components]]
+        Wtr.Private.decoder Wtr.Private.int [%e wtr_expression ~loc components]]
     | "int32" ->
       [%expr
-        Otr.Private.decoder Otr.Private.int32
-          [%e otr_expression ~loc components]]
+        Wtr.Private.decoder Wtr.Private.int32
+          [%e wtr_expression ~loc components]]
     | "int64" ->
       [%expr
-        Otr.Private.decoder Otr.Private.int64
-          [%e otr_expression ~loc components]]
+        Wtr.Private.decoder Wtr.Private.int64
+          [%e wtr_expression ~loc components]]
     | "float" ->
       [%expr
-        Otr.Private.decoder Otr.Private.float
-          [%e otr_expression ~loc components]]
+        Wtr.Private.decoder Wtr.Private.float
+          [%e wtr_expression ~loc components]]
     | "string" ->
       [%expr
-        Otr.Private.decoder Otr.Private.string
-          [%e otr_expression ~loc components]]
+        Wtr.Private.decoder Wtr.Private.string
+          [%e wtr_expression ~loc components]]
     | "bool" ->
       [%expr
-        Otr.Private.decoder Otr.Private.bool [%e otr_expression ~loc components]]
+        Wtr.Private.decoder Wtr.Private.bool [%e wtr_expression ~loc components]]
     | custom_arg when capitalized custom_arg ->
       let longident_loc = { txt = Longident.parse (custom_arg ^ ".t"); loc } in
       [%expr
-        Otr.Private.decoder
+        Wtr.Private.decoder
           [%e Ast_builder.pexp_ident ~loc longident_loc]
-          [%e otr_expression ~loc components]]
+          [%e wtr_expression ~loc components]]
     | x ->
       Location.raise_errorf ~loc
-        "otr: Invalid custom argument name '%s'. Custom argument component \
+        "wtr: Invalid custom argument name '%s'. Custom argument component \
          name must be a valid module name."
         x)
   | comp :: components ->
     [%expr
-      Otr.Private.lit
+      Wtr.Private.lit
         [%e Ast_builder.estring ~loc comp]
-        [%e otr_expression ~loc components]]
+        [%e wtr_expression ~loc components]]
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 
-let extend ~loc ~path:_ otr = decode_otr_expression ~loc otr
+let extend ~loc ~path:_ wtr = decode_wtr_expression ~loc wtr
 
-let ppx_name = "otr"
+let ppx_name = "wtr"
 
 let ext =
   Extension.declare ppx_name Extension.Context.Expression

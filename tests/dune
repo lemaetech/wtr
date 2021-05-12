@@ -1,11 +1,11 @@
 (test
  (name tests)
- (libraries otr)
+ (libraries wtr)
  (modules tests)
  (preprocess
-  (pps otr.ppx)))
+  (pps wtr.ppx)))
 
 (mdx
  (files user_guide.md README.md)
- (packages otr)
+ (packages wtr)
  (preludes prelude.ml))

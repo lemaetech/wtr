@@ -1,28 +1,28 @@
-# Otr - OCaml Typed Router 
+# Wtr - OCaml Typed Router 
 
-[User Guide](https://github.com/lemaetech/otr/blob/main/tests/user_guide.md) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[Otr API](https://lemaetech.co.uk/otr/otr/Otr/index.html)
+[User Guide](https://github.com/lemaetech/wtr/blob/main/tests/user_guide.md) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[Wtr API](https://lemaetech.co.uk/wtr/wtr/Wtr/index.html)
 
 ## Overview 
 
-A typed router for OCaml web applications. 
+Wtr is typed router for OCaml web applications. 
 
 - A trie based router. Route matching is efficient and fast.
 - Route handlers are type-checked during compilation.
 - Supports matching and capturing URI path components, eg `/home/about/:int`.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
 - Supports converting captured URI components to OCaml and custom user defined data types.
-- `otr.ppx` is used to specify uri values. If you know how to type URI path in a browser location, then you already know how to use `otr`.
-- Minimal learning overhead. `Otr` is centered around just four API calls and a ppx - `otr.ppx`. 
-  - `{%otr| /home/products/:int |}` - creates a `path` and an infix function `>-` creates a `route` given a route handler.
+- `wtr.ppx` is used to specify uri values. If you know how to type URI path in a browser location, then you already know how to use `wtr`.
+- Minimal learning overhead. `Wtr` is centered around just four API calls and a ppx - `wtr.ppx`. 
+  - `{%wtr| /home/products/:int |}` - creates a `path` and an infix function `>-` creates a `route` given a route handler.
   - Route handler is just a normal OCaml function.
-  - `Otr.create` - creates a router from a list of `route` values
-  - `Otr.match'` - matches a given uri path in a router.
-  - `Otr.create_decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
+  - `Wtr.create` - creates a router from a list of `route` values
+  - `Wtr.match'` - matches a given uri path in a router.
+  - `Wtr.create_decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
 
-## Otr Demo
+## Wtr Demo
 
 ```ocaml
-open! Otr
+open! Wtr
 open! Printf
 
 (* User defined decoder. *)
@@ -32,8 +32,8 @@ module Fruit = struct
     | Orange
     | Pineapple
 
-  let t : t Otr.decoder =
-    Otr.create_decoder ~name:"fruit" ~decode:(function
+  let t : t Wtr.decoder =
+    Wtr.create_decoder ~name:"fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -42,14 +42,14 @@ end
 
 let rec router () =
   create
-    [ {%otr| /home/about                           |} >- "about page"
-    ; {%otr| /home/:int/                           |} >- prod_page
-    ; {%otr| /home/:float/                         |} >- float_page
-    ; {%otr| /contact/*/:int                       |} >- contact_page
-    ; {%otr| /product/:string?section=:int&q=:bool |} >- product1
-    ; {%otr| /product/:string?section=:int&q1=yes  |} >- product2
-    ; {%otr| /fruit/:Fruit                         |} >- fruit_page
-    ; {%otr| /faq/:int/**                          |} >- faq
+    [ {%wtr| /home/about                           |} >- "about page"
+    ; {%wtr| /home/:int/                           |} >- prod_page
+    ; {%wtr| /home/:float/                         |} >- float_page
+    ; {%wtr| /contact/*/:int                       |} >- contact_page
+    ; {%wtr| /product/:string?section=:int&q=:bool |} >- product1
+    ; {%wtr| /product/:string?section=:int&q1=yes  |} >- product2
+    ; {%wtr| /fruit/:Fruit                         |} >- fruit_page
+    ; {%wtr| /faq/:int/**                          |} >- faq
     ]
 
 (* route handlers. *)
@@ -76,17 +76,17 @@ and faq category_id =
 
 let () =
   let router = router () in
-  [ Otr.match' router "/home/100001.1/"; Otr.match' router "/home/100001/"
-  ; Otr.match' router "/home/about"
-  ; Otr.match' router "/product/dyson350?section=233&q=true"
-  ; Otr.match' router "/product/dyson350?section=2&q=false"
-  ; Otr.match' router "/product/dyson350?section=2&q1=yes"
-  ; Otr.match' router "/product/dyson350?section=2&q1=no"
-  ; Otr.match' router "/fruit/apple"; Otr.match' router "/fruit/orange"
-  ; Otr.match' router "/fruit/pineapple"; Otr.match' router "/fruit/guava" 
-  ; Otr.match' router "/faq/1/"
-  ; Otr.match' router "/faq/1/whatever"
-  ; Otr.match' router "/faq/2/whateasdfasdfasdf"
+  [ Wtr.match' router "/home/100001.1/"; Wtr.match' router "/home/100001/"
+  ; Wtr.match' router "/home/about"
+  ; Wtr.match' router "/product/dyson350?section=233&q=true"
+  ; Wtr.match' router "/product/dyson350?section=2&q=false"
+  ; Wtr.match' router "/product/dyson350?section=2&q1=yes"
+  ; Wtr.match' router "/product/dyson350?section=2&q1=no"
+  ; Wtr.match' router "/fruit/apple"; Wtr.match' router "/fruit/orange"
+  ; Wtr.match' router "/fruit/pineapple"; Wtr.match' router "/fruit/guava" 
+  ; Wtr.match' router "/faq/1/"
+  ; Wtr.match' router "/faq/1/whatever"
+  ; Wtr.match' router "/faq/2/whateasdfasdfasdf"
   ]
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s

@@ -1,4 +1,4 @@
-open! Otr
+open! Wtr
 
 module Fruit = struct
   type t =
@@ -6,8 +6,8 @@ module Fruit = struct
     | Orange
     | Pineapple
 
-  let t : t Otr.decoder =
-    Otr.create_decoder ~name:"Fruit" ~decode:(function
+  let t : t Wtr.decoder =
+    Wtr.create_decoder ~name:"Fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -20,34 +20,34 @@ let fruit_page = function
   | Pineapple -> "Pineapple has scaly skin"
 
 let router =
-  Otr.(
+  Wtr.(
     create
-      [ {%otr| /home/about |} >- "about page"
-      ; ({%otr| /home/:int/ |}
+      [ {%wtr| /home/about |} >- "about page"
+      ; ({%wtr| /home/:int/ |}
         >- fun i -> "Product Page. Product Id : " ^ string_of_int i)
-      ; ({%otr| /home/:float/ |}
+      ; ({%wtr| /home/:float/ |}
         >- fun f -> "Float page. number : " ^ string_of_float f)
-      ; ({%otr| /contact/*/:int |}
+      ; ({%wtr| /contact/*/:int |}
         >- fun name number ->
         "Contact page. Hi, " ^ name ^ ". Number " ^ string_of_int number)
-      ; {%otr| /home/products/** |} >- "full splat page"
-      ; ({%otr| /home/*/** |} >- fun s -> "Wildcard page. " ^ s)
-      ; ({%otr| /contact/:string/:bool |}
+      ; {%wtr| /home/products/** |} >- "full splat page"
+      ; ({%wtr| /home/*/** |} >- fun s -> "Wildcard page. " ^ s)
+      ; ({%wtr| /contact/:string/:bool |}
         >- fun name call_me_later ->
         "Contact Page2. Name "
         ^ name
         ^ ". Call me later: "
         ^ string_of_bool call_me_later)
-      ; ({%otr| /product/:string?section=:int&q=:bool |}
+      ; ({%wtr| /product/:string?section=:int&q=:bool |}
         >- fun name section_id q ->
         Printf.sprintf "Product detail - %s. Section: %d. Display questions? %b"
           name section_id q)
-      ; ({%otr| /product/:string?section=:int&q1=yes |}
+      ; ({%wtr| /product/:string?section=:int&q1=yes |}
         >- fun name section_id ->
         Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id)
-      ; {%otr| /fruit/:Fruit                         |} >- fruit_page
-      ; {%otr| /                                     |} >- "404 Not found"
-      ; ({%otr| /numbers/:int32/code/:int64/            |}
+      ; {%wtr| /fruit/:Fruit                         |} >- fruit_page
+      ; {%wtr| /                                     |} >- "404 Not found"
+      ; ({%wtr| /numbers/:int32/code/:int64/            |}
         >- fun id code ->
         "int32: "
         ^ Int32.to_string id
@@ -59,7 +59,7 @@ let router =
 let pp_uri p =
   let buf = Buffer.create 10 in
   let fmt = Format.formatter_of_buffer buf in
-  Otr.pp_uri fmt p;
+  Wtr.pp_uri fmt p;
   Buffer.contents buf
 
 let () =
@@ -104,13 +104,13 @@ let () =
   assert (Some "404 Not found" = match' router "/");
   assert (None = match' router "");
 
-  (* Otr.pp_uri *)
-  assert (pp_uri [%otr "/home/about/:bool"] = "/home/about/:bool");
+  (* Wtr.pp_uri *)
+  assert (pp_uri [%wtr "/home/about/:bool"] = "/home/about/:bool");
   assert (
-    pp_uri [%otr "/home/about/:int/:string/:Fruit"]
+    pp_uri [%wtr "/home/about/:int/:string/:Fruit"]
     = "/home/about/:int/:string/:Fruit");
   assert (
-    pp_uri [%otr "/home/:int/:int32/:int64/:Fruit"]
+    pp_uri [%wtr "/home/:int/:int32/:int64/:Fruit"]
     = "/home/:int/:int32/:int64/:Fruit");
 
   (* int32, int64 *)

@@ -1,6 +1,6 @@
 (lang dune 2.8)
 
-(name otr)
+(name wtr)
 
 (version 1.0.0)
 
@@ -11,7 +11,7 @@
 (implicit_transitive_deps false)
 
 (source
- (github lemaetech/otr))
+ (github lemaetech/wtr))
 
 (license MPL-2.0)
 
@@ -20,14 +20,14 @@
 (maintainers "Bikal Lem")
 
 (package
- (name otr)
- (synopsis "A typed router for OCaml web applications")
- (description "A typed router for OCaml web applications")
+ (name wtr)
+ (synopsis "Well Typed Router")
+ (description "Wtr - A typed router for OCaml web applications")
  (depends
   (ocaml
    (>= 4.12.0))
   (uri
    (>= 4.2.0))
-  (mdx :with-test)
   (ppxlib
-   (>= 0.22.0))))
+   (>= 0.22.0))
+  (mdx :with-test)))
