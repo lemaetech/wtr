@@ -1,4 +1,6 @@
-# Wtr - OCaml typed router
+# Wtr - Well Typed Router
+
+Wtr - a typed router for OCaml web applications.
 
 * [Getting started](#getting-started)
 * [Specifying a Uri](#specifying-a-uri)
