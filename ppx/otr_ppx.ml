@@ -105,6 +105,14 @@ and otr_expression ~loc = function
     | "int" ->
       [%expr
         Otr.Private.decoder Otr.Private.int [%e otr_expression ~loc components]]
+    | "int32" ->
+      [%expr
+        Otr.Private.decoder Otr.Private.int32
+          [%e otr_expression ~loc components]]
+    | "int64" ->
+      [%expr
+        Otr.Private.decoder Otr.Private.int64
+          [%e otr_expression ~loc components]]
     | "float" ->
       [%expr
         Otr.Private.decoder Otr.Private.float

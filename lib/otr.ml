@@ -51,6 +51,10 @@ module Decoder = struct
 
   let int = create ~name:"int" ~decode:int_of_string_opt
 
+  let int32 = create ~name:"int32" ~decode:Int32.of_string_opt
+
+  let int64 = create ~name:"int64" ~decode:Int64.of_string_opt
+
   let float = create ~name:"float" ~decode:float_of_string_opt
 
   let string = create ~name:"string" ~decode:(fun a -> Some a)
@@ -254,6 +258,10 @@ module Private = struct
   let decoder a p = Decoder (a, p)
 
   let int = Decoder.int
+
+  let int32 = Decoder.int32
+
+  let int64 = Decoder.int64
 
   let float = Decoder.float
 

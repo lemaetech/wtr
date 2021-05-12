@@ -92,6 +92,10 @@ module Private : sig
   (** decoders *)
   val int : int decoder
 
+  val int32 : int32 decoder
+
+  val int64 : int64 decoder
+
   val float : float decoder
 
   val bool : bool decoder
