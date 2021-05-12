@@ -160,6 +160,8 @@ For example, in uri `/home/:int` Wtr first matches the literal 'home' at positio
 
 Wtr comes with a few built-in decoders:
 - `int` - decodes OCaml *int* values
+- `int32` - decodes OCaml *int32* values
+- `int64` - decodes OCaml *int64* values
 - `float` - decodes OCaml *float* values
 - `bool` - decodes OCaml *bool* values
 - `string` - decodes OCaml *string* values
