@@ -111,8 +111,8 @@ module Uri_type = struct
     | PTrailing_slash, PTrailing_slash -> true
     | PFull_splat, PFull_splat -> true
     | PLiteral lit', PLiteral lit -> String.equal lit lit'
-    | PDecoder arg', PDecoder arg -> (
-      match Decoder.eq arg.id arg'.id with
+    | PDecoder decoder, PDecoder decoder' -> (
+      match Decoder.eq decoder'.id decoder.id with
       | Some Decoder.Eq -> true
       | None -> false)
     | _ -> false
@@ -124,7 +124,7 @@ module Uri_type = struct
     | Trailing_slash -> [ PTrailing_slash ]
     | Full_splat -> [ PFull_splat ]
     | Literal (lit, uri) -> PLiteral lit :: of_uri uri
-    | Decoder (arg, uri) -> PDecoder arg :: of_uri uri
+    | Decoder (decoder, uri) -> PDecoder decoder :: of_uri uri
 end
 
 (** ['a t] is a node in a trie based router. *)
@@ -190,10 +190,10 @@ let rec match' t uri =
       let full_splat_matched = ref false in
       while !continue && !index < Array.length t.uri_types do
         match t.uri_types.(!index) with
-        | Uri_type.PDecoder arg, t' -> (
-          match arg.decode uri_type with
+        | Uri_type.PDecoder decoder, t' -> (
+          match decoder.decode uri_type with
           | Some v ->
-            matched_node := Some (t', D (arg, v) :: decoded_values);
+            matched_node := Some (t', D (decoder, v) :: decoded_values);
             continue := false
           | None -> incr index)
         | PLiteral lit, t' when String.equal lit uri_type ->
