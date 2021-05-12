@@ -189,25 +189,24 @@ let rec match' t uri =
       let matched_node = ref None in
       let full_splat_matched = ref false in
       while !continue && !index < Array.length t.uri_types do
-        Uri_type.(
-          match t.uri_types.(!index) with
-          | PDecoder arg, t' -> (
-            match arg.decode uri_type with
-            | Some v ->
-              matched_node := Some (t', D (arg, v) :: decoded_values);
-              continue := false
-            | None -> incr index)
-          | PLiteral lit, t' when String.equal lit uri_type ->
-            matched_node := Some (t', decoded_values);
+        match t.uri_types.(!index) with
+        | Uri_type.PDecoder arg, t' -> (
+          match arg.decode uri_type with
+          | Some v ->
+            matched_node := Some (t', D (arg, v) :: decoded_values);
             continue := false
-          | PTrailing_slash, t' when String.equal "" uri_type ->
-            matched_node := Some (t', decoded_values);
-            continue := false
-          | PFull_splat, t' ->
-            matched_node := Some (t', decoded_values);
-            continue := false;
-            full_splat_matched := true
-          | _ -> incr index)
+          | None -> incr index)
+        | PLiteral lit, t' when String.equal lit uri_type ->
+          matched_node := Some (t', decoded_values);
+          continue := false
+        | PTrailing_slash, t' when String.equal "" uri_type ->
+          matched_node := Some (t', decoded_values);
+          continue := false
+        | PFull_splat, t' ->
+          matched_node := Some (t', decoded_values);
+          continue := false;
+          full_splat_matched := true
+        | _ -> incr index
       done;
       Option.bind !matched_node (fun (t', decoded_values) ->
           if !full_splat_matched then
