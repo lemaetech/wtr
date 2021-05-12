@@ -48,7 +48,9 @@ let rec router () =
     ; {%otr| /contact/*/:int                       |} >- contact_page
     ; {%otr| /product/:string?section=:int&q=:bool |} >- product1
     ; {%otr| /product/:string?section=:int&q1=yes  |} >- product2
-    ; {%otr| /fruit/:Fruit                         |} >- fruit_page ]
+    ; {%otr| /fruit/:Fruit                         |} >- fruit_page
+    ; {%otr| /faq/:int/**                          |} >- faq
+    ]
 
 (* route handlers. *)
 and prod_page i = "Product Page. Product Id : " ^ string_of_int i
@@ -62,6 +64,16 @@ and fruit_page = function
   | Orange -> "Orange is a citrus fruit."
   | Pineapple -> "Pineapple has scaly skin"
 
+and faq category_id =
+  let category_name =
+    match category_id with
+    | 1 -> "products"
+    | 2 -> "insurance"
+    | 3 -> "returns"
+    | _ -> "unknown"
+  in
+  "FAQ page for category : " ^ category_name
+
 let () =
   let router = router () in
   [ Otr.match' router "/home/100001.1/"; Otr.match' router "/home/100001/"
@@ -71,7 +83,11 @@ let () =
   ; Otr.match' router "/product/dyson350?section=2&q1=yes"
   ; Otr.match' router "/product/dyson350?section=2&q1=no"
   ; Otr.match' router "/fruit/apple"; Otr.match' router "/fruit/orange"
-  ; Otr.match' router "/fruit/pineapple"; Otr.match' router "/fruit/guava" ]
+  ; Otr.match' router "/fruit/pineapple"; Otr.match' router "/fruit/guava" 
+  ; Otr.match' router "/faq/1/"
+  ; Otr.match' router "/faq/1/whatever"
+  ; Otr.match' router "/faq/2/whateasdfasdfasdf"
+  ]
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) );;
@@ -83,12 +99,15 @@ let () =
   1: Float page. number : 100001.1
   2: Product Page. Product Id : 100001
   3: about page
-  4: Product detail - dyson350. Section: 233. Display questions? true
-  5: Product detail - dyson350. Section: 2. Display questions? false
-  6: Product detail 2 - dyson350. Section: 2.
+  4: Product1 dyson350. Id: 233. q = true
+  5: Product1 dyson350. Id: 2. q = false
+  6: Product2 dyson350. Id: 2.
   7: None
   8: Apples are juicy!
   9: Orange is a citrus fruit.
  10: Pineapple has scaly skin
  11: None
+ 12: FAQ page for category : products
+ 13: FAQ page for category : products
+ 14: FAQ page for category : insuranc
 ```

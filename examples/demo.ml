@@ -26,6 +26,7 @@ let rec router () =
     ; {%otr| /product/:string?section=:int&q=:bool |} >- product1
     ; {%otr| /product/:string?section=:int&q1=yes  |} >- product2
     ; {%otr| /fruit/:Fruit                         |} >- fruit_page
+    ; {%otr| /faq/:int/**                          |} >- faq
     ]
 
 (* route handlers. *)
@@ -44,6 +45,16 @@ and fruit_page = function
   | Orange -> "Orange is a citrus fruit."
   | Pineapple -> "Pineapple has scaly skin"
 
+and faq category_id =
+  let category_name =
+    match category_id with
+    | 1 -> "products"
+    | 2 -> "insurance"
+    | 3 -> "returns"
+    | _ -> "unknown"
+  in
+  "FAQ page for category : " ^ category_name
+
 let () =
   let router = router () in
   [ Otr.match' router "/home/100001.1/"
@@ -57,6 +68,9 @@ let () =
   ; Otr.match' router "/fruit/orange"
   ; Otr.match' router "/fruit/pineapple"
   ; Otr.match' router "/fruit/guava"
+  ; Otr.match' router "/faq/1/"
+  ; Otr.match' router "/faq/1/whatever"
+  ; Otr.match' router "/faq/2/whateasdfasdfasdf"
   ]
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
@@ -75,5 +89,8 @@ let () =
   9: Orange is a citrus fruit.
  10: Pineapple has scaly skin
  11: None
+ 12: FAQ page for category : products
+ 13: FAQ page for category : products
+ 14: FAQ page for category : insurance
 
 *)
