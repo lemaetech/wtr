@@ -14,23 +14,23 @@ let ( let* ) r f = Result.bind r f
 
 let ( >>= ) = ( let* )
 
-let rec decode_wtr_expression ~loc wtr =
-  (let* uri = decode_uri wtr in
-   let* query_components = decode_query_tokens uri in
-   let* path_components = decode_path_tokens uri in
+let rec parse_wtr_expression ~loc wtr =
+  (let* uri = parse_uri wtr in
+   let* query_components = parse_query_tokens uri in
+   let* path_components = parse_path_tokens uri in
    validate_tokens (path_components @ query_components))
   |> function
   | Ok wtr_tokens -> wtr_expression ~loc wtr_tokens
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-and decode_uri wtr =
+and parse_uri wtr =
   let wtr = String.trim wtr in
   if String.length wtr > 0 then
     Ok (Uri.of_string wtr)
   else
     Error "Empty uri path specification"
 
-and decode_query_tokens uri =
+and parse_query_tokens uri =
   let exception E of string in
   try
     Uri.query uri
@@ -45,7 +45,7 @@ and decode_query_tokens uri =
   with
   | E msg -> Error msg
 
-and decode_path_tokens uri = Ok (Uri.path uri |> String.split_on_char '/')
+and parse_path_tokens uri = Ok (Uri.path uri |> String.split_on_char '/')
 
 and validate_tokens tokens =
   let validate_start tokens =
@@ -143,7 +143,7 @@ and wtr_expression ~loc = function
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 
-let extend ~loc ~path:_ wtr = decode_wtr_expression ~loc wtr
+let extend ~loc ~path:_ wtr = parse_wtr_expression ~loc wtr
 
 let ppx_name = "wtr"
 
