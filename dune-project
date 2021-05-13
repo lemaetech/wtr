@@ -8,7 +8,7 @@
 
 (generate_opam_files true)
 
-(implicit_transitive_deps false)
+(implicit_transitive_deps true)
 
 (source
  (github lemaetech/wtr))
@@ -30,4 +30,5 @@
    (>= 4.2.0))
   (ppxlib
    (>= 0.22.0))
+  (ppx_expect :with-test)
   (mdx :with-test)))
