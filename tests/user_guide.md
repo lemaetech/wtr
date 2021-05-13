@@ -45,6 +45,10 @@ A uri is created using a ppx in the form of `{%wtr| |}` or `[%wtr ""]`. It alway
 Some examples of specifying routes:
 
 ```ocaml
+# #require "wtr, wtr.ppx";;
+```
+
+```ocaml
 # let r = {%wtr| /home/about?a=:int&b=val |};;
 val r : (int -> '_weak1, '_weak1) Wtr.uri = <abstr>
 

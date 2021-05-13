@@ -6,6 +6,5 @@
   (pps wtr.ppx)))
 
 (mdx
- (files user_guide.md README.md)
- (packages wtr)
- (preludes prelude.ml))
+ (files user_guide.md)
+ (packages wtr))
