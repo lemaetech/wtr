@@ -6,8 +6,8 @@
   (pps wtr.ppx)))
 
 (executable
- (name http)
+ (name cohttp)
  (libraries wtr cohttp-lwt-unix conduit-lwt)
- (modules http)
+ (modules cohttp)
  (preprocess
   (pps wtr.ppx)))

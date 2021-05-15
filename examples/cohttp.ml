@@ -4,7 +4,7 @@
     opam install cohttp-lwt-unix
 
     2. Run the server
-    dune exec examples/http.exe
+    dune exec examples/cohttp.exe
   *)
 
 (* User defined decoder *)
