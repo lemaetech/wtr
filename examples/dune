@@ -1,5 +1,13 @@
 (executable
  (name demo)
  (libraries wtr)
+ (modules demo)
+ (preprocess
+  (pps wtr.ppx)))
+
+(executable
+ (name http)
+ (libraries wtr cohttp-lwt-unix conduit-lwt)
+ (modules http)
  (preprocess
   (pps wtr.ppx)))
