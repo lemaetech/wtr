@@ -2,7 +2,7 @@
 
 Wtr - A typed router for OCaml web applications.
 
-[User Guide](https://github.com/lemaetech/wtr/blob/main/tests/user_guide.md) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[Wtr API](https://lemaetech.co.uk/wtr/wtr/Wtr/index.html)
+[User Guide](https://github.com/lemaetech/wtr/blob/main/tests/user_guide.md) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[Wtr API](https://lemaetech.co.uk/wtr/wtr/Wtr/index.html)&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [CoHttp Demo](https://github.com/lemaetech/wtr/blob/main/examples/cohttp.ml)
 
 ## Overview 
 
@@ -14,10 +14,10 @@ Wtr is typed router for OCaml web applications.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
 - Supports converting captured URI components to OCaml and custom user defined data types.
 - `wtr.ppx` is used to specify uri values. If you know how to type URI path in a browser location, then you already know how to use `wtr`.
-- Minimal learning overhead. `Wtr` is centered around just four API calls and a ppx - `wtr.ppx`. 
-  - `{%wtr| /home/products/:int |}` - creates a `path` and an infix function `>-` creates a `route` given a route handler.
-  - Route handler is just a normal OCaml function.
-  - `Wtr.create` - creates a router from a list of `route` values
+- Minimal learning overhead. `Wtr` is centered around just four API calls, a ppx and your existing HTTP url/uri knowledge:
+  - `{%wtr| /home/products/:int |}` - creates a `uri` value using `%wtr` ppx extension.
+  - `>-` - an inifx function - creates a `route` given a `uri` value and a route handler. A route handler is just a normal OCaml function.
+  - `Wtr.create` - creates a router - *'a Wtr.t* - from a list of `route` values.
   - `Wtr.match'` - matches a given uri path in a router.
   - `Wtr.create_decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
 
