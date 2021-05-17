@@ -40,7 +40,7 @@ val create : 'a route list -> 'a t
     the computed value. [None] is returned if [uri] is not matched. *)
 val match' : 'a t -> string -> 'a option
 
-(** {2 URI Decoder} *)
+(** {2 Decoder} *)
 
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc.*)
 type 'a decoder
