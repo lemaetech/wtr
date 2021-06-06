@@ -8,7 +8,6 @@
 *-------------------------------------------------------------------------*)
 
 module Decoder = struct
-  (* Adapted from https://github.com/dbuenzli/hmap/blob/master/src/hmap.ml#L10-L34. *)
   type 'a witness = ..
 
   type (_, _) eq = Eq : ('a, 'a) eq
