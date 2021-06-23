@@ -9,14 +9,12 @@
 
 module Decoder = struct
   type 'a witness = ..
-
   type (_, _) eq = Eq : ('a, 'a) eq
 
   module type Ty = sig
     type t
 
     val witness : t witness
-
     val eq : 'a witness -> ('a, t) eq option
   end
 
@@ -25,7 +23,6 @@ module Decoder = struct
   let new_id (type a) () =
     let module Ty = struct
       type t = a
-
       type 'a witness += Ty : t witness
 
       let witness = Ty
@@ -40,25 +37,19 @@ module Decoder = struct
    fun (module TyA) (module TyB) -> TyB.eq TyA.witness
 
   type 'a t =
-    { name : string (* name e.g. int, float, bool, string etc *)
-    ; decode : string -> 'a option
-    ; id : 'a id
-    }
+    { name: string (* name e.g. int, float, bool, string etc *)
+    ; decode: string -> 'a option
+    ; id: 'a id }
 
   let create ~name ~decode =
     let id = new_id () in
-    { name; decode; id }
+    {name; decode; id}
 
   let int = create ~name:"int" ~decode:int_of_string_opt
-
   let int32 = create ~name:"int32" ~decode:Int32.of_string_opt
-
   let int64 = create ~name:"int64" ~decode:Int64.of_string_opt
-
   let float = create ~name:"float" ~decode:float_of_string_opt
-
   let string = create ~name:"string" ~decode:(fun a -> Some a)
-
   let bool = create ~name:"bool" ~decode:bool_of_string_opt
 end
 
@@ -92,7 +83,7 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
   | Decoder (decoder, uri) ->
-    Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
+      Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
 
 type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
 
@@ -114,123 +105,102 @@ module Uri_type = struct
     | PDecoder decoder, PDecoder decoder' -> (
       match Decoder.eq decoder'.id decoder.id with
       | Some Decoder.Eq -> true
-      | None -> false)
+      | None -> false )
     | _ -> false
 
   (* [of_uri uri] converts [uri] to [kind list]. This is done to get around OCaml
      type inference issue when using [uri] type in the [add] function below. *)
   let rec of_uri : type a b. (a, b) uri -> t list = function
     | Nil -> []
-    | Trailing_slash -> [ PTrailing_slash ]
-    | Full_splat -> [ PFull_splat ]
+    | Trailing_slash -> [PTrailing_slash]
+    | Full_splat -> [PFull_splat]
     | Literal (lit, uri) -> PLiteral lit :: of_uri uri
     | Decoder (decoder, uri) -> PDecoder decoder :: of_uri uri
 end
 
 (** ['a t] is a node in a trie based router. *)
-type 'a node =
-  { route : 'a route option
-  ; uri_types : (Uri_type.t * 'a node) list
-  }
+type 'a node = {route: 'a route option; uri_types: (Uri_type.t * 'a node) list}
 
 let rec add node (Route (uri, _) as route) =
   let rec loop node = function
-    | [] -> { node with route = Some route }
+    | [] -> {node with route= Some route}
     | uri_type :: uri_types ->
-      List.find_opt
-        (fun (uri_type', _) -> Uri_type.equal uri_type uri_type')
-        node.uri_types
-      |> (function
-           | Some _ ->
-             List.map
-               (fun (uri_type', t') ->
-                 if Uri_type.equal uri_type uri_type' then
-                   (uri_type', loop t' uri_types)
-                 else
-                   (uri_type', t'))
-               node.uri_types
-           | None -> (uri_type, loop empty uri_types) :: node.uri_types)
-      |> update_uri_types node
-  in
+        List.find_opt
+          (fun (uri_type', _) -> Uri_type.equal uri_type uri_type')
+          node.uri_types
+        |> (function
+             | Some _ ->
+                 List.map
+                   (fun (uri_type', t') ->
+                     if Uri_type.equal uri_type uri_type' then
+                       (uri_type', loop t' uri_types)
+                     else (uri_type', t') )
+                   node.uri_types
+             | None -> (uri_type, loop empty uri_types) :: node.uri_types )
+        |> update_uri_types node in
   loop node (Uri_type.of_uri uri)
 
-and empty : 'a node = { route = None; uri_types = [] }
+and empty : 'a node = {route= None; uri_types= []}
+and update_uri_types t uri_types = {t with uri_types}
 
-and update_uri_types t uri_types = { t with uri_types }
-
-type 'a t =
-  { route : 'a route option
-  ; uri_types : (Uri_type.t * 'a t) array
-  }
+type 'a t = {route: 'a route option; uri_types: (Uri_type.t * 'a t) array}
 
 let rec create routes = List.fold_left add empty routes |> compile
 
 and compile : 'a node -> 'a t =
  fun t ->
-  { route = t.route
-  ; uri_types =
+  { route= t.route
+  ; uri_types=
       List.rev t.uri_types
       |> List.map (fun (uri_kind, t) -> (uri_kind, compile t))
-      |> Array.of_list
-  }
+      |> Array.of_list }
 
 type decoded_value = D : 'c Decoder.t * 'c -> decoded_value
 
 let rec match' t uri =
   let rec loop t decoded_values = function
     | [] ->
-      Option.map
-        (fun (Route (uri, f)) ->
-          exec_route_handler f (uri, List.rev decoded_values))
-        t.route
+        Option.map
+          (fun (Route (uri, f)) ->
+            exec_route_handler f (uri, List.rev decoded_values) )
+          t.route
     | uri_type :: uri_types ->
-      let continue = ref true in
-      let index = ref 0 in
-      let matched_node = ref None in
-      let full_splat_matched = ref false in
-      while !continue && !index < Array.length t.uri_types do
-        match t.uri_types.(!index) with
-        | Uri_type.PDecoder decoder, t' -> (
-          match decoder.decode uri_type with
-          | Some v ->
-            matched_node := Some (t', D (decoder, v) :: decoded_values);
-            continue := false
-          | None -> incr index)
-        | PLiteral lit, t' when String.equal lit uri_type ->
-          matched_node := Some (t', decoded_values);
-          continue := false
-        | PTrailing_slash, t' when String.equal "" uri_type ->
-          matched_node := Some (t', decoded_values);
-          continue := false
-        | PFull_splat, t' ->
-          matched_node := Some (t', decoded_values);
-          continue := false;
-          full_splat_matched := true
-        | _ -> incr index
-      done;
-      Option.bind !matched_node (fun (t', decoded_values) ->
-          if !full_splat_matched then
-            (loop [@tailcall]) t' decoded_values []
-          else
-            (loop [@tailcall]) t' decoded_values uri_types)
-  in
+        let continue = ref true in
+        let index = ref 0 in
+        let matched_node = ref None in
+        let full_splat_matched = ref false in
+        while !continue && !index < Array.length t.uri_types do
+          match t.uri_types.(!index) with
+          | Uri_type.PDecoder decoder, t' -> (
+            match decoder.decode uri_type with
+            | Some v ->
+                matched_node := Some (t', D (decoder, v) :: decoded_values) ;
+                continue := false
+            | None -> incr index )
+          | PLiteral lit, t' when String.equal lit uri_type ->
+              matched_node := Some (t', decoded_values) ;
+              continue := false
+          | PTrailing_slash, t' when String.equal "" uri_type ->
+              matched_node := Some (t', decoded_values) ;
+              continue := false
+          | PFull_splat, t' ->
+              matched_node := Some (t', decoded_values) ;
+              continue := false ;
+              full_splat_matched := true
+          | _ -> incr index
+        done ;
+        Option.bind !matched_node (fun (t', decoded_values) ->
+            if !full_splat_matched then (loop [@tailcall]) t' decoded_values []
+            else (loop [@tailcall]) t' decoded_values uri_types ) in
   let uri = String.trim uri in
-  if String.length uri > 0 then
-    loop t [] (uri_tokens uri)
-  else
-    None
+  if String.length uri > 0 then loop t [] (uri_tokens uri) else None
 
 and uri_tokens s =
   let uri = Uri.of_string s in
   let uri_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
   Uri.query uri
-  |> List.map (fun (k, v) ->
-         if List.length v > 0 then
-           [ k; List.hd v ]
-         else
-           [ k ])
-  |> List.concat
-  |> List.append uri_tokens
+  |> List.map (fun (k, v) -> if List.length v > 0 then [k; List.hd v] else [k])
+  |> List.concat |> List.append uri_tokens
 
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
@@ -238,33 +208,23 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | Full_splat, [] -> f
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->
-    exec_route_handler f (uri, decoded_values)
-  | Decoder ({ id; _ }, uri), D ({ id = id'; _ }, v) :: decoded_values -> (
+      exec_route_handler f (uri, decoded_values)
+  | Decoder ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
     match Decoder.eq id id' with
     | Some Decoder.Eq -> exec_route_handler (f v) (uri, decoded_values)
-    | None -> assert false)
+    | None -> assert false )
   | _, _ -> assert false
 
 module Private = struct
   let nil = Nil
-
   let trailing_slash = Trailing_slash
-
   let full_splat = Full_splat
-
   let lit s uri = Literal (s, uri)
-
   let decoder a p = Decoder (a, p)
-
   let int = Decoder.int
-
   let int32 = Decoder.int32
-
   let int64 = Decoder.int64
-
   let float = Decoder.float
-
   let bool = Decoder.bool
-
   let string = Decoder.string
 end

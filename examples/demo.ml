@@ -3,17 +3,14 @@ open! Printf
 
 (* User defined data type. *)
 module Fruit = struct
-  type t =
-    | Apple
-    | Orange
-    | Pineapple
+  type t = Apple | Orange | Pineapple
 
   let t : t Wtr.decoder =
     Wtr.create_decoder ~name:"fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
-      | _ -> None)
+      | _ -> None )
 end
 
 (* create a router *)
@@ -26,18 +23,13 @@ let rec router () =
     ; {%wtr| /product/:string?section=:int&q=:bool |} >- product1
     ; {%wtr| /product/:string?section=:int&q1=yes  |} >- product2
     ; {%wtr| /fruit/:Fruit                         |} >- fruit_page
-    ; {%wtr| /faq/:int/**                          |} >- faq
-    ]
+    ; {%wtr| /faq/:int/**                          |} >- faq ]
 
 (* route handlers. *)
 and prod_page i = "Product Page. Product Id : " ^ string_of_int i
-
 and float_page f = "Float page. number : " ^ string_of_float f
-
 and contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
-
 and product1 name id q = sprintf "Product1 %s. Id: %d. q = %b" name id q
-
 and product2 name id = sprintf "Product2 %s. Id: %d." name id
 
 and fruit_page = function
@@ -51,8 +43,7 @@ and faq category_id =
     | 1 -> "products"
     | 2 -> "insurance"
     | 3 -> "returns"
-    | _ -> "unknown"
-  in
+    | _ -> "unknown" in
   "FAQ page for category : " ^ category_name
 
 let () =
@@ -70,11 +61,10 @@ let () =
   ; Wtr.match' router "/fruit/guava"
   ; Wtr.match' router "/faq/1/"
   ; Wtr.match' router "/faq/1/whatever"
-  ; Wtr.match' router "/faq/2/whateasdfasdfasdf"
-  ]
+  ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ]
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
-       | None -> Printf.printf "%3d: None\n" (i + 1))
+       | None -> Printf.printf "%3d: None\n" (i + 1) )
 
 (* Should output below: 
 
