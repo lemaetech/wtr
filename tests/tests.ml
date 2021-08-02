@@ -19,31 +19,28 @@ let fruit_page = function
   | Pineapple -> sf "Pineapple has scaly skin"
 
 let router =
-  Wtr.(
-    create
-      [ {%wtr| /home/about                           |} "about page"
-      ; {%wtr| /home/:int/                           |} (fun i ->
-            sf "Product Page. Product Id : %d" i )
-      ; {%wtr| /home/:float/                         |} (fun f ->
-            sf "Float page. number : %f" f )
-      ; {%wtr| /contact/*/:int                       |} (fun name number ->
-            sf "Contact page. Hi, %s. Number %i" name number )
-      ; {%wtr|  /home/products/**                    |} "full splat page"
-      ; {%wtr| /home/*/**                            |} (fun s ->
-            sf "Wildcard page. %s" s )
-      ; {%wtr| /contact/:string/:bool                |}
-          (fun name call_me_later ->
-            sf "Contact Page2. Name - %s, number - %b" name call_me_later )
-      ; {%wtr| /product/:string?section=:int&q=:bool |}
-          (fun name section_id q ->
-            sf "Product detail - %s. Section: %d. Display questions? %b" name
-              section_id q )
-      ; {%wtr| /product/:string?section=:int&q1=yes  |} (fun name section_id ->
-            sf "Product detail 2 - %s. Section: %d." name section_id )
-      ; {%wtr| /fruit/:Fruit                         |} fruit_page
-      ; {%wtr| /                                     |} "404 Not found"
-      ; {%wtr| /numbers/:int32/code/:int64/          |} (fun id code ->
-            sf "int32: %ld, int64: %Ld." id code ) ])
+  Wtr.create
+    [ {%wtr| get,post; /home/about                 |} "about page"
+    ; {%wtr| /home/:int/                           |} (fun i ->
+          sf "Product Page. Product Id : %d" i )
+    ; {%wtr| /home/:float/                         |} (fun f ->
+          sf "Float page. number : %f" f )
+    ; {%wtr| /contact/*/:int                       |} (fun name number ->
+          sf "Contact page. Hi, %s. Number %i" name number )
+    ; {%wtr|  /home/products/**                    |} "full splat page"
+    ; {%wtr| /home/*/**                            |} (fun s ->
+          sf "Wildcard page. %s" s )
+    ; {%wtr| /contact/:string/:bool                |} (fun name call_me_later ->
+          sf "Contact Page2. Name - %s, number - %b" name call_me_later )
+    ; {%wtr| /product/:string?section=:int&q=:bool |} (fun name section_id q ->
+          sf "Product detail - %s. Section: %d. Display questions? %b" name
+            section_id q )
+    ; {%wtr| /product/:string?section=:int&q1=yes  |} (fun name section_id ->
+          sf "Product detail 2 - %s. Section: %d." name section_id )
+    ; {%wtr| /fruit/:Fruit                         |} fruit_page
+    ; {%wtr| /                                     |} "404 Not found"
+    ; {%wtr| /numbers/:int32/code/:int64/          |} (fun id code ->
+          sf "int32: %ld, int64: %Ld." id code ) ]
 
 let pp_route r = Wtr.pp_route Format.std_formatter r
 
@@ -64,6 +61,14 @@ let%expect_test _ =
 let%expect_test "about route" =
   pp_match ~meth:`GET "/home/about" ;
   [%expect {| "about page" |}]
+
+let%expect_test "about route" =
+  pp_match ~meth:`POST "/home/about" ;
+  [%expect {| "about page" |}]
+
+let%expect_test "about route" =
+  pp_match ~meth:`HEAD "/home/about" ;
+  [%expect {| None |}]
 
 let%expect_test "about_route2" =
   pp_match ~meth:`GET "/home/about/" ;

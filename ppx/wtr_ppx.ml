@@ -31,17 +31,21 @@ let rec make_route ~loc ~path:_ wtr =
   |> function
   | Ok uri_tokens ->
       let uri_expr = make_uri ~loc uri_tokens in
-      let _methods = parse_methods ~loc methods in
-      [%expr Wtr.route [] [%e uri_expr]]
+      let methods = make_methods ~loc methods in
+      [%expr Wtr.route [%e methods] [%e uri_expr]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-and parse_methods ~loc methods_str =
+and make_methods ~loc methods_str =
   let methods =
     String.split_on_char ',' methods_str
     |> List.map String.trim
     |> List.filter (fun s -> String.length s > 0)
   in
-  let loop = function [] -> [%expr []] | _ -> failwith "" in
+  let rec loop = function
+    | [] -> [%expr []]
+    | meth :: methods ->
+        [%expr Wtr.meth [%e Ast_builder.estring ~loc meth] :: [%e loop methods]]
+  in
   loop methods
 
 and parse_uri wtr =

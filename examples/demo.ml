@@ -16,7 +16,7 @@ end
 (* create a router *)
 let rec router () =
   create
-    [ {%wtr| get,post,put,delete ; /home/about     |} >- "about page"
+    [ {%wtr| get,post,put,delete ; /home/about     |} "about page"
     ; {%wtr| get                 ; /home/:int/     |} >- prod_page
     ; {%wtr|                     ; /home/:float/   |} >- float_page
     ; {%wtr| /contact/*/:int                       |} >- contact_page
