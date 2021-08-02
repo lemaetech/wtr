@@ -44,8 +44,8 @@ val pp_meth : Format.formatter -> meth -> unit
     the handler. *)
 type 'c route
 
-val route : ?methods:meth list -> ('a, 'b) uri -> 'a -> 'b route
-(** [route ?meth uri handler] creates a route which matches request method
+val route : meth list -> ('a, 'b) uri -> 'a -> 'b route
+(** [route methods uri handler] creates a route which matches request method
     [meth], [uri] and a route handler [handler]. *)
 
 val ( >- ) : ('a, 'b) uri -> 'a -> 'b route

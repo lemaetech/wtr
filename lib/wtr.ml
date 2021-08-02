@@ -126,10 +126,10 @@ let meth meth =
 
 type 'c route = Route : meth array * ('a, 'c) uri * 'a -> 'c route
 
-let route : ?methods:meth list -> ('a, 'b) uri -> 'a -> 'b route =
- fun ?(methods = []) uri f -> Route (Array.of_list methods, uri, f)
+let route : meth list -> ('a, 'b) uri -> 'a -> 'b route =
+ fun methods uri f -> Route (Array.of_list methods, uri, f)
 
-let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> route uri f
+let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> route [] uri f
 
 (** Existential to encode uri component/node type. *)
 type node_type =
