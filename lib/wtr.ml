@@ -124,6 +124,7 @@ type node_type =
   | PTrailing_slash : node_type
   | PFull_splat : node_type
   | PLiteral : string -> node_type
+  | PMethod : meth -> node_type
   | PDecoder : 'c Decoder.t -> node_type
 
 let node_type_equal a b =
@@ -131,6 +132,7 @@ let node_type_equal a b =
   | PTrailing_slash, PTrailing_slash -> true
   | PFull_splat, PFull_splat -> true
   | PLiteral lit', PLiteral lit -> String.equal lit lit'
+  | PMethod meth1, PMethod meth2 -> meth_equal meth1 meth2
   | PDecoder decoder, PDecoder decoder' -> (
     match Decoder.eq decoder'.id decoder.id with
     | Some Decoder.Eq -> true
@@ -149,68 +151,84 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
 (** ['a t] is a node in a trie based router. *)
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
 
-let rec node node' (Route (_, uri, _) as route) =
-  let rec loop node node_type =
-    match node_type with
+let rec node : 'a node -> 'a route -> 'a node =
+ fun node' (Route (meth, uri, _) as route) ->
+  let rec loop node node_types =
+    match node_types with
     | [] -> {node with route= Some route}
     | node_type :: node_types ->
-        List.find_opt
-          (fun (node_type', _) -> node_type_equal node_type node_type')
-          node.node_types
-        |> (function
-             | Some _ ->
-                 List.map
-                   (fun (node_type', t') ->
-                     if node_type_equal node_type node_type' then
-                       (node_type', loop t' node_types)
-                     else (node_type', t') )
-                   node.node_types
-             | None -> (node_type, loop empty node_types) :: node.node_types )
-        |> update_node_types node
+        let node'' =
+          List.find_opt
+            (fun (node_type', _) -> node_type_equal node_type node_type')
+            node.node_types
+        in
+        { node with
+          node_types=
+            ( match node'' with
+            | Some _ ->
+                List.map
+                  (fun (node_type', t') ->
+                    if node_type_equal node_type node_type' then
+                      (node_type', loop t' node_types)
+                    else (node_type', t') )
+                  node.node_types
+            | None -> (node_type, loop empty_node node_types) :: node.node_types
+            ) }
   in
-  loop node' (node_type_of_uri uri)
+  let node_types = node_type_of_uri uri in
+  let node_types =
+    match meth with
+    | Some meth' -> PMethod meth' :: node_types
+    | None -> node_types
+  in
+  loop node' node_types
 
-and empty : 'a node = {route= None; node_types= []}
-and update_node_types t node_types = {t with node_types}
+and empty_node : 'a node = {route= None; node_types= []}
 
-type 'a t = {route: 'a route option; uri_types: (node_type * 'a t) array}
+type 'a t = {route: 'a route option; node_types: (node_type * 'a t) array}
 
-let rec create routes = List.fold_left node empty routes |> compile
+let rec create routes = List.fold_left node empty_node routes |> compile
 
 and compile : 'a node -> 'a t =
  fun t ->
   { route= t.route
-  ; uri_types=
+  ; node_types=
       List.rev t.node_types
       |> List.map (fun (uri_kind, t) -> (uri_kind, compile t))
       |> Array.of_list }
 
 type decoded_value = D : 'c Decoder.t * 'c -> decoded_value
 
-let rec match' ?meth:_ t uri =
+let rec match' ?meth t uri =
   let rec loop t decoded_values = function
     | [] ->
         Option.map
           (fun (Route (_, uri, f)) ->
             exec_route_handler f (uri, List.rev decoded_values) )
           t.route
-    | uri_type :: uri_types ->
+    | uri :: uris ->
         let continue = ref true in
         let index = ref 0 in
         let matched_node = ref None in
         let full_splat_matched = ref false in
-        while !continue && !index < Array.length t.uri_types do
-          match t.uri_types.(!index) with
+        while !continue && !index < Array.length t.node_types do
+          match t.node_types.(!index) with
+          | PMethod meth', t' -> (
+            match meth with
+            | Some meth'' when meth_equal meth' meth'' ->
+                matched_node := Some (t', decoded_values) ;
+                continue := false
+            | Some _ | None -> incr index )
           | PDecoder decoder, t' -> (
-            match decoder.decode uri_type with
+            match decoder.decode uri with
             | Some v ->
                 matched_node := Some (t', D (decoder, v) :: decoded_values) ;
                 continue := false
             | None -> incr index )
-          | PLiteral lit, t' when String.equal lit uri_type ->
+          | PLiteral lit, t' when String.equal lit uri ->
               matched_node := Some (t', decoded_values) ;
               continue := false
-          | PTrailing_slash, t' when String.equal "" uri_type ->
+          | PTrailing_slash, t' when String.equal "" uri ->
               matched_node := Some (t', decoded_values) ;
               continue := false
           | PFull_splat, t' ->
@@ -221,7 +239,7 @@ let rec match' ?meth:_ t uri =
         done ;
         Option.bind !matched_node (fun (t', decoded_values) ->
             if !full_splat_matched then (loop [@tailcall]) t' decoded_values []
-            else (loop [@tailcall]) t' decoded_values uri_types )
+            else (loop [@tailcall]) t' decoded_values uris )
   in
   let uri = String.trim uri in
   if String.length uri > 0 then loop t [] (uri_tokens uri) else None
