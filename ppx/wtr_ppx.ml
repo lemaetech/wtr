@@ -13,7 +13,7 @@ module Ast_builder = Ast_builder.Default
 let ( let* ) r f = Result.bind r f
 let ( >>= ) = ( let* )
 
-let rec parse_wtr_expression ~loc wtr =
+let rec make_route ~loc ~path:_ wtr =
   (let* uri = parse_uri wtr in
    let* query_components = parse_query_tokens uri in
    let* path_components = parse_path_tokens uri in
@@ -132,12 +132,11 @@ and wtr_expression ~loc = function
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 
-let extend ~loc ~path:_ wtr = parse_wtr_expression ~loc wtr
 let ppx_name = "wtr"
 
 let ext =
   Extension.declare ppx_name Extension.Context.Expression
     Ast_pattern.(single_expr_payload (estring __))
-    extend
+    make_route
 
 let () = Driver.register_transformation ppx_name ~extensions:[ext]
