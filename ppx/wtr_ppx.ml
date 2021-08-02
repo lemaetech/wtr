@@ -17,7 +17,7 @@ let rec parse_wtr_expression ~loc wtr =
   (let* uri = parse_uri wtr in
    let* query_components = parse_query_tokens uri in
    let* path_components = parse_path_tokens uri in
-   validate_tokens (path_components @ query_components))
+   validate_tokens (path_components @ query_components) )
   |> function
   | Ok wtr_tokens -> wtr_expression ~loc wtr_tokens
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
@@ -53,20 +53,23 @@ and validate_tokens tokens =
       Error
         "Invalid uri path specification. No tokens allowed after trailing '/' \
          token"
-    else Ok path in
+    else Ok path
+  in
   let validate_full_splat path =
     let _, l2 = split_on (fun x -> String.equal "**" x) path in
     if List.length l2 > 0 then
       Error
         "Invalid uri path specification. No tokens allowed after full splat \
          (**) token"
-    else Ok path in
+    else Ok path
+  in
   validate_start tokens >>= validate_end_slash >>= validate_full_splat
 
 and findi f l =
   let rec loop n = function
     | [] -> None
-    | x :: t -> if f x then Some n else loop (n + 1) t in
+    | x :: t -> if f x then Some n else loop (n + 1) t
+  in
   loop 0 l
 
 and split_on f l =

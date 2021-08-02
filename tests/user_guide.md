@@ -280,7 +280,7 @@ represents the value computed by the route handler.
 
 ```ocaml
 # Wtr.match';;
-- : 'a Wtr.t -> string -> 'a option = <fun>
+- : ?meth:Wtr.meth -> 'a Wtr.t -> string -> 'a option = <fun>
 ```
 
 ```ocaml

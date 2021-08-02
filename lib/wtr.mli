@@ -19,14 +19,36 @@ type ('a, 'b) uri
 val pp_uri : Format.formatter -> ('a, 'b) uri -> unit
 (** [pp_uri fmt uri] pretty prints [uri] on to [fmt]. *)
 
+(** {2 HTTP method *)
+
+(** [meth] represents HTTP request methods. It can be used as part of a
+    {!type:route}. *)
+type meth =
+  [ `GET
+  | `HEAD
+  | `POST
+  | `PUT
+  | `DELETE
+  | `CONNECT
+  | `OPTIONS
+  | `TRACE
+  | `Method of string ]
+
+val meth_equal : meth -> meth -> bool
+val pp_meth : Format.formatter -> meth -> unit
+
 (** {2 Route} *)
 
 (** ['c route] is a [uri] and its handler. ['c] represents the value returned by
     the handler. *)
 type 'c route
 
+val route : ?meth:meth -> ('a, 'b) uri -> 'a -> 'b route
+(** [route ?meth uri handler] creates a route which matches request method
+    [meth], [uri] and a route handler [handler]. *)
+
 val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
-(** [p >- route_handler] creates a route from uri [p] and [route_handler]. *)
+(** [p >- handler] creates a route from uri [p] and a route handler [handler]. *)
 
 (** {2 Router} *)
 
@@ -36,7 +58,7 @@ type 'a t
 val create : 'a route list -> 'a t
 (** [create routes] creates a router from a list of [route]s. *)
 
-val match' : 'a t -> string -> 'a option
+val match' : ?meth:meth -> 'a t -> string -> 'a option
 (** [match t uri] matches a [route] to [uri], executes its handler and returns
     the computed value. [None] is returned if [uri] is not matched. *)
 

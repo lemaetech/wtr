@@ -5,7 +5,7 @@
 
     2. Run the server
     dune exec examples/cohttp.exe
-  *)
+*)
 
 (* User defined decoder *)
 module Fruit = struct
@@ -50,7 +50,8 @@ and faq category_id =
     | 1 -> "products"
     | 2 -> "insurance"
     | 3 -> "returns"
-    | _ -> "unknown" in
+    | _ -> "unknown"
+  in
   "FAQ page for category : " ^ category_name
 
 let () =
@@ -60,7 +61,8 @@ let () =
     |> function
     | Some resp ->
         Cohttp_lwt_unix.Server.respond_string ~status:`OK ~body:resp ()
-    | None -> Cohttp_lwt_unix.Server.respond_not_found () in
+    | None -> Cohttp_lwt_unix.Server.respond_not_found ()
+  in
   Cohttp_lwt_unix.Server.create
     ~mode:(`TCP (`Port 5000))
     (Cohttp_lwt_unix.Server.make ~callback ())
