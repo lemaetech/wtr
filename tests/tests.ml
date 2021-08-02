@@ -21,7 +21,7 @@ let fruit_page = function
 let router =
   Wtr.(
     create
-      [ route ~meth:`GET {%wtr|  /home/about           |} "about page"
+      [ route ~methods:[`GET] {%wtr|  /home/about      |} "about page"
       ; ( {%wtr| /home/:int/                           |}
         >- fun i -> sf "Product Page. Product Id : %d" i )
       ; ( {%wtr| /home/:float/                         |}

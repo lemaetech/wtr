@@ -14,13 +14,25 @@ let ( let* ) r f = Result.bind r f
 let ( >>= ) = ( let* )
 
 let rec make_route ~loc ~path:_ wtr =
-  (let* uri = parse_uri wtr in
+  let _methods, uri =
+    let tokens =
+      String.trim wtr |> String.split_on_char ';' |> List.map String.trim
+      |> List.filter (fun s -> not (String.equal "" s))
+    in
+    let len = List.length tokens in
+    if len < 1 || len > 2 then Location.raise_errorf ~loc "Invalid wtr: %s" wtr
+    else if len = 2 then (Some (List.nth tokens 0), List.nth tokens 1)
+    else (None, List.hd tokens)
+  in
+  (let* uri = parse_uri uri in
    let* query_components = parse_query_tokens uri in
    let* path_components = parse_path_tokens uri in
    validate_tokens (path_components @ query_components) )
   |> function
   | Ok wtr_tokens -> wtr_expression ~loc wtr_tokens
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
+
+(* and parse_methods methods = *)
 
 and parse_uri wtr =
   let wtr = String.trim wtr in

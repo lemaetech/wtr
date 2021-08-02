@@ -35,6 +35,7 @@ type meth =
   | `Method of string ]
 
 val meth_equal : meth -> meth -> bool
+val meth : string -> meth
 val pp_meth : Format.formatter -> meth -> unit
 
 (** {2 Route} *)
@@ -43,7 +44,7 @@ val pp_meth : Format.formatter -> meth -> unit
     the handler. *)
 type 'c route
 
-val route : ?meth:meth -> ('a, 'b) uri -> 'a -> 'b route
+val route : ?methods:meth list -> ('a, 'b) uri -> 'a -> 'b route
 (** [route ?meth uri handler] creates a route which matches request method
     [meth], [uri] and a route handler [handler]. *)
 

@@ -111,20 +111,32 @@ let pp_meth fmt t =
   | `Method s -> Format.sprintf "Method (%s)" s )
   |> Format.fprintf fmt "%s"
 
-type 'c route = Route : meth option * ('a, 'c) uri * 'a -> 'c route
+let meth meth =
+  String.uppercase_ascii meth
+  |> function
+  | "GET" -> `GET
+  | "HEAD" -> `HEAD
+  | "POST" -> `POST
+  | "PUT" -> `PUT
+  | "DELETE" -> `DELETE
+  | "CONNECT" -> `CONNECT
+  | "OPTIONS" -> `OPTIONS
+  | "TRACE" -> `TRACE
+  | header -> `Method header
 
-let route : ?meth:meth -> ('a, 'b) uri -> 'a -> 'b route =
- fun ?meth uri f -> Route (meth, uri, f)
+type 'c route = Route : meth array * ('a, 'c) uri * 'a -> 'c route
 
-let ( >- ) : ('a, 'b) uri -> 'a -> 'b route =
- fun uri f -> route ?meth:None uri f
+let route : ?methods:meth list -> ('a, 'b) uri -> 'a -> 'b route =
+ fun ?(methods = []) uri f -> Route (Array.of_list methods, uri, f)
+
+let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> route uri f
 
 (** Existential to encode uri component/node type. *)
 type node_type =
   | PTrailing_slash : node_type
   | PFull_splat : node_type
   | PLiteral : string -> node_type
-  | PMethod : meth -> node_type
+  | PMethod : meth array -> node_type
   | PDecoder : 'c Decoder.t -> node_type
 
 let node_type_equal a b =
@@ -132,7 +144,7 @@ let node_type_equal a b =
   | PTrailing_slash, PTrailing_slash -> true
   | PFull_splat, PFull_splat -> true
   | PLiteral lit', PLiteral lit -> String.equal lit lit'
-  | PMethod meth1, PMethod meth2 -> meth_equal meth1 meth2
+  (* | PMethod meth1, PMethod meth2 -> meth_equal meth1 meth2 *)
   | PDecoder decoder, PDecoder decoder' -> (
     match Decoder.eq decoder'.id decoder.id with
     | Some Decoder.Eq -> true
@@ -152,7 +164,7 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
 
 let rec node : 'a node -> 'a route -> 'a node =
- fun node' (Route (meth, uri, _) as route) ->
+ fun node' (Route (methods, uri, _) as route) ->
   let rec loop node node_types =
     match node_types with
     | [] -> {node with route= Some route}
@@ -177,9 +189,8 @@ let rec node : 'a node -> 'a route -> 'a node =
   in
   let node_types = node_type_of_uri uri in
   let node_types =
-    match meth with
-    | Some meth' -> PMethod meth' :: node_types
-    | None -> node_types
+    if Array.length methods = 0 then node_types
+    else PMethod methods :: node_types
   in
   loop node' node_types
 
@@ -214,13 +225,15 @@ let rec match' ?meth t uri =
         let method_matched = ref false in
         while !continue && !index < Array.length t.node_types do
           match t.node_types.(!index) with
-          | PMethod meth', t' -> (
+          | PMethod methods, t' -> (
             match meth with
-            | Some meth'' when meth_equal meth' meth'' ->
-                matched_node := Some (t', decoded_values) ;
-                continue := false ;
-                method_matched := true
-            | Some _ | None -> incr index )
+            | Some meth'' ->
+                if Array.exists (fun m -> meth_equal m meth'') methods then (
+                  matched_node := Some (t', decoded_values) ;
+                  continue := false ;
+                  method_matched := true )
+                else incr index
+            | None -> incr index )
           | PDecoder decoder, t' -> (
             match decoder.decode uri with
             | Some v ->
