@@ -98,6 +98,14 @@ let () =
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) );;
 ```
+```mdx-error
+Line 19, characters 9-56:
+Warning 5 [ignored-partial-application]: this function application is partial,
+maybe some arguments are missing.
+Line 19, characters 9-56:
+Error: This expression has type 'a -> 'a route
+       but an expression was expected of type ('b, 'c) uri
+```
 
 ### Output of the Demo
 

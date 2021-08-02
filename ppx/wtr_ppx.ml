@@ -14,25 +14,35 @@ let ( let* ) r f = Result.bind r f
 let ( >>= ) = ( let* )
 
 let rec make_route ~loc ~path:_ wtr =
-  let _methods, uri =
+  let methods, uri =
     let tokens =
       String.trim wtr |> String.split_on_char ';' |> List.map String.trim
       |> List.filter (fun s -> not (String.equal "" s))
     in
     let len = List.length tokens in
     if len < 1 || len > 2 then Location.raise_errorf ~loc "Invalid wtr: %s" wtr
-    else if len = 2 then (Some (List.nth tokens 0), List.nth tokens 1)
-    else (None, List.hd tokens)
+    else if len = 2 then (List.nth tokens 0, List.nth tokens 1)
+    else ("", List.hd tokens)
   in
   (let* uri = parse_uri uri in
    let* query_components = parse_query_tokens uri in
    let* path_components = parse_path_tokens uri in
    validate_tokens (path_components @ query_components) )
   |> function
-  | Ok wtr_tokens -> wtr_expression ~loc wtr_tokens
+  | Ok uri_tokens ->
+      let uri_expr = make_uri ~loc uri_tokens in
+      let _methods = parse_methods ~loc methods in
+      [%expr Wtr.route [] [%e uri_expr]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-(* and parse_methods methods = *)
+and parse_methods ~loc methods_str =
+  let methods =
+    String.split_on_char ',' methods_str
+    |> List.map String.trim
+    |> List.filter (fun s -> String.length s > 0)
+  in
+  let loop = function [] -> [%expr []] | _ -> failwith "" in
+  loop methods
 
 and parse_uri wtr =
   let wtr = String.trim wtr in
@@ -90,47 +100,40 @@ and split_on f l =
       (List.filteri (fun i _ -> i < n) l, List.filteri (fun i _ -> i > n) l)
   | None -> (l, [])
 
-and wtr_expression ~loc = function
+and make_uri ~loc = function
   | [] -> [%expr Wtr.Private.nil]
   | [""] -> [%expr Wtr.Private.trailing_slash]
   | ["**"] -> [%expr Wtr.Private.full_splat]
   | "*" :: components ->
       [%expr
-        Wtr.Private.decoder Wtr.Private.string
-          [%e wtr_expression ~loc components]]
+        Wtr.Private.decoder Wtr.Private.string [%e make_uri ~loc components]]
   | comp :: components when Char.equal comp.[0] ':' -> (
       let comp = String.sub comp 1 (String.length comp - 1) in
       match comp with
       | "int" ->
           [%expr
-            Wtr.Private.decoder Wtr.Private.int
-              [%e wtr_expression ~loc components]]
+            Wtr.Private.decoder Wtr.Private.int [%e make_uri ~loc components]]
       | "int32" ->
           [%expr
-            Wtr.Private.decoder Wtr.Private.int32
-              [%e wtr_expression ~loc components]]
+            Wtr.Private.decoder Wtr.Private.int32 [%e make_uri ~loc components]]
       | "int64" ->
           [%expr
-            Wtr.Private.decoder Wtr.Private.int64
-              [%e wtr_expression ~loc components]]
+            Wtr.Private.decoder Wtr.Private.int64 [%e make_uri ~loc components]]
       | "float" ->
           [%expr
-            Wtr.Private.decoder Wtr.Private.float
-              [%e wtr_expression ~loc components]]
+            Wtr.Private.decoder Wtr.Private.float [%e make_uri ~loc components]]
       | "string" ->
           [%expr
-            Wtr.Private.decoder Wtr.Private.string
-              [%e wtr_expression ~loc components]]
+            Wtr.Private.decoder Wtr.Private.string [%e make_uri ~loc components]]
       | "bool" ->
           [%expr
-            Wtr.Private.decoder Wtr.Private.bool
-              [%e wtr_expression ~loc components]]
+            Wtr.Private.decoder Wtr.Private.bool [%e make_uri ~loc components]]
       | custom_arg when capitalized custom_arg ->
           let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
             Wtr.Private.decoder
               [%e Ast_builder.pexp_ident ~loc longident_loc]
-              [%e wtr_expression ~loc components]]
+              [%e make_uri ~loc components]]
       | x ->
           Location.raise_errorf ~loc
             "wtr: Invalid custom argument name '%s'. Custom argument component \
@@ -140,7 +143,7 @@ and wtr_expression ~loc = function
       [%expr
         Wtr.Private.lit
           [%e Ast_builder.estring ~loc comp]
-          [%e wtr_expression ~loc components]]
+          [%e make_uri ~loc components]]
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 

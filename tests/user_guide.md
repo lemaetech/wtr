@@ -50,26 +50,26 @@ Some examples of specifying routes:
 
 ```ocaml
 # let r = {%wtr| /home/about?a=:int&b=val |};;
-val r : (int -> '_weak1, '_weak1) Wtr.uri = <abstr>
+val r : (int -> '_weak1) -> '_weak1 Wtr.route = <fun>
 
 # let r = {%wtr| /home/:int/:float/:bool/:string |};;
-val r : (int -> float -> bool -> string -> '_weak2, '_weak2) Wtr.uri =
-  <abstr>
+val r : (int -> float -> bool -> string -> '_weak2) -> '_weak2 Wtr.route =
+  <fun>
 
 # let r = {%wtr| /home/about |};;
-val r : ('_weak3, '_weak3) Wtr.uri = <abstr>
+val r : '_weak3 -> '_weak3 Wtr.route = <fun>
 
 # let r = {%wtr| /home/about/ |};;
-val r : ('_weak4, '_weak4) Wtr.uri = <abstr>
+val r : '_weak4 -> '_weak4 Wtr.route = <fun>
 
 # let r = {%wtr| /home/*/contact |};;
-val r : (string -> '_weak5, '_weak5) Wtr.uri = <abstr>
+val r : (string -> '_weak5) -> '_weak5 Wtr.route = <fun>
 
 # let r = {%wtr| /home/about/** |};;
-val r : ('_weak6, '_weak6) Wtr.uri = <abstr>
+val r : '_weak6 -> '_weak6 Wtr.route = <fun>
 
 # let r = {%wtr| /home/:int/** |};;
-val r : (int -> '_weak7, '_weak7) Wtr.uri = <abstr>
+val r : (int -> '_weak7) -> '_weak7 Wtr.route = <fun>
 ```
 
 ### Pretty Printing a URI
@@ -77,14 +77,14 @@ val r : (int -> '_weak7, '_weak7) Wtr.uri = <abstr>
 `Wtr.pp_uri` function can be used to pretty printing a `uri` value.
 
 ```ocaml
-# Wtr.pp_uri;;
-- : Format.formatter -> ('a, 'b) Wtr.uri -> unit = <fun>
+# Wtr.pp_route;;
+- : Format.formatter -> 'b Wtr.route -> unit = <fun>
 
-# Wtr.pp_uri Format.std_formatter [%wtr "/home/about"];;
+# Wtr.pp_route Format.std_formatter ([%wtr "/home/about"] () );;
 /home/about
 - : unit = ()
 
-# Wtr.pp_uri Format.std_formatter [%wtr "/home/:int/:string"];;
+# Wtr.pp_route Format.std_formatter ([%wtr "/home/:int/:string"] (fun _ _ -> ()) );;
 /home/:int/:string
 - : unit = ()
 ```
@@ -115,21 +115,13 @@ Some examples of valid uri path:
 
 ```ocaml
 # let about_page_uri = {%wtr| /home/about |};;
-val about_page_uri : ('_weak8, '_weak8) Wtr.uri = <abstr>
+val about_page_uri : '_weak8 -> '_weak8 Wtr.route = <fun>
 
 # let product_detail_uri = {%wtr| /product/product1/details |};;
-val product_detail_uri : ('_weak9, '_weak9) Wtr.uri = <abstr>
+val product_detail_uri : '_weak9 -> '_weak9 Wtr.route = <fun>
 
 # let contact_uri = {%wtr| /home/contact/ |};;
-val contact_uri : ('_weak10, '_weak10) Wtr.uri = <abstr>
-```
-
-Two paths with the same path components, such as `/home/about` and `/home/about/`, but with the only difference being the trailing `/` are not equal to each other. As such `wtr` matches them differently.
-
-```ocaml
-
-# [%wtr "/home/about"] = [%wtr "/home/about/"];;
-- : bool = false
+val contact_uri : '_weak10 -> '_weak10 Wtr.route = <fun>
 ```
 
 ### Query  
@@ -142,10 +134,10 @@ Uri values creation examples:
   
 ```ocaml
 # let uri = {%wtr| /home/products/a?count=a&size=200 |};;
-val uri : ('_weak11, '_weak11) Wtr.uri = <abstr>
+val uri : '_weak11 -> '_weak11 Wtr.route = <fun>
 
 # let r = {%wtr| /home/about |};;
-val r : ('_weak12, '_weak12) Wtr.uri = <abstr>
+val r : '_weak12 -> '_weak12 Wtr.route = <fun>
 ```
 
 ### Uri Components
@@ -177,13 +169,13 @@ Some examples of decoder usages:
 
 ```ocaml
 # let r = {%wtr| /home/:int/:float/:bool |};;
-val r : (int -> float -> bool -> '_weak13, '_weak13) Wtr.uri = <abstr>
+val r : (int -> float -> bool -> '_weak13) -> '_weak13 Wtr.route = <fun>
 ```
 You can use decoder components in Query *value* component position:
 
 ```ocaml
 # let r = [%wtr "/home/contact?name=:string&number=:int"];;
-val r : (string -> int -> '_weak14, '_weak14) Wtr.uri = <abstr>
+val r : (string -> int -> '_weak14) -> '_weak14 Wtr.route = <fun>
 ```
 
 ##### User Defined Decoder 
@@ -223,7 +215,7 @@ Here is how we can use the `Fruit` decoder:
 
 ```ocaml
 # let r = {%wtr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak15, '_weak15) Wtr.uri = <abstr>
+val r : (Fruit.t -> '_weak15) -> '_weak15 Wtr.route = <fun>
 ```
 
 #### Full splat
@@ -234,7 +226,7 @@ Here, Wtr matches `/home/about`, `/home/contact` and `/home/product/product2` ur
 
 ```ocaml
 # let full_splat = [%wtr "/home/**"];;
-val full_splat : ('_weak16, '_weak16) Wtr.uri = <abstr>
+val full_splat : '_weak16 -> '_weak16 Wtr.route = <fun>
 ```
 
 ## Creating a route
@@ -250,14 +242,14 @@ Parameter `'a` above denotes a route handler. A route handler is dependent on wh
 An `Wtr.uri` value where only literal values are specified results in a handler which immediately returns a value. 
 
 ```ocaml
-# let r = Wtr.({%wtr| /home/about |} >- "about page");;
+# let r = Wtr.({%wtr| /home/about |} "about page");;
 val r : string Wtr.route = <abstr>
 ```
 
 Whereas an`Wtr.uri` where decoders are specified results in a handler which is a ocaml function. The parameters of the function match the order in which the decoders are specified.
 
 ```ocaml
-# let r = Wtr.({%wtr| /home/:int |} >- fun (i: int) -> Printf.sprintf "int: %d" i);;
+# let r = Wtr.({%wtr| /home/:int |} (fun (i: int) -> Printf.sprintf "int: %d" i));;
 val r : string Wtr.route = <abstr>
 ```
 
@@ -271,7 +263,7 @@ A route is created by applying function a list of `route` values to `Wtr.create`
 ```
 
 ```ocaml
-# let router = Wtr.(create [{%wtr| /home/about |} >- "about page"]);;
+# let router = Wtr.(create [{%wtr| /home/about |} "about page"]);;
 val router : string Wtr.t = <abstr>
 ```
 Matching is peformed by applying a `router` and a `uri` value. `Wtr.match`

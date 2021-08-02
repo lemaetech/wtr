@@ -129,6 +129,9 @@ type 'c route = Route : meth array * ('a, 'c) uri * 'a -> 'c route
 let route : meth list -> ('a, 'b) uri -> 'a -> 'b route =
  fun methods uri f -> Route (Array.of_list methods, uri, f)
 
+let pp_route : Format.formatter -> 'b route -> unit =
+ fun fmt (Route (_, uri, _)) -> pp_uri fmt uri
+
 let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> route [] uri f
 
 (** Existential to encode uri component/node type. *)

@@ -48,8 +48,12 @@ val route : meth list -> ('a, 'b) uri -> 'a -> 'b route
 (** [route methods uri handler] creates a route which matches request method
     [meth], [uri] and a route handler [handler]. *)
 
+val pp_route : Format.formatter -> 'b route -> unit
+
 val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
-(** [p >- handler] creates a route from uri [p] and a route handler [handler]. *)
+(** [p >- handler] creates a route from uri [p] and a route handler [handler].
+    The resulting route is not constrained by HTTP methods,i.e. it accepts all
+    HTTP methods. *)
 
 (** {2 Router} *)
 
