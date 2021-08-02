@@ -21,7 +21,7 @@ let fruit_page = function
 let router =
   Wtr.(
     create
-      [ {%wtr|  /home/about                           |} >- sf "about page"
+      [ route ~meth:`GET {%wtr|  /home/about           |} "about page"
       ; ( {%wtr| /home/:int/                           |}
         >- fun i -> sf "Product Page. Product Id : %d" i )
       ; ( {%wtr| /home/:float/                         |}
@@ -49,8 +49,8 @@ let router =
 
 let pp_uri p = Wtr.pp_uri Format.std_formatter p
 
-let pp_match uri =
-  Wtr.match' router uri
+let pp_match ?meth uri =
+  Wtr.match' ?meth router uri
   |> function
   | Some s -> Printf.printf {|"%s%!"|} s | None -> Printf.printf "None%!"
 
@@ -63,8 +63,13 @@ let%expect_test _ = pp_match "/home/100001.1" ; [%expect {| None |}]
 let%expect_test _ =
   pp_match "/home/100001/" ; [%expect {| "Product Page. Product Id : 100001" |}]
 
-let%expect_test _ = pp_match "/home/about" ; [%expect {| "about page" |}]
-let%expect_test _ = pp_match "/home/about/" ; [%expect {| None |}]
+let%expect_test "about route" =
+  pp_match ~meth:`GET "/home/about" ;
+  [%expect {| "about page" |}]
+
+let%expect_test "about_route2" =
+  pp_match ~meth:`GET "/home/about/" ;
+  [%expect {| None |}]
 
 let%expect_test _ =
   pp_match "/contact/bikal/123456" ;

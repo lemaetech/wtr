@@ -211,13 +211,15 @@ let rec match' ?meth t uri =
         let index = ref 0 in
         let matched_node = ref None in
         let full_splat_matched = ref false in
+        let method_matched = ref false in
         while !continue && !index < Array.length t.node_types do
           match t.node_types.(!index) with
           | PMethod meth', t' -> (
             match meth with
             | Some meth'' when meth_equal meth' meth'' ->
                 matched_node := Some (t', decoded_values) ;
-                continue := false
+                continue := false ;
+                method_matched := true
             | Some _ | None -> incr index )
           | PDecoder decoder, t' -> (
             match decoder.decode uri with
@@ -239,6 +241,8 @@ let rec match' ?meth t uri =
         done ;
         Option.bind !matched_node (fun (t', decoded_values) ->
             if !full_splat_matched then (loop [@tailcall]) t' decoded_values []
+            else if !method_matched then
+              (loop [@tailcall]) t' decoded_values (uri :: uris)
             else (loop [@tailcall]) t' decoded_values uris )
   in
   let uri = String.trim uri in
