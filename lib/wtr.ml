@@ -147,7 +147,6 @@ let node_type_equal a b =
   | PTrailing_slash, PTrailing_slash -> true
   | PFull_splat, PFull_splat -> true
   | PLiteral lit', PLiteral lit -> String.equal lit lit'
-  (* | PMethod meth1, PMethod meth2 -> meth_equal meth1 meth2 *)
   | PDecoder decoder, PDecoder decoder' -> (
     match Decoder.eq decoder'.id decoder.id with
     | Some Decoder.Eq -> true
@@ -225,44 +224,56 @@ let rec match' ?meth t uri =
         let index = ref 0 in
         let matched_node = ref None in
         let full_splat_matched = ref false in
-        let method_matched = ref false in
         while !continue && !index < Array.length t.node_types do
           match t.node_types.(!index) with
           | PMethod methods, t' -> (
-            match meth with
-            | Some meth'' ->
+            match uri with
+            | `Method meth'' ->
                 if Array.exists (fun m -> meth_equal m meth'') methods then (
                   matched_node := Some (t', decoded_values) ;
-                  continue := false ;
-                  method_matched := true )
+                  continue := false )
                 else incr index
-            | None -> incr index )
+            | _ -> incr index )
           | PDecoder decoder, t' -> (
-            match decoder.decode uri with
-            | Some v ->
-                matched_node := Some (t', D (decoder, v) :: decoded_values) ;
-                continue := false
-            | None -> incr index )
-          | PLiteral lit, t' when String.equal lit uri ->
-              matched_node := Some (t', decoded_values) ;
-              continue := false
-          | PTrailing_slash, t' when String.equal "" uri ->
-              matched_node := Some (t', decoded_values) ;
-              continue := false
+            match uri with
+            | `String uri' -> (
+              match decoder.decode uri' with
+              | Some v ->
+                  matched_node := Some (t', D (decoder, v) :: decoded_values) ;
+                  continue := false
+              | None -> incr index )
+            | _ -> incr index )
+          | PLiteral lit, t' -> (
+            match uri with
+            | `String uri' ->
+                if String.equal lit uri' then (
+                  matched_node := Some (t', decoded_values) ;
+                  continue := false )
+                else incr index
+            | _ -> incr index )
+          | PTrailing_slash, t' -> (
+            match uri with
+            | `String uri' ->
+                if String.equal "" uri' then (
+                  matched_node := Some (t', decoded_values) ;
+                  continue := false )
+                else incr index
+            | _ -> incr index )
           | PFull_splat, t' ->
               matched_node := Some (t', decoded_values) ;
               continue := false ;
               full_splat_matched := true
-          | _ -> incr index
         done ;
         Option.bind !matched_node (fun (t', decoded_values) ->
             if !full_splat_matched then (loop [@tailcall]) t' decoded_values []
-            else if !method_matched then
-              (loop [@tailcall]) t' decoded_values (uri :: uris)
             else (loop [@tailcall]) t' decoded_values uris )
   in
   let uri = String.trim uri in
-  if String.length uri > 0 then loop t [] (uri_tokens uri) else None
+  let u_tokens = uri_tokens uri in
+  let u_tokens =
+    match meth with Some m -> `Method m :: u_tokens | None -> u_tokens
+  in
+  if String.length uri > 0 then loop t [] u_tokens else None
 
 and uri_tokens s =
   let uri = Uri.of_string s in
@@ -270,6 +281,7 @@ and uri_tokens s =
   Uri.query uri
   |> List.map (fun (k, v) -> if List.length v > 0 then [k; List.hd v] else [k])
   |> List.concat |> List.append uri_tokens
+  |> List.map (fun s -> `String s)
 
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function

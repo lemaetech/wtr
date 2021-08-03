@@ -28,8 +28,8 @@ Wtr is typed router for OCaml web applications.
 ```
 
 ```ocaml
-open! Wtr;;
-open! Printf;;
+open Wtr;;
+open Printf;;
 
 (* User defined decoder. *)
 module Fruit = struct
@@ -48,14 +48,14 @@ end
 
 let rec router () =
   create
-    [ {%wtr| /home/about                           |} >- "about page"
-    ; {%wtr| /home/:int/                           |} >- prod_page
-    ; {%wtr| /home/:float/                         |} >- float_page
-    ; {%wtr| /contact/*/:int                       |} >- contact_page
-    ; {%wtr| /product/:string?section=:int&q=:bool |} >- product1
-    ; {%wtr| /product/:string?section=:int&q1=yes  |} >- product2
-    ; {%wtr| /fruit/:Fruit                         |} >- fruit_page
-    ; {%wtr| /faq/:int/**                          |} >- faq
+    [ {%wtr| /home/about                           |} "about page"
+    ; {%wtr| /home/:int/                           |} prod_page
+    ; {%wtr| /home/:float/                         |} float_page
+    ; {%wtr| /contact/*/:int                       |} contact_page
+    ; {%wtr| /product/:string?section=:int&q=:bool |} product1
+    ; {%wtr| /product/:string?section=:int&q1=yes  |} product2
+    ; {%wtr| /fruit/:Fruit                         |} fruit_page
+    ; {%wtr| /faq/:int/**                          |} faq
     ]
 
 (* route handlers. *)
@@ -97,14 +97,6 @@ let () =
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) );;
-```
-```mdx-error
-Line 19, characters 9-56:
-Warning 5 [ignored-partial-application]: this function application is partial,
-maybe some arguments are missing.
-Line 19, characters 9-56:
-Error: This expression has type 'a -> 'a route
-       but an expression was expected of type ('b, 'c) uri
 ```
 
 ### Output of the Demo

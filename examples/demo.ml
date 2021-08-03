@@ -1,6 +1,3 @@
-open! Wtr
-open! Printf
-
 (* User defined data type. *)
 module Fruit = struct
   type t = Apple | Orange | Pineapple
@@ -13,31 +10,19 @@ module Fruit = struct
       | _ -> None )
 end
 
-(* create a router *)
-let rec router () =
-  create
-    [ {%wtr| get,post,put,delete ; /home/about     |} "about page"
-    ; {%wtr| get                 ; /home/:int/     |} >- prod_page
-    ; {%wtr|                     ; /home/:float/   |} >- float_page
-    ; {%wtr| /contact/*/:int                       |} >- contact_page
-    ; {%wtr| /product/:string?section=:int&q=:bool |} >- product1
-    ; {%wtr| /product/:string?section=:int&q1=yes  |} >- product2
-    ; {%wtr| /fruit/:Fruit                         |} >- fruit_page
-    ; {%wtr| /faq/:int/**                          |} >- faq ]
-
 (* route handlers. *)
-and prod_page i = "Product Page. Product Id : " ^ string_of_int i
-and float_page f = "Float page. number : " ^ string_of_float f
-and contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
-and product1 name id q = sprintf "Product1 %s. Id: %d. q = %b" name id q
-and product2 name id = sprintf "Product2 %s. Id: %d." name id
+let prod_page i = "Product Page. Product Id : " ^ string_of_int i
+let float_page f = "Float page. number : " ^ string_of_float f
+let contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
+let product1 name id q = Format.sprintf "Product1 %s. Id: %d. q = %b" name id q
+let product2 name id = Format.sprintf "Product2 %s. Id: %d." name id
 
-and fruit_page = function
+let fruit_page = function
   | Fruit.Apple -> "Apples are juicy!"
   | Orange -> "Orange is a citrus fruit."
   | Pineapple -> "Pineapple has scaly skin"
 
-and faq category_id =
+let faq category_id =
   let category_name =
     match category_id with
     | 1 -> "products"
@@ -47,11 +32,22 @@ and faq category_id =
   in
   "FAQ page for category : " ^ category_name
 
+(* create a router *)
+let router =
+  Wtr.create
+    [ {%wtr| get,post        ; /home/about/:int    |} (fun _ -> "about page")
+    ; {%wtr| get             ; /home/:int/         |} prod_page
+    ; {%wtr| get,post        ; /home/:float/       |} float_page
+    ; {%wtr| /contact/*/:int                       |} contact_page
+    ; {%wtr| /product/:string?section=:int&q=:bool |} product1
+    ; {%wtr| /product/:string?section=:int&q1=yes  |} product2
+    ; {%wtr| /fruit/:Fruit                         |} fruit_page
+    ; {%wtr| /faq/:int/**                          |} faq ]
+
 let () =
-  let router = router () in
   [ Wtr.match' router "/home/100001.1/"
   ; Wtr.match' router "/home/100001/"
-  ; Wtr.match' router "/home/about"
+  ; Wtr.match' ~meth:`GET router "/home/about"
   ; Wtr.match' router "/product/dyson350?section=233&q=true"
   ; Wtr.match' router "/product/dyson350?section=2&q=false"
   ; Wtr.match' router "/product/dyson350?section=2&q1=yes"
