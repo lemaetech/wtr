@@ -28,6 +28,8 @@
    (>= 4.12.0))
   (uri
    (>= 4.2.0))
+  (fmt
+   (>= 0.8.9))
   (ppxlib
    (>= 0.22.0))
   (ppx_expect :with-test)

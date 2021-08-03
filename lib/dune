@@ -1,6 +1,6 @@
 (library
  (name wtr)
- (libraries uri)
+ (libraries uri fmt)
  (public_name wtr))
 
 (documentation

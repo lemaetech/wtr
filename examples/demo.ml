@@ -11,7 +11,7 @@ module Fruit = struct
 end
 
 (* route handlers. *)
-let prod_page i = "Product Page. Product Id : " ^ string_of_int i
+let prod_page i = "Int page. number : " ^ string_of_int i
 let float_page f = "Float page. number : " ^ string_of_float f
 let contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
 let product1 name id q = Format.sprintf "Product1 %s. Id: %d. q = %b" name id q
@@ -45,20 +45,20 @@ let router =
     ; {%wtr| /faq/:int/**                          |} faq ]
 
 let () =
-  [ Wtr.match' router "/home/100001.1/"
-  ; Wtr.match' router "/home/100001/"
-  ; Wtr.match' ~meth:`GET router "/home/about"
-  ; Wtr.match' router "/product/dyson350?section=233&q=true"
-  ; Wtr.match' router "/product/dyson350?section=2&q=false"
-  ; Wtr.match' router "/product/dyson350?section=2&q1=yes"
-  ; Wtr.match' router "/product/dyson350?section=2&q1=no"
-  ; Wtr.match' router "/fruit/apple"
-  ; Wtr.match' router "/fruit/orange"
-  ; Wtr.match' router "/fruit/pineapple"
-  ; Wtr.match' router "/fruit/guava"
-  ; Wtr.match' router "/faq/1/"
-  ; Wtr.match' router "/faq/1/whatever"
-  ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ]
+  [ Wtr.match' ~meth:`GET router "/home/100001.1/"
+  ; Wtr.match' ~meth:`POST router "/home/100001/"
+    (* ; Wtr.match' ~meth:`GET router "/home/about" *)
+    (* ; Wtr.match' router "/product/dyson350?section=233&q=true" *)
+    (* ; Wtr.match' router "/product/dyson350?section=2&q=false" *)
+    (* ; Wtr.match' router "/product/dyson350?section=2&q1=yes" *)
+    (* ; Wtr.match' router "/product/dyson350?section=2&q1=no" *)
+    (* ; Wtr.match' router "/fruit/apple" *)
+    (* ; Wtr.match' router "/fruit/orange" *)
+    (* ; Wtr.match' router "/fruit/pineapple" *)
+    (* ; Wtr.match' router "/fruit/guava" *)
+    (* ; Wtr.match' router "/faq/1/" *)
+    (* ; Wtr.match' router "/faq/1/whatever" *)
+    (* ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ] *) ]
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) )

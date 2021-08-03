@@ -67,6 +67,8 @@ val match' : ?meth:meth -> 'a t -> string -> 'a option
 (** [match t uri] matches a [route] to [uri], executes its handler and returns
     the computed value. [None] is returned if [uri] is not matched. *)
 
+val pp : Format.formatter -> 'a t -> unit
+
 (** {2 Decoder} *)
 
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc.*)
