@@ -295,6 +295,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | Nil, [] -> f
   | Full_splat, [] -> f
   | Trailing_slash, [] -> f
+  | Method (_, uri), decoded_values -> exec_route_handler f (uri, decoded_values)
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
   | Decoder ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (

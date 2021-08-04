@@ -46,39 +46,94 @@ let router =
       ; {%wtr| /fruit/:Fruit                              |} fruit_page
       ; {%wtr| /faq/:int/**                               |} faq ])
 
-let () = Wtr.pp Format.std_formatter router
-(* [ Wtr.match' ~meth:`GET router "/home/100001.1/" *)
-(* ; Wtr.match' ~meth:`POST router "/home/100001/" *)
-(*   (1* ; Wtr.match' ~meth:`GET router "/home/about" *1) *)
-(*   (1* ; Wtr.match' router "/product/dyson350?section=233&q=true" *1) *)
-(*   (1* ; Wtr.match' router "/product/dyson350?section=2&q=false" *1) *)
-(*   (1* ; Wtr.match' router "/product/dyson350?section=2&q1=yes" *1) *)
-(*   (1* ; Wtr.match' router "/product/dyson350?section=2&q1=no" *1) *)
-(*   (1* ; Wtr.match' router "/fruit/apple" *1) *)
-(*   (1* ; Wtr.match' router "/fruit/orange" *1) *)
-(*   (1* ; Wtr.match' router "/fruit/pineapple" *1) *)
-(*   (1* ; Wtr.match' router "/fruit/guava" *1) *)
-(*   (1* ; Wtr.match' router "/faq/1/" *1) *)
-(*   (1* ; Wtr.match' router "/faq/1/whatever" *1) *)
-(*   (1* ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ] *1) ] *)
-(* |> List.iteri (fun i -> function *)
-(*      | Some s -> Printf.printf "%3d: %s\n" (i + 1) s *)
-(*      | None -> Printf.printf "%3d: None\n" (i + 1) ) *)
+let () =
+  Format.(fprintf std_formatter "====Routes====\n%a\n" Wtr.pp router) ;
+  Printf.printf "\n====Router Match Results====\n" ;
+  [ Wtr.match' ~meth:`GET router "/home/100001.1/"
+  ; Wtr.match' ~meth:`GET router "/home/100001/"
+  ; Wtr.match' ~meth:`GET router "/home/about/12"
+  ; Wtr.match' router "/product/dyson350?section=233&q=true"
+  ; Wtr.match' router "/product/dyson350?section=2&q=false"
+  ; Wtr.match' router "/product/dyson350?section=2&q1=yes"
+  ; Wtr.match' router "/product/dyson350?section=2&q1=no"
+  ; Wtr.match' router "/fruit/apple"
+  ; Wtr.match' router "/fruit/orange"
+  ; Wtr.match' router "/fruit/pineapple"
+  ; Wtr.match' router "/fruit/guava"
+  ; Wtr.match' router "/faq/1/"
+  ; Wtr.match' router "/faq/1/whatever"
+  ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ]
+  |> List.iteri (fun i -> function
+       | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
+       | None -> Printf.printf "%3d: None\n" (i + 1) )
 
 (* Should output below:
 
-    1: Float page. number : 100001.1
-    2: Product Page. Product Id : 100001
-    3: about page
-    4: Product1 dyson350. Id: 233. q = true
-    5: Product1 dyson350. Id: 2. q = false
-    6: Product2 dyson350. Id: 2.
-    7: None
-    8: Apples are juicy!
-    9: Orange is a citrus fruit.
+ *====Routes====
+   GET
+   /home
+    /about
+      /:int
+
+    /:int
+      /
+
+    /:float
+      /
+
+   POST
+   /home
+    /about
+      /:int
+
+    /:float
+      /
+
+   HEAD
+   /home
+    /about
+      /:int
+
+   DELETE
+   /home
+    /about
+      /:int
+
+   /contact
+   /:string
+    /:int
+
+   /product
+   /:string
+    /section
+      /:int
+        /q
+          /:bool
+
+        /q1
+          /yes
+
+   /fruit
+   /:fruit
+
+   /faq
+   /:int
+    /**
+
+   ====Router Match Results====
+   1: Float page. number : 100001.1
+   2: Int page. number : 100001
+   3: about page
+   4: Product1 dyson350. Id: 233. q = true
+   5: Product1 dyson350. Id: 2. q = false
+   6: Product2 dyson350. Id: 2.
+   7: None
+   8: Apples are juicy!
+   9: Orange is a citrus fruit.
    10: Pineapple has scaly skin
    11: None
    12: FAQ page for category : products
    13: FAQ page for category : products
-   14: FAQ page for category : insurance
-*)
+   14: FAQ page for category : insurance)
+
+ *)
