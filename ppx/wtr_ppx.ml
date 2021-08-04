@@ -30,23 +30,26 @@ let rec make_route ~loc ~path:_ wtr =
    validate_tokens (path_components @ query_components) )
   |> function
   | Ok uri_tokens ->
-      let uri_expr = make_uri ~loc uri_tokens in
-      let methods = make_methods ~loc methods in
-      [%expr Wtr.route [%e methods] [%e uri_expr]]
+      let methods' = to_methods methods in
+      let uris =
+        ( if List.length methods' = 0 then [uri_tokens]
+        else List.map (fun m -> m :: uri_tokens) methods' )
+        |> make_uris ~loc
+      in
+      [%expr Wtr.route [%e uris]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-and make_methods ~loc methods_str =
-  let methods =
-    String.split_on_char ',' methods_str
-    |> List.map String.trim
-    |> List.filter (fun s -> String.length s > 0)
-  in
-  let rec loop = function
-    | [] -> [%expr []]
-    | meth :: methods ->
-        [%expr Wtr.meth [%e Ast_builder.estring ~loc meth] :: [%e loop methods]]
-  in
-  loop methods
+and make_uris ~loc = function
+  | [] -> [%expr []]
+  | uri_toks :: l ->
+      [%expr [%e make_uri ~loc uri_toks] :: [%e make_uris ~loc l]]
+
+and to_methods methods_str =
+  String.split_on_char ',' methods_str
+  |> List.filter_map (fun s ->
+         let s = String.trim s in
+         if String.length s > 0 then Some ("^^" ^ String.uppercase_ascii s)
+         else None )
 
 and parse_uri wtr =
   let wtr = String.trim wtr in
@@ -98,6 +101,15 @@ and findi f l =
   in
   loop 0 l
 
+and starts_with ~prefix s =
+  let len_s = String.length s and len_pre = String.length prefix in
+  let rec aux i =
+    if i = len_pre then true
+    else if String.unsafe_get s i <> String.unsafe_get prefix i then false
+    else aux (i + 1)
+  in
+  len_s >= len_pre && aux 0
+
 and split_on f l =
   match findi f l with
   | Some n ->
@@ -112,6 +124,7 @@ and make_uri ~loc = function
       [%expr
         Wtr.Private.decoder Wtr.Private.string [%e make_uri ~loc components]]
   | comp :: components when Char.equal comp.[0] ':' -> (
+      (* Decoders *)
       let comp = String.sub comp 1 (String.length comp - 1) in
       match comp with
       | "int" ->
@@ -143,6 +156,11 @@ and make_uri ~loc = function
             "wtr: Invalid custom argument name '%s'. Custom argument component \
              name must be a valid module name."
             x )
+  | comp :: components when starts_with ~prefix:"^^" comp ->
+      (* Methods *)
+      let method' = String.(sub comp 2 (length comp - 2)) in
+      let meth_expr = [%expr Wtr.meth [%e Ast_builder.estring ~loc method']] in
+      [%expr Wtr.Private.method' [%e meth_expr] [%e make_uri ~loc components]]
   | comp :: components ->
       [%expr
         Wtr.Private.lit

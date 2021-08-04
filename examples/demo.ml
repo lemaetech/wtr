@@ -34,15 +34,17 @@ let faq category_id =
 
 (* create a router *)
 let router =
-  Wtr.create
-    [ {%wtr| get,post        ; /home/about/:int    |} (fun _ -> "about page")
-    ; {%wtr| get             ; /home/:int/         |} prod_page
-    ; {%wtr| get,post        ; /home/:float/       |} float_page
-    ; {%wtr| /contact/*/:int                       |} contact_page
-    ; {%wtr| /product/:string?section=:int&q=:bool |} product1
-    ; {%wtr| /product/:string?section=:int&q1=yes  |} product2
-    ; {%wtr| /fruit/:Fruit                         |} fruit_page
-    ; {%wtr| /faq/:int/**                          |} faq ]
+  Wtr.(
+    create
+      [ {%wtr| get,post,head,delete  ; /home/about/:int   |} (fun _ ->
+            "about page" )
+      ; {%wtr| get                   ; /home/:int/        |} prod_page
+      ; {%wtr| get,post              ; /home/:float/      |} float_page
+      ; {%wtr| /contact/*/:int                            |} contact_page
+      ; {%wtr| /product/:string?section=:int&q=:bool      |} product1
+      ; {%wtr| /product/:string?section=:int&q1=yes       |} product2
+      ; {%wtr| /fruit/:Fruit                              |} fruit_page
+      ; {%wtr| /faq/:int/**                               |} faq ])
 
 let () = Wtr.pp Format.std_formatter router
 (* [ Wtr.match' ~meth:`GET router "/home/100001.1/" *)

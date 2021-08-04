@@ -44,7 +44,7 @@ val pp_meth : Format.formatter -> meth -> unit
     the handler. *)
 type 'c route
 
-val route : meth list -> ('a, 'b) uri -> 'a -> 'b route
+val route : ('a, 'b) uri list -> 'a -> 'b route list
 (** [route methods uri handler] creates a route which matches request method
     [meth], [uri] and a route handler [handler]. *)
 
@@ -60,7 +60,7 @@ val ( >- ) : ('a, 'b) uri -> 'a -> 'b route
 (** ['a t] represents a Trie based router. *)
 type 'a t
 
-val create : 'a route list -> 'a t
+val create : 'a route list list -> 'a t
 (** [create routes] creates a router from a list of [route]s. *)
 
 val match' : ?meth:meth -> 'a t -> string -> 'a option
@@ -111,10 +111,11 @@ module Private : sig
   val trailing_slash : ('b, 'b) uri
   val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
   val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
+  val method' : meth -> ('a, 'b) uri -> ('a, 'b) uri
 
-  val int : int decoder
   (** decoders *)
 
+  val int : int decoder
   val int32 : int32 decoder
   val int64 : int64 decoder
   val float : float decoder
