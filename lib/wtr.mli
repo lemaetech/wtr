@@ -137,7 +137,7 @@ val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 
 (** {1 HTTP Method} *)
 
-val meth_equal : method' -> method' -> bool
+val method_equal : method' -> method' -> bool
 val meth : string -> method'
 
 (** {1 Pretty Printers} *)

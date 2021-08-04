@@ -62,7 +62,7 @@ type method' =
   | `TRACE
   | `Method of string ]
 
-let meth_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
+let method_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
 
 let pp_method' fmt t =
   ( match t with
@@ -135,7 +135,7 @@ let node_type_equal a b =
   | PTrailing_slash, PTrailing_slash -> true
   | PFull_splat, PFull_splat -> true
   | PLiteral lit', PLiteral lit -> String.equal lit lit'
-  | PMethod meth1, PMethod meth2 -> meth_equal meth1 meth2
+  | PMethod meth1, PMethod meth2 -> method_equal meth1 meth2
   | PDecoder decoder, PDecoder decoder' -> (
     match eq decoder'.id decoder.id with Some Eq -> true | None -> false )
   | _ -> false
@@ -270,7 +270,7 @@ and match_method method' t : 'a t list =
   Array.fold_left
     (fun routes (node_type, t') ->
       match node_type with
-      | PMethod method'' when meth_equal method'' method' -> t' :: routes
+      | PMethod method'' when method_equal method'' method' -> t' :: routes
       | PMethod _ -> routes
       | _ -> t' :: routes )
     [] t.node_types
