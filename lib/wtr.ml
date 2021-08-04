@@ -165,13 +165,21 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Literal (lit, uri) -> PLiteral lit :: node_type_of_uri uri
   | Decoder (decoder, uri) -> PDecoder decoder :: node_type_of_uri uri
 
-let pp_node_type fmt node_type =
+let _pp_node_type fmt node_type =
   match node_type with
   | PFull_splat -> Format.fprintf fmt "/**%!"
   | PTrailing_slash -> Format.fprintf fmt "/%!"
   | PLiteral lit -> Format.fprintf fmt "/%s" lit
   | PDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
   | PMethod method' -> Format.fprintf fmt "%a" pp_meth method'
+
+let node_type_to_string node_type =
+  match node_type with
+  | PFull_splat -> Format.sprintf "/**%!"
+  | PTrailing_slash -> Format.sprintf "/%!"
+  | PLiteral lit -> Format.sprintf "/%s" lit
+  | PDecoder decoder -> Format.sprintf "/:%s" decoder.name
+  | PMethod method' -> Format.asprintf "%a" pp_meth method'
 
 (** ['a t] is a node in a trie based router. *)
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
@@ -220,9 +228,17 @@ and compile : 'a node -> 'a t =
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
 
-let rec pp fmt t =
-  let pp_node_path = Fmt.(pair (vbox ~indent:2 (pp_node_type ++ cut)) pp) in
-  Fmt.array pp_node_path fmt t.node_types
+let pp fmt t =
+  let open PPrint in
+  let rec doc t =
+    separate_map hardline
+      (fun (node_type, t') ->
+        let d1 = string (node_type_to_string node_type) in
+        let d2 = doc t' in
+        d1 ^//^ d2 )
+      (Array.to_list t.node_types)
+  in
+  ToFormatter.pretty 0. 80 fmt (doc t)
 
 type decoded_value = D : 'c Decoder.t * 'c -> decoded_value
 

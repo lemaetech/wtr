@@ -44,24 +44,24 @@ let router =
     ; {%wtr| /fruit/:Fruit                         |} fruit_page
     ; {%wtr| /faq/:int/**                          |} faq ]
 
-let () =
-  [ Wtr.match' ~meth:`GET router "/home/100001.1/"
-  ; Wtr.match' ~meth:`POST router "/home/100001/"
-    (* ; Wtr.match' ~meth:`GET router "/home/about" *)
-    (* ; Wtr.match' router "/product/dyson350?section=233&q=true" *)
-    (* ; Wtr.match' router "/product/dyson350?section=2&q=false" *)
-    (* ; Wtr.match' router "/product/dyson350?section=2&q1=yes" *)
-    (* ; Wtr.match' router "/product/dyson350?section=2&q1=no" *)
-    (* ; Wtr.match' router "/fruit/apple" *)
-    (* ; Wtr.match' router "/fruit/orange" *)
-    (* ; Wtr.match' router "/fruit/pineapple" *)
-    (* ; Wtr.match' router "/fruit/guava" *)
-    (* ; Wtr.match' router "/faq/1/" *)
-    (* ; Wtr.match' router "/faq/1/whatever" *)
-    (* ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ] *) ]
-  |> List.iteri (fun i -> function
-       | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
-       | None -> Printf.printf "%3d: None\n" (i + 1) )
+let () = Wtr.pp Format.std_formatter router
+(* [ Wtr.match' ~meth:`GET router "/home/100001.1/" *)
+(* ; Wtr.match' ~meth:`POST router "/home/100001/" *)
+(*   (1* ; Wtr.match' ~meth:`GET router "/home/about" *1) *)
+(*   (1* ; Wtr.match' router "/product/dyson350?section=233&q=true" *1) *)
+(*   (1* ; Wtr.match' router "/product/dyson350?section=2&q=false" *1) *)
+(*   (1* ; Wtr.match' router "/product/dyson350?section=2&q1=yes" *1) *)
+(*   (1* ; Wtr.match' router "/product/dyson350?section=2&q1=no" *1) *)
+(*   (1* ; Wtr.match' router "/fruit/apple" *1) *)
+(*   (1* ; Wtr.match' router "/fruit/orange" *1) *)
+(*   (1* ; Wtr.match' router "/fruit/pineapple" *1) *)
+(*   (1* ; Wtr.match' router "/fruit/guava" *1) *)
+(*   (1* ; Wtr.match' router "/faq/1/" *1) *)
+(*   (1* ; Wtr.match' router "/faq/1/whatever" *1) *)
+(*   (1* ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ] *1) ] *)
+(* |> List.iteri (fun i -> function *)
+(*      | Some s -> Printf.printf "%3d: %s\n" (i + 1) s *)
+(*      | None -> Printf.printf "%3d: None\n" (i + 1) ) *)
 
 (* Should output below:
 
