@@ -51,13 +51,7 @@ let float = create_decoder ~name:"float" ~decode:float_of_string_opt
 let string = create_decoder ~name:"string" ~decode:(fun a -> Some a)
 let bool = create_decoder ~name:"bool" ~decode:bool_of_string_opt
 
-module type Decoder = sig
-  type t
-
-  val t : t decoder
-end
-
-type meth =
+type method' =
   [ `GET
   | `HEAD
   | `POST
@@ -68,9 +62,9 @@ type meth =
   | `TRACE
   | `Method of string ]
 
-let meth_equal (meth1 : meth) (meth2 : meth) = compare meth1 meth2 = 0
+let meth_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
 
-let pp_meth fmt t =
+let pp_method' fmt t =
   ( match t with
   | `GET -> "GET"
   | `HEAD -> "HEAD"
@@ -104,7 +98,7 @@ let meth meth =
       runtime, eg. ':int' in '/home/:int' *)
 type ('a, 'b) uri =
   | Nil : ('b, 'b) uri
-  | Method : meth * ('a, 'b) uri -> ('a, 'b) uri
+  | Method : method' * ('a, 'b) uri -> ('a, 'b) uri
   | Full_splat : ('b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
@@ -113,7 +107,7 @@ type ('a, 'b) uri =
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
   | Nil -> Format.fprintf fmt "%!"
-  | Method (meth, uri) -> Format.fprintf fmt "%a%a" pp_meth meth pp_uri uri
+  | Method (meth, uri) -> Format.fprintf fmt "%a%a" pp_method' meth pp_uri uri
   | Full_splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
@@ -128,14 +122,12 @@ let route : ('a, 'b) uri list -> 'a -> 'b route list =
 let pp_route : Format.formatter -> 'b route -> unit =
  fun fmt (Route (uri, _)) -> pp_uri fmt uri
 
-let ( >- ) : ('a, 'b) uri -> 'a -> 'b route = fun uri f -> Route (uri, f)
-
 (** Existential to encode uri component/node type. *)
 type node_type =
   | PTrailing_slash : node_type
   | PFull_splat : node_type
   | PLiteral : string -> node_type
-  | PMethod : meth -> node_type
+  | PMethod : method' -> node_type
   | PDecoder : 'c decoder -> node_type
 
 let node_type_equal a b =
@@ -164,7 +156,7 @@ let node_type_to_string node_type =
   | PTrailing_slash -> Format.sprintf "/%!"
   | PLiteral lit -> Format.sprintf "/%s" lit
   | PDecoder decoder -> Format.sprintf "/:%s" decoder.name
-  | PMethod method' -> Format.asprintf "%a" pp_meth method'
+  | PMethod method' -> Format.asprintf "%a" pp_method' method'
 
 (** ['a t] is a node in a trie based router. *)
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
@@ -222,7 +214,7 @@ let pp fmt t =
 
 type decoded_value = D : 'c decoder * 'c -> decoded_value
 
-let rec match' ?meth (t : 'a t) uri =
+let rec match' ?method' (t : 'a t) uri =
   let rec try_router t decoded_values = function
     | [] ->
         Option.map
@@ -269,7 +261,7 @@ let rec match' ?meth (t : 'a t) uri =
   let uri = String.trim uri in
   if String.length uri > 0 then
     let routers =
-      match meth with Some method' -> match_method method' t | None -> [t]
+      match method' with Some method' -> match_method method' t | None -> [t]
     in
     try_routers (uri_tokens uri) routers
   else None
@@ -305,6 +297,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | _, _ -> assert false
 
 module Private = struct
+  let route = route
   let nil = Nil
   let trailing_slash = Trailing_slash
   let full_splat = Full_splat
