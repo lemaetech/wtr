@@ -7,55 +7,49 @@
  *
  *-------------------------------------------------------------------------*)
 
-module Decoder = struct
-  type 'a witness = ..
-  type (_, _) eq = Eq : ('a, 'a) eq
+type 'a witness = ..
+type (_, _) eq = Eq : ('a, 'a) eq
 
-  module type Ty = sig
-    type t
+module type Ty = sig
+  type t
 
-    val witness : t witness
-    val eq : 'a witness -> ('a, t) eq option
-  end
-
-  type 'a id = (module Ty with type t = 'a)
-
-  let new_id (type a) () =
-    let module Ty = struct
-      type t = a
-      type 'a witness += Ty : t witness
-
-      let witness = Ty
-
-      let eq (type b) : b witness -> (b, t) eq option = function
-        | Ty -> Some Eq
-        | _ -> None
-    end in
-    (module Ty : Ty with type t = a)
-
-  let eq : type a b. a id -> b id -> (a, b) eq option =
-   fun (module TyA) (module TyB) -> TyB.eq TyA.witness
-
-  type 'a t =
-    { name: string (* name e.g. int, float, bool, string etc *)
-    ; decode: string -> 'a option
-    ; id: 'a id }
-
-  let create ~name ~decode =
-    let id = new_id () in
-    {name; decode; id}
-
-  let int = create ~name:"int" ~decode:int_of_string_opt
-  let int32 = create ~name:"int32" ~decode:Int32.of_string_opt
-  let int64 = create ~name:"int64" ~decode:Int64.of_string_opt
-  let float = create ~name:"float" ~decode:float_of_string_opt
-  let string = create ~name:"string" ~decode:(fun a -> Some a)
-  let bool = create ~name:"bool" ~decode:bool_of_string_opt
+  val witness : t witness
+  val eq : 'a witness -> ('a, t) eq option
 end
 
-type 'a decoder = 'a Decoder.t
+type 'a id = (module Ty with type t = 'a)
 
-let create_decoder = Decoder.create
+let new_id (type a) () =
+  let module Ty = struct
+    type t = a
+    type 'a witness += Ty : t witness
+
+    let witness = Ty
+
+    let eq (type b) : b witness -> (b, t) eq option = function
+      | Ty -> Some Eq
+      | _ -> None
+  end in
+  (module Ty : Ty with type t = a)
+
+let eq : type a b. a id -> b id -> (a, b) eq option =
+ fun (module TyA) (module TyB) -> TyB.eq TyA.witness
+
+type 'a decoder =
+  { name: string (* name e.g. int, float, bool, string etc *)
+  ; decode: string -> 'a option
+  ; id: 'a id }
+
+let create_decoder ~name ~decode =
+  let id = new_id () in
+  {name; decode; id}
+
+let int = create_decoder ~name:"int" ~decode:int_of_string_opt
+let int32 = create_decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64 = create_decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float = create_decoder ~name:"float" ~decode:float_of_string_opt
+let string = create_decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool = create_decoder ~name:"bool" ~decode:bool_of_string_opt
 
 module type Decoder = sig
   type t
@@ -114,7 +108,7 @@ type ('a, 'b) uri =
   | Full_splat : ('b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decoder : 'c Decoder.t * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
@@ -142,7 +136,7 @@ type node_type =
   | PFull_splat : node_type
   | PLiteral : string -> node_type
   | PMethod : meth -> node_type
-  | PDecoder : 'c Decoder.t -> node_type
+  | PDecoder : 'c decoder -> node_type
 
 let node_type_equal a b =
   match (a, b) with
@@ -151,9 +145,7 @@ let node_type_equal a b =
   | PLiteral lit', PLiteral lit -> String.equal lit lit'
   | PMethod meth1, PMethod meth2 -> meth_equal meth1 meth2
   | PDecoder decoder, PDecoder decoder' -> (
-    match Decoder.eq decoder'.id decoder.id with
-    | Some Decoder.Eq -> true
-    | None -> false )
+    match eq decoder'.id decoder.id with Some Eq -> true | None -> false )
   | _ -> false
 
 (* [node_type_of_uri uri] converts [uri] to [node_type list]. This is done to get around OCaml
@@ -228,7 +220,7 @@ let pp fmt t =
   in
   ToFormatter.pretty 0. 80 fmt (doc t)
 
-type decoded_value = D : 'c Decoder.t * 'c -> decoded_value
+type decoded_value = D : 'c decoder * 'c -> decoded_value
 
 let rec match' ?meth (t : 'a t) uri =
   let rec try_router t decoded_values = function
@@ -306,8 +298,8 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
   | Decoder ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
-    match Decoder.eq id id' with
-    | Some Decoder.Eq -> exec_route_handler (f v) (uri, decoded_values)
+    match eq id id' with
+    | Some Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false )
   | _, _ -> assert false
 
@@ -318,10 +310,10 @@ module Private = struct
   let lit s uri = Literal (s, uri)
   let decoder d uri = Decoder (d, uri)
   let method' meth uri = Method (meth, uri)
-  let int = Decoder.int
-  let int32 = Decoder.int32
-  let int64 = Decoder.int64
-  let float = Decoder.float
-  let bool = Decoder.bool
-  let string = Decoder.string
+  let int = int
+  let int32 = int32
+  let int64 = int64
+  let float = float
+  let bool = bool
+  let string = string
 end

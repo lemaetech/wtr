@@ -105,6 +105,7 @@ val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** Only to be used by PPX *)
 module Private : sig
   val nil : ('b, 'b) uri
+
   (** uri components *)
 
   val full_splat : ('b, 'b) uri
