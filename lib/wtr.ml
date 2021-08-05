@@ -209,7 +209,6 @@ let rec pp fmt t =
   let open Format in
   let nodes = t.node_types |> Array.to_list in
   let len = List.length nodes in
-  (* Printf.printf "len:%d\n" len ; *)
   nodes
   |> pp_print_list
        ~pp_sep:(if len > 1 then pp_force_newline else fun _ () -> ())
@@ -284,7 +283,7 @@ let rec match' method' uri (t : 'a t) =
         match t.node_types.(i) with
         | PMethod method'', t' when method_equal method' method'' ->
             try_match t' [] uri_toks
-        | _ -> loop (i + 1)
+        | _ -> (loop [@tailcall]) (i + 1)
     in
     loop 0
   else None
