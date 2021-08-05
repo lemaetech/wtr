@@ -64,7 +64,7 @@ type method' =
 
 let method_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
 
-let pp_method' fmt t =
+let pp_method fmt t =
   ( match t with
   | `GET -> "GET"
   | `HEAD -> "HEAD"
@@ -107,7 +107,7 @@ type ('a, 'b) uri =
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
   | Nil -> Format.fprintf fmt "%!"
-  | Method (meth, uri) -> Format.fprintf fmt "%a%a" pp_method' meth pp_uri uri
+  | Method (meth, uri) -> Format.fprintf fmt "%a%a" pp_method meth pp_uri uri
   | Full_splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
@@ -156,7 +156,7 @@ let node_type_to_string node_type =
   | PTrailing_slash -> Format.sprintf "/%!"
   | PLiteral lit -> Format.sprintf "/%s" lit
   | PDecoder decoder -> Format.sprintf "/:%s" decoder.name
-  | PMethod method' -> Format.asprintf "%a" pp_method' method'
+  | PMethod method' -> Format.asprintf "%a" pp_method method'
 
 (** ['a t] is a node in a trie based router. *)
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}

@@ -145,7 +145,7 @@ val method' : string -> method'
 
 (** {1 Pretty Printers} *)
 
-val pp_method' : Format.formatter -> method' -> unit
+val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
 val pp : Format.formatter -> 'a t -> unit
 
