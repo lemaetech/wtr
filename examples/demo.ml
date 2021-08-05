@@ -47,8 +47,8 @@ let router =
 
 let () =
   Printexc.record_backtrace true ;
-  Format.(fprintf std_formatter "====Routes====\n%a\n" Wtr.pp router) ;
-  Printf.printf "\n====Router Match Results====\n" ;
+  Format.(fprintf std_formatter "====Routes====@.%a" Wtr.pp router) ;
+  Format.(fprintf std_formatter "@.@.====Router Match Results====@.") ;
   [ Wtr.match' `GET "/home/100001.1/" router
   ; Wtr.match' `DELETE "/home/100001/" router
   ; Wtr.match' `GET "/home/about/" router
@@ -68,73 +68,72 @@ let () =
        | None -> Printf.printf "%3d: None\n" (i + 1) )
 
 (* Should output below:
-   ====Routes====
-   GET
-     /home
-       /about
-         /
+    ====Routes====
+    GET
+      /home
+        /about
+          /
 
-       /:float
-         /
+        /:float
+          /
 
-     /contact
-       /:string
-         /:int
+      /contact
+        /:string
+          /:int
 
-     /product
-       /:string
-         /section
-           /:int
-             /q
-               /:bool
+      /product
+        /:string
+          /section
+            /:int
+              /q
+                /:bool
 
-             /q1
-               /yes
+              /q1
+                /yes
 
-     /fruit
-       /:fruit
+      /fruit
+        /:fruit
 
-     /faq
-       /:int
-         /**
+      /faq
+        /:int
+          /**
 
-   POST
-     /home
-       /about
-         /
+    POST
+      /home
+        /about
+          /
 
-       /:float
-         /
+        /:float
+          /
 
-   HEAD
-     /home
-       /about
-         /
+    HEAD
+      /home
+        /about
+          /
 
-       /:int
-         /
+        /:int
+          /
 
-   DELETE
-     /home
-       /about
-         /
+    DELETE
+      /home
+        /about
+          /
 
-       /:int
-         /
+        /:int
+          /
 
-      ====Router Match Results====
-      1: Float page. number : 100001.1
-      2: Int page. number : 100001
-      3: about page
-      4: Product1 dyson350. Id: 233. q = true
-      5: Product1 dyson350. Id: 2. q = false
-      6: Product2 dyson350. Id: 2.
-      7: None
-      8: Apples are juicy!
-      9: Orange is a citrus fruit.
-      10: Pineapple has scaly skin
-      11: None
-      12: FAQ page for category : products
-      13: FAQ page for category : products
-      14: FAQ page for category : insurance)
-*)
+   ====Router Match Results====
+    1: Float page. number : 100001.1
+    2: Int page. number : 100001
+    3: about page
+    4: Product1 dyson350. Id: 233. q = true
+    5: Product1 dyson350. Id: 2. q = false
+    6: Product2 dyson350. Id: 2.
+    7: None
+    8: Apples are juicy!
+    9: Orange is a citrus fruit.
+    10: Pineapple has scaly skin
+    11: None
+    12: FAQ page for category : products
+    13: FAQ page for category : products
+    14: FAQ page for category : insurance *)

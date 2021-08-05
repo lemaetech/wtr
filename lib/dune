@@ -1,6 +1,6 @@
 (library
  (name wtr)
- (libraries uri pprint)
+ (libraries uri pprint pp)
  (public_name wtr))
 
 (documentation

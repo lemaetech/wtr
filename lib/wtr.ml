@@ -205,7 +205,7 @@ and compile : 'a node -> 'a t =
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
 
-let pp fmt t =
+let _pp fmt t =
   let open PPrint in
   let rec doc t =
     separate_map hardline
@@ -213,6 +213,23 @@ let pp fmt t =
       (Array.to_list t.node_types)
   in
   ToFormatter.pretty 0. 80 fmt (doc t)
+
+let rec pp fmt t =
+  let open Format in
+  let nodes = t.node_types |> Array.to_list in
+  let len = List.length nodes in
+  (* Printf.printf "len:%d\n" len ; *)
+  nodes
+  |> pp_print_list
+       ~pp_sep:(if len > 1 then pp_force_newline else fun _ () -> ())
+       (fun fmt (nt, t') ->
+         pp_open_vbox fmt 2 ;
+         pp_print_string fmt (node_type_to_string nt) ;
+         if Array.length t'.node_types > 0 then (
+           pp_print_break fmt 0 0 ; pp fmt t' ) ;
+         pp_close_box fmt () ;
+         () )
+       fmt
 
 type decoded_value = D : 'c decoder * 'c -> decoded_value
 
