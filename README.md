@@ -2,7 +2,7 @@
 
 Wtr - A typed router for OCaml web applications.
 
-[User Guide](https://github.com/lemaetech/wtr/blob/main/tests/user_guide.md) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;[Wtr API](https://lemaetech.co.uk/wtr/wtr/Wtr/index.html)&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [CoHttp Demo](https://github.com/lemaetech/wtr/blob/main/examples/cohttp.ml)
+[Wtr API](https://lemaetech.co.uk/wtr/wtr/Wtr/index.html)&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [CoHttp Demo](https://github.com/lemaetech/wtr/blob/main/examples/cohttp.ml)
 
 ## Overview 
 
