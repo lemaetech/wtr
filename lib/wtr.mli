@@ -92,9 +92,9 @@ val create : 'a route list list -> 'a t
             ; {%wtr\| /faq/:int/**                               \|} faq ])
     ]} *)
 
-val match' : ?method':method' -> 'a t -> string -> 'a option
-(** [match t uri] matches a [route] to [uri], executes its handler and returns
-    the computed value. [None] is returned if [uri] is not matched. *)
+val match' : method' -> 'a t -> string -> 'a option
+(** [match method' t uri] matches a route to a given [uri], executes its handler
+    and returns the computed value. [None] is returned if [uri] is not matched. *)
 
 (** {1 Decoders}
 
@@ -138,7 +138,9 @@ val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** {1 HTTP Method} *)
 
 val method_equal : method' -> method' -> bool
-val meth : string -> method'
+
+val method' : string -> method'
+(** [method' m] creates a {!type:method'} from value [m]. *)
 
 (** {1 Pretty Printers} *)
 

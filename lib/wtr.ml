@@ -77,7 +77,7 @@ let pp_method' fmt t =
   | `Method s -> Format.sprintf "Method (%s)" s )
   |> Format.fprintf fmt "%s"
 
-let meth meth =
+let method' meth =
   String.uppercase_ascii meth
   |> function
   | "GET" -> `GET
@@ -190,6 +190,8 @@ let rec node : 'a node -> 'a route -> 'a node =
 
 and empty_node : 'a node = {route= None; node_types= []}
 
+(* We use array for node_types so that we get better cache locality. The hope being
+   that iterating nodes via array is faster than via the list. *)
 type 'a t = {route: 'a route option; node_types: (node_type * 'a t) array}
 
 let rec create routes =
@@ -214,8 +216,8 @@ let pp fmt t =
 
 type decoded_value = D : 'c decoder * 'c -> decoded_value
 
-let rec match' ?method' (t : 'a t) uri =
-  let rec try_router t decoded_values = function
+let rec match' method' (t : 'a t) uri =
+  let rec try_match t decoded_values = function
     | [] ->
         Option.map
           (fun (Route (uri, f)) ->
@@ -248,39 +250,35 @@ let rec match' ?method' (t : 'a t) uri =
         done ;
         Option.bind !matched_node (fun (t', decoded_values) ->
             if !full_splat_matched then
-              (try_router [@tailcall]) t' decoded_values []
-            else (try_router [@tailcall]) t' decoded_values uris )
+              (try_match [@tailcall]) t' decoded_values []
+            else (try_match [@tailcall]) t' decoded_values uris )
   in
-  let rec try_routers uri_tokens = function
-    | [] -> None
-    | wtr :: wtrs -> (
-      match try_router wtr [] uri_tokens with
-      | Some _ as x -> x
-      | None -> try_routers uri_tokens wtrs )
+  (* split uri path and query into tokens *)
+  let uri_toks =
+    let uri = String.trim uri |> Uri.of_string in
+    let uri_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
+    Uri.query uri
+    |> List.map (fun (k, v) ->
+           if List.length v > 0 then [k; List.hd v] else [k] )
+    |> List.concat |> List.append uri_tokens
   in
-  let uri = String.trim uri in
-  if String.length uri > 0 then
-    let routers =
-      match method' with Some method' -> match_method method' t | None -> [t]
+  (* Matching algorithm overview:
+
+     1. First match the HTTP method as all routes always start with a HTTP method
+     2. Then follow the trie nodes as suggested by the trie algorithm.
+  *)
+  if List.length uri_toks > 0 then
+    let n = Array.length t.node_types in
+    let rec loop i =
+      if i = n then None
+      else
+        match t.node_types.(i) with
+        | PMethod method'', t' when method_equal method' method'' ->
+            try_match t' [] uri_toks
+        | _ -> loop (n + 1)
     in
-    try_routers (uri_tokens uri) routers
+    loop 0
   else None
-
-and match_method method' t : 'a t list =
-  Array.fold_left
-    (fun routes (node_type, t') ->
-      match node_type with
-      | PMethod method'' when method_equal method'' method' -> t' :: routes
-      | PMethod _ -> routes
-      | _ -> t' :: routes )
-    [] t.node_types
-
-and uri_tokens s =
-  let uri = Uri.of_string s in
-  let uri_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
-  Uri.query uri
-  |> List.map (fun (k, v) -> if List.length v > 0 then [k; List.hd v] else [k])
-  |> List.concat |> List.append uri_tokens
 
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function

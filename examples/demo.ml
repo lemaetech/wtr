@@ -49,9 +49,9 @@ let router =
 let () =
   Format.(fprintf std_formatter "====Routes====\n%a\n" Wtr.pp router) ;
   Printf.printf "\n====Router Match Results====\n" ;
-  [ Wtr.match' ~meth:`GET router "/home/100001.1/"
-  ; Wtr.match' ~meth:`GET router "/home/100001/"
-  ; Wtr.match' ~meth:`GET router "/home/about/12"
+  [ Wtr.match' ~method':`GET router "/home/100001.1/"
+  ; Wtr.match' ~method':`GET router "/home/100001/"
+  ; Wtr.match' ~method':`GET router "/home/about/12"
   ; Wtr.match' router "/product/dyson350?section=233&q=true"
   ; Wtr.match' router "/product/dyson350?section=2&q=false"
   ; Wtr.match' router "/product/dyson350?section=2&q1=yes"

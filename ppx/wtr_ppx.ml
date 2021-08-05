@@ -36,7 +36,7 @@ let rec make_route ~loc ~path:_ wtr =
         else List.map (fun m -> m :: uri_tokens) methods' )
         |> make_uris ~loc
       in
-      [%expr Wtr.route [%e uris]]
+      [%expr Wtr.Private.route [%e uris]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
 and make_uris ~loc = function
@@ -159,7 +159,9 @@ and make_uri ~loc = function
   | comp :: components when starts_with ~prefix:"^^" comp ->
       (* Methods *)
       let method' = String.(sub comp 2 (length comp - 2)) in
-      let meth_expr = [%expr Wtr.meth [%e Ast_builder.estring ~loc method']] in
+      let meth_expr =
+        [%expr Wtr.method' [%e Ast_builder.estring ~loc method']]
+      in
       [%expr Wtr.Private.method' [%e meth_expr] [%e make_uri ~loc components]]
   | comp :: components ->
       [%expr
