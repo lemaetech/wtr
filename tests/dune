@@ -5,7 +5,3 @@
  (modules tests)
  (preprocess
   (pps wtr.ppx ppx_expect)))
-
-(mdx
- (files user_guide.md)
- (packages wtr))
