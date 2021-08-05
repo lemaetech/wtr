@@ -98,6 +98,11 @@ let () =
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) );;
 ```
+```mdx-error
+Line 19, characters 9-56:
+Error: Invalid wtr: /home/about. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
+```
 
 ### Output of the Demo
 

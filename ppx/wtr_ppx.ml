@@ -14,15 +14,19 @@ let ( let* ) r f = Result.bind r f
 let ( >>= ) = ( let* )
 
 let rec make_route ~loc ~path:_ wtr =
+  let wtr = String.trim wtr in
   let methods, uri =
     let tokens =
-      String.trim wtr |> String.split_on_char ';' |> List.map String.trim
+      String.split_on_char ';' wtr
+      |> List.map String.trim
       |> List.filter (fun s -> not (String.equal "" s))
     in
-    let len = List.length tokens in
-    if len < 1 || len > 2 then Location.raise_errorf ~loc "Invalid wtr: %s" wtr
-    else if len = 2 then (List.nth tokens 0, List.nth tokens 1)
-    else ("", List.hd tokens)
+    if List.length tokens != 2 then
+      Location.raise_errorf ~loc
+        "Invalid wtr: %s. Valid wtr is: [HTTP methods separated by comma (,)] \
+         ; [URI]"
+        wtr
+    else (List.nth tokens 0, List.nth tokens 1)
   in
   (let* uri = parse_uri uri in
    let* query_components = parse_query_tokens uri in

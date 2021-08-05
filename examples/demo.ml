@@ -1,4 +1,4 @@
-(* User defined data type. *)
+(* User defined decoder *)
 module Fruit = struct
   type t = Apple | Orange | Pineapple
 
@@ -10,7 +10,8 @@ module Fruit = struct
       | _ -> None )
 end
 
-(* route handlers. *)
+(* Route handlers. *)
+let about_page = "about page"
 let prod_page i = "Int page. number : " ^ string_of_int i
 let float_page f = "Float page. number : " ^ string_of_float f
 let contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
@@ -32,108 +33,108 @@ let faq category_id =
   in
   "FAQ page for category : " ^ category_name
 
-(* create a router *)
 let router =
   Wtr.(
     create
-      [ {%wtr| get,post,head,delete  ; /home/about/:int   |} (fun _ ->
-            "about page" )
-      ; {%wtr| get                   ; /home/:int/        |} prod_page
-      ; {%wtr| get,post              ; /home/:float/      |} float_page
-      ; {%wtr| /contact/*/:int                            |} contact_page
-      ; {%wtr| /product/:string?section=:int&q=:bool      |} product1
-      ; {%wtr| /product/:string?section=:int&q1=yes       |} product2
-      ; {%wtr| /fruit/:Fruit                              |} fruit_page
-      ; {%wtr| /faq/:int/**                               |} faq ])
+      [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
+      ; {%wtr| head,delete           ; /home/:int/             |} prod_page
+      ; {%wtr| get,post              ; /home/:float/           |} float_page
+      ; {%wtr| get; /contact/*/:int                            |} contact_page
+      ; {%wtr| get; /product/:string?section=:int&q=:bool      |} product1
+      ; {%wtr| get; /product/:string?section=:int&q1=yes       |} product2
+      ; {%wtr| get; /fruit/:Fruit                              |} fruit_page
+      ; {%wtr| GET; /faq/:int/**                               |} faq ])
 
 let () =
+  Printexc.record_backtrace true ;
   Format.(fprintf std_formatter "====Routes====\n%a\n" Wtr.pp router) ;
   Printf.printf "\n====Router Match Results====\n" ;
-  [ Wtr.match' ~method':`GET router "/home/100001.1/"
-  ; Wtr.match' ~method':`GET router "/home/100001/"
-  ; Wtr.match' ~method':`GET router "/home/about/12"
-  ; Wtr.match' router "/product/dyson350?section=233&q=true"
-  ; Wtr.match' router "/product/dyson350?section=2&q=false"
-  ; Wtr.match' router "/product/dyson350?section=2&q1=yes"
-  ; Wtr.match' router "/product/dyson350?section=2&q1=no"
-  ; Wtr.match' router "/fruit/apple"
-  ; Wtr.match' router "/fruit/orange"
-  ; Wtr.match' router "/fruit/pineapple"
-  ; Wtr.match' router "/fruit/guava"
-  ; Wtr.match' router "/faq/1/"
-  ; Wtr.match' router "/faq/1/whatever"
-  ; Wtr.match' router "/faq/2/whateasdfasdfasdf" ]
+  [ Wtr.match' `GET "/home/100001.1/" router
+  ; Wtr.match' `DELETE "/home/100001/" router
+  ; Wtr.match' `GET "/home/about/" router
+  ; Wtr.match' `GET "/product/dyson350?section=233&q=true" router
+  ; Wtr.match' `GET "/product/dyson350?section=2&q=false" router
+  ; Wtr.match' `GET "/product/dyson350?section=2&q1=yes" router
+  ; Wtr.match' `GET "/product/dyson350?section=2&q1=no" router
+  ; Wtr.match' `GET "/fruit/apple" router
+  ; Wtr.match' `GET "/fruit/orange" router
+  ; Wtr.match' `GET "/fruit/pineapple" router
+  ; Wtr.match' `GET "/fruit/guava" router
+  ; Wtr.match' `GET "/faq/1/" router
+  ; Wtr.match' `GET "/faq/1/whatever" router
+  ; Wtr.match' `GET "/faq/2/whateasdfasdfasdf" router ]
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) )
 
 (* Should output below:
-
- *====Routes====
+   ====Routes====
    GET
-   /home
-    /about
-      /:int
+     /home
+       /about
+         /
 
-    /:int
-      /
+       /:float
+         /
 
-    /:float
-      /
+     /contact
+       /:string
+         /:int
+
+     /product
+       /:string
+         /section
+           /:int
+             /q
+               /:bool
+
+             /q1
+               /yes
+
+     /fruit
+       /:fruit
+
+     /faq
+       /:int
+         /**
 
    POST
-   /home
-    /about
-      /:int
+     /home
+       /about
+         /
 
-    /:float
-      /
+       /:float
+         /
 
    HEAD
-   /home
-    /about
-      /:int
+     /home
+       /about
+         /
+
+       /:int
+         /
 
    DELETE
-   /home
-    /about
-      /:int
+     /home
+       /about
+         /
 
-   /contact
-   /:string
-    /:int
+       /:int
+         /
 
-   /product
-   /:string
-    /section
-      /:int
-        /q
-          /:bool
-
-        /q1
-          /yes
-
-   /fruit
-   /:fruit
-
-   /faq
-   /:int
-    /**
-
-   ====Router Match Results====
-   1: Float page. number : 100001.1
-   2: Int page. number : 100001
-   3: about page
-   4: Product1 dyson350. Id: 233. q = true
-   5: Product1 dyson350. Id: 2. q = false
-   6: Product2 dyson350. Id: 2.
-   7: None
-   8: Apples are juicy!
-   9: Orange is a citrus fruit.
-   10: Pineapple has scaly skin
-   11: None
-   12: FAQ page for category : products
-   13: FAQ page for category : products
-   14: FAQ page for category : insurance)
-
- *)
+      ====Router Match Results====
+      1: Float page. number : 100001.1
+      2: Int page. number : 100001
+      3: about page
+      4: Product1 dyson350. Id: 233. q = true
+      5: Product1 dyson350. Id: 2. q = false
+      6: Product2 dyson350. Id: 2.
+      7: None
+      8: Apples are juicy!
+      9: Orange is a citrus fruit.
+      10: Pineapple has scaly skin
+      11: None
+      12: FAQ page for category : products
+      13: FAQ page for category : products
+      14: FAQ page for category : insurance)
+*)

@@ -50,26 +50,39 @@ Some examples of specifying routes:
 
 ```ocaml
 # let r = {%wtr| /home/about?a=:int&b=val |};;
-val r : (int -> '_weak1) -> '_weak1 Wtr.route list = <fun>
+Line 1, characters 9-43:
+Error: Invalid wtr: /home/about?a=:int&b=val. Valid wtr is: [HTTP methods
+       separated by comma (,)] ; [URI]
 
 # let r = {%wtr| /home/:int/:float/:bool/:string |};;
-val r : (int -> float -> bool -> string -> '_weak2) -> '_weak2 Wtr.route list =
-  <fun>
+Line 1, characters 9-50:
+Error: Invalid wtr: /home/:int/:float/:bool/:string. Valid wtr is: [HTTP
+       methods separated by comma (,)] ; [URI]
 
 # let r = {%wtr| /home/about |};;
-val r : '_weak3 -> '_weak3 Wtr.route list = <fun>
+Line 1, characters 9-30:
+Error: Invalid wtr: /home/about. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 
 # let r = {%wtr| /home/about/ |};;
-val r : '_weak4 -> '_weak4 Wtr.route list = <fun>
+Line 1, characters 9-31:
+Error: Invalid wtr: /home/about/. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 
 # let r = {%wtr| /home/*/contact |};;
-val r : (string -> '_weak5) -> '_weak5 Wtr.route list = <fun>
+Line 1, characters 9-34:
+Error: Invalid wtr: /home/*/contact. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 
 # let r = {%wtr| /home/about/** |};;
-val r : '_weak6 -> '_weak6 Wtr.route list = <fun>
+Line 1, characters 9-33:
+Error: Invalid wtr: /home/about/**. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 
 # let r = {%wtr| /home/:int/** |};;
-val r : (int -> '_weak7) -> '_weak7 Wtr.route list = <fun>
+Line 1, characters 9-32:
+Error: Invalid wtr: /home/:int/**. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 ```
 
 ### Pretty Printing a URI
@@ -81,14 +94,14 @@ val r : (int -> '_weak7) -> '_weak7 Wtr.route list = <fun>
 - : Format.formatter -> 'b Wtr.route -> unit = <fun>
 
 # Wtr.pp_route Format.std_formatter ([%wtr "/home/about"] () );;
-Line 1, characters 35-61:
-Error: This expression has type unit Wtr.route list
-       but an expression was expected of type 'a Wtr.route
+Line 1, characters 36-56:
+Error: Invalid wtr: /home/about. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 
 # Wtr.pp_route Format.std_formatter ([%wtr "/home/:int/:string"] (fun _ _ -> ()) );;
-Line 1, characters 35-81:
-Error: This expression has type unit Wtr.route list
-       but an expression was expected of type 'a Wtr.route
+Line 1, characters 36-63:
+Error: Invalid wtr: /home/:int/:string. Valid wtr is: [HTTP methods separated
+       by comma (,)] ; [URI]
 ```
 
 ### Compile time validation
@@ -96,17 +109,18 @@ Error: This expression has type unit Wtr.route list
 ```ocaml
 # let r = {%wtr| home/about/ |};;
 Line 1, characters 9-30:
-Error: wtr: Uri path specification must start with '/'
+Error: Invalid wtr: home/about/. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 
 # let r = {%wtr| /home/about/?a=b |};;
 Line 1, characters 9-35:
-Error: wtr: Invalid uri path specification. No tokens allowed after trailing
-       '/' token
+Error: Invalid wtr: /home/about/?a=b. Valid wtr is: [HTTP methods separated
+       by comma (,)] ; [URI]
 
 # let r = {%wtr| /home/about/**/abc |};;
 Line 1, characters 9-37:
-Error: wtr: Invalid uri path specification. No tokens allowed after full
-       splat (**) token
+Error: Invalid wtr: /home/about/**/abc. Valid wtr is: [HTTP methods separated
+       by comma (,)] ; [URI]
 ```
 
 ### Path
@@ -117,13 +131,19 @@ Some examples of valid uri path:
 
 ```ocaml
 # let about_page_uri = {%wtr| /home/about |};;
-val about_page_uri : '_weak8 -> '_weak8 Wtr.route list = <fun>
+Line 1, characters 22-43:
+Error: Invalid wtr: /home/about. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 
 # let product_detail_uri = {%wtr| /product/product1/details |};;
-val product_detail_uri : '_weak9 -> '_weak9 Wtr.route list = <fun>
+Line 1, characters 26-61:
+Error: Invalid wtr: /product/product1/details. Valid wtr is: [HTTP methods
+       separated by comma (,)] ; [URI]
 
 # let contact_uri = {%wtr| /home/contact/ |};;
-val contact_uri : '_weak10 -> '_weak10 Wtr.route list = <fun>
+Line 1, characters 19-43:
+Error: Invalid wtr: /home/contact/. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 ```
 
 ### Query  
@@ -136,10 +156,14 @@ Uri values creation examples:
   
 ```ocaml
 # let uri = {%wtr| /home/products/a?count=a&size=200 |};;
-val uri : '_weak11 -> '_weak11 Wtr.route list = <fun>
+Line 1, characters 11-54:
+Error: Invalid wtr: /home/products/a?count=a&size=200. Valid wtr is: [HTTP
+       methods separated by comma (,)] ; [URI]
 
 # let r = {%wtr| /home/about |};;
-val r : '_weak12 -> '_weak12 Wtr.route list = <fun>
+Line 1, characters 9-30:
+Error: Invalid wtr: /home/about. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 ```
 
 ### Uri Components
@@ -171,13 +195,17 @@ Some examples of decoder usages:
 
 ```ocaml
 # let r = {%wtr| /home/:int/:float/:bool |};;
-val r : (int -> float -> bool -> '_weak13) -> '_weak13 Wtr.route list = <fun>
+Line 1, characters 9-42:
+Error: Invalid wtr: /home/:int/:float/:bool. Valid wtr is: [HTTP methods
+       separated by comma (,)] ; [URI]
 ```
 You can use decoder components in Query *value* component position:
 
 ```ocaml
 # let r = [%wtr "/home/contact?name=:string&number=:int"];;
-val r : (string -> int -> '_weak14) -> '_weak14 Wtr.route list = <fun>
+Line 1, characters 9-56:
+Error: Invalid wtr: /home/contact?name=:string&number=:int. Valid wtr is:
+       [HTTP methods separated by comma (,)] ; [URI]
 ```
 
 ##### User Defined Decoder 
@@ -217,7 +245,9 @@ Here is how we can use the `Fruit` decoder:
 
 ```ocaml
 # let r = {%wtr| /home/:Fruit |};;
-val r : (Fruit.t -> '_weak15) -> '_weak15 Wtr.route list = <fun>
+Line 1, characters 9-31:
+Error: Invalid wtr: /home/:Fruit. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 ```
 
 #### Full splat
@@ -228,7 +258,9 @@ Here, Wtr matches `/home/about`, `/home/contact` and `/home/product/product2` ur
 
 ```ocaml
 # let full_splat = [%wtr "/home/**"];;
-val full_splat : '_weak16 -> '_weak16 Wtr.route list = <fun>
+Line 1, characters 18-35:
+Error: Invalid wtr: /home/**. Valid wtr is: [HTTP methods separated by comma
+       (,)] ; [URI]
 ```
 
 ## Creating a route
@@ -246,14 +278,18 @@ An `Wtr.uri` value where only literal values are specified results in a handler 
 
 ```ocaml
 # let r = Wtr.({%wtr| /home/about |} "about page");;
-val r : string Wtr.route list = [<abstr>]
+Line 1, characters 14-35:
+Error: Invalid wtr: /home/about. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 ```
 
 Whereas an`Wtr.uri` where decoders are specified results in a handler which is a ocaml function. The parameters of the function match the order in which the decoders are specified.
 
 ```ocaml
 # let r = Wtr.({%wtr| /home/:int |} (fun (i: int) -> Printf.sprintf "int: %d" i));;
-val r : string Wtr.route list = [<abstr>]
+Line 1, characters 14-34:
+Error: Invalid wtr: /home/:int. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 ```
 
 ## Creating and matching a router
@@ -267,7 +303,9 @@ A route is created by applying function a list of `route` values to `Wtr.create`
 
 ```ocaml
 # let router = Wtr.(create [{%wtr| /home/about |} "about page"]);;
-val router : string Wtr.t = <abstr>
+Line 1, characters 27-48:
+Error: Invalid wtr: /home/about. Valid wtr is: [HTTP methods separated by
+       comma (,)] ; [URI]
 ```
 Matching is peformed by applying a `router` and a `uri` value. `Wtr.match`
 returns `Some a` if the given `uri` matches one of the routes in `router`. `a`
@@ -275,19 +313,23 @@ represents the value computed by the route handler.
 
 ```ocaml
 # Wtr.match';;
-- : ?method':Wtr.method' -> 'a Wtr.t -> string -> 'a option = <fun>
+- : Wtr.method' -> string -> 'a Wtr.t -> 'a option = <fun>
 ```
 
 ```ocaml
 # Wtr.match' router "/home/about";;
-- : string option = Some "about page"
+Line 1, characters 12-18:
+Error: Unbound value router
 
 # Wtr.match' router "/home/about/";;
-- : string option = None
+Line 1, characters 12-18:
+Error: Unbound value router
 
 # Wtr.match' router "/home/About";;
-- : string option = None
+Line 1, characters 12-18:
+Error: Unbound value router
 
 # Wtr.match' router "/Home/about";;
-- : string option = None
+Line 1, characters 12-18:
+Error: Unbound value router
 ```

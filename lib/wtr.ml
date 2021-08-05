@@ -276,7 +276,7 @@ let rec match' method' uri (t : 'a t) =
         match t.node_types.(i) with
         | PMethod method'', t' when method_equal method' method'' ->
             try_match t' [] uri_toks
-        | _ -> loop (n + 1)
+        | _ -> loop (i + 1)
     in
     loop 0
   else None
