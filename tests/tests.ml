@@ -16,7 +16,7 @@ let fruit_page = function
   | Orange -> Printf.sprintf "Orange is a citrus fruit."
   | Pineapple -> Printf.sprintf "Pineapple has scaly skin"
 
-let about_page = "about_page"
+let about_page i = Format.sprintf "about_page - %d" i
 let full_splat_page = "full splat page"
 let home_int_page i = Printf.sprintf "Product Page. Product Id : %d" i
 let home_float_page f = Printf.sprintf "Float page. number : %f" f
@@ -39,7 +39,7 @@ let product_page2 name section_id =
 
 let router =
   Wtr.create
-    [ {%wtr| get,post  ;         /home/about/              |} about_page
+    [ {%wtr| get,post  ;         /home/about/:int          |} about_page
     ; {%wtr| head,delete;        /home/:int/               |} home_int_page
     ; {%wtr| get;   /home/:float/                          |} home_float_page
     ; {%wtr| get;   /contact/*/:int                        |} contact_page
@@ -73,133 +73,135 @@ let%expect_test _ =
   pp_match `HEAD "/home/100001/" ;
   [%expect {| "Product Page. Product Id : 100001" |}]
 
-(* let%expect_test "about route" = pp_match "/home/about" ; [%expect {| *)
-   (*   None |}] *)
+let%expect_test _ =
+  pp_match `POST "/home/about" ;
+  [%expect {|
+     None |}]
 
-(* let%expect_test "about route" = *)
-(*   pp_match ~method':`GET "/home/about/2" ; *)
-(*   [%expect {| "Wildcard page. home" |}] *)
+let%expect_test _ =
+  pp_match `GET "/home/about/1" ;
+  [%expect {| "about_page - 1" |}]
 
-(* let%expect_test "about route" = *)
-(*   pp_match ~method':`POST "/home/about/3" ; *)
-(*   [%expect {| "Wildcard page. home" |}] *)
+let%expect_test _ =
+  pp_match `POST "/home/about/3" ;
+  [%expect {| "about_page - 3" |}]
 
-(* let%expect_test "about route" = *)
-(*   pp_match ~method':`HEAD "/home/about/3" ; *)
-(*   [%expect {| "Wildcard page. home" |}] *)
+let%expect_test _ =
+  pp_match `HEAD "/home/about/3" ;
+  [%expect {| None |}]
 
-(* let%expect_test "about route" = *)
-(*   pp_match ~method':`HEAD "/home/about/" ; *)
-(*   [%expect {| "Wildcard page. home" |}] *)
+let%expect_test _ =
+  pp_match `DELETE "/home/about/3" ;
+  [%expect {| None |}]
 
-(* let%expect_test "about route" = *)
-(*   pp_match ~method':`DELETE "/home/about/" ; *)
-(*   [%expect {| "Wildcard page. home" |}] *)
+let%expect_test _ =
+  pp_match `GET "/contact/bikal/123456" ;
+  [%expect {|
+       "Contact page. Hi, bikal. Number 123456" |}]
 
-(* let%expect_test "about_route2" = *)
-(*   pp_match ~method':`GET "/home/about/" ; *)
-(*   [%expect {| "Wildcard page. home" |}] *)
+let%expect_test _ =
+  pp_match `POST "/home/products/asdfasdf\nasdfasdfasd" ;
+  [%expect {|
+       "full splat page" |}]
 
-(* let%expect_test "about_route2" = *)
-(* pp_match "/home/about/" ; [%expect {| *)
-   (*     "Wildcard page. about" |}] *)
+let%expect_test _ =
+  pp_match `POST "/home/products/" ;
+  [%expect {|
+       "full splat page" |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/contact/bikal/123456" ; *)
-(* [%expect {| *)
-   (*     "Contact page. Hi, bikal. Number 123456" |}] *)
+let%expect_test _ =
+  pp_match `GET "/home/product1/" ;
+  [%expect {|
+       "Wildcard page. product1" |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/home/products/asdfasdf\nasdfasdfasd" ; *)
-(* [%expect {| *)
-   (*     "full splat page" |}] *)
+let%expect_test _ =
+  pp_match `GET "/contact/bikal/true" ;
+  [%expect {|
+       "Contact Page2. Name - bikal, number - true" |}]
 
-(* let%expect_test _ = *)
-(* pp_match "/home/products/" ; [%expect {| *)
-   (*     "full splat page" |}] *)
+let%expect_test _ =
+  pp_match `GET "/contact/bob/false" ;
+  [%expect {|
+       "Contact Page2. Name - bob, number - false" |}]
 
-(* let%expect_test _ = *)
-(* pp_match "/home/product1/" ; [%expect {| *)
-   (*     "Wildcard page. product1" |}] *)
+let%expect_test _ =
+  pp_match `POST "/product/dyson350?section=233&q=true" ;
+  [%expect
+    {|
+         "Product detail - dyson350. Section: 233. Display questions? true" |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/contact/bikal/true" ; *)
-(* [%expect {| *)
-   (*     "Contact Page2. Name - bikal, number - true" |}] *)
+let%expect_test _ =
+  pp_match `POST "/product/dyson350?section=2&q=false" ;
+  [%expect
+    {|
+         "Product detail - dyson350. Section: 2. Display questions? false" |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/contact/bob/false" ; *)
-(* [%expect {| *)
-   (*     "Contact Page2. Name - bob, number - false" |}] *)
+let%expect_test _ =
+  pp_match `GET "/product/dyson350?section=2&q1=no" ;
+  [%expect {|
+       None |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/product/dyson350?section=233&q=true" ; *)
-(*   [%expect *)
-(* {| *)
-   (*       "Product detail - dyson350. Section: 233. Display questions? true" |}] *)
+let%expect_test _ =
+  pp_match `GET "/product/dyson350?section=2&q1=yes" ;
+  [%expect {|
+       "Product detail 2 - dyson350. Section: 2." |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/product/dyson350?section=2&q=false" ; *)
-(*   [%expect *)
-(* {| *)
-   (*       "Product detail - dyson350. Section: 2. Display questions? false" |}] *)
+let%expect_test _ =
+  pp_match `GET "/fruit/apple" ;
+  [%expect {|
+       "Apples are juicy!" |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/product/dyson350?section=2&q1=no" ; *)
-(* [%expect {| *)
-   (*     None |}] *)
+let%expect_test _ =
+  pp_match `GET "/fruit/pineapple" ;
+  [%expect {|
+       "Pineapple has scaly skin" |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/product/dyson350?section=2&q1=yes" ; *)
-(* [%expect {| *)
-   (*     "Product detail 2 - dyson350. Section: 2." |}] *)
+let%expect_test _ =
+  pp_match `GET "/fruit/orange" ;
+  [%expect {|
+       "Orange is a citrus fruit." |}]
 
-(* let%expect_test _ = *)
-(* pp_match "/fruit/apple" ; [%expect {| *)
-   (*     "Apples are juicy!" |}] *)
+let%expect_test _ =
+  pp_match `GET "/fruit/guava" ;
+  [%expect {|
+     None |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/fruit/pineapple" ; *)
-(* [%expect {| *)
-   (*     "Pineapple has scaly skin" |}] *)
+let%expect_test _ =
+  pp_match `GET "/" ;
+  [%expect {|
+     "404 Not found" |}]
 
-(* let%expect_test _ = *)
-(* pp_match "/fruit/orange" ; [%expect {| *)
-   (*     "Orange is a citrus fruit." |}] *)
+let%expect_test _ =
+  pp_match `GET "" ;
+  [%expect {|
+     None |}]
 
-(* let%expect_test _ = pp_match "/fruit/guava" ; [%expect {| *)
-   (*   None |}] *)
-(* let%expect_test _ = pp_match "/" ; [%expect {| *)
-   (*   "404 Not found" |}] *)
-(* let%expect_test _ = pp_match "" ; [%expect {| *)
-   (*   None |}] *)
+let%expect_test _ =
+  pp_match `HEAD "/numbers/23/code/6888/" ;
+  [%expect {|
+       "int32: 23, int64: 6888." |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/numbers/23/code/6888/" ; *)
-(* [%expect {| *)
-   (*     "int32: 23, int64: 6888." |}] *)
+let%expect_test _ =
+  pp_match `HEAD "/numbers/23.01/code/6888/" ;
+  [%expect {|
+       None |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/numbers/23.01/code/6888/" ; *)
-(* [%expect {| *)
-   (*     None |}] *)
+let%expect_test _ =
+  pp_match `HEAD "/numbers/23/code/6888.222/" ;
+  [%expect {|
+       None |}]
 
-(* let%expect_test _ = *)
-(*   pp_match "/numbers/23/code/6888.222/" ; *)
-(* [%expect {| *)
-   (*     None |}] *)
+let%expect_test _ =
+  pp_route ({%wtr| get; /home/about/:bool|} (fun _ -> ())) ;
+  [%expect {| GET/home/about/:bool |}]
 
-(* let%expect_test _ = *)
-(*   pp_route ([%wtr "/home/about/:bool"] (fun _ -> ())) ; *)
-(*   [%expect {| /home/about/:bool |}] *)
+let%expect_test _ =
+  pp_route ({%wtr| post; /home/about/:int/:string/:Fruit|} (fun _ _ _ -> ())) ;
+  [%expect {| POST/home/about/:int/:string/:Fruit |}]
 
-(* let%expect_test _ = *)
-(*   pp_route ([%wtr "/home/about/:int/:string/:Fruit"] (fun _ _ _ -> ())) ; *)
-(*   [%expect {| /home/about/:int/:string/:Fruit |}] *)
-
-(* let%expect_test _ = *)
-(*   pp_route ([%wtr "/home/:int/:int32/:int64/:Fruit"] (fun _ _ _ _ -> ())) ; *)
-(*   [%expect {| /home/:int/:int32/:int64/:Fruit |}] *)
+let%expect_test _ =
+  pp_route ({%wtr| head;/home/:int/:int32/:int64/:Fruit|} (fun _ _ _ _ -> ())) ;
+  [%expect {| HEAD/home/:int/:int32/:int64/:Fruit |}]
 
 let%expect_test _ =
   Wtr.pp Format.std_formatter router ;
@@ -208,7 +210,7 @@ let%expect_test _ =
     GET
       /home
         /about
-          /
+          /:int
 
         /:float
           /
@@ -237,7 +239,7 @@ let%expect_test _ =
     POST
       /home
         /about
-          /
+          /:int
 
         /products
           /**
