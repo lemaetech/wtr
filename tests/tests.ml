@@ -54,70 +54,6 @@ let router =
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter
 
-let%expect_test _ =
-  Wtr.pp Format.std_formatter router ;
-  [%expect
-    {|
-    GET
-      /home
-        /about
-          /
-
-        /:float
-          /
-
-        /:string
-          /**
-
-      /contact
-        /:string
-          /:int
-
-          /:bool
-
-      /product
-        /:string
-          /section
-            /:int
-              /q1
-                /yes
-
-      /fruit
-        /:Fruit
-
-      /
-
-    POST
-      /home
-        /about
-          /
-
-        /products
-          /**
-
-      /product
-        /:string
-          /section
-            /:int
-              /q
-                /:bool
-
-    HEAD
-      /home
-        /:int
-          /
-
-      /numbers
-        /:int32
-          /code
-            /:int64
-              /
-
-    DELETE
-      /home
-        /:int
-          / |}]
-
 let pp_match method' uri =
   Wtr.match' method' uri router
   |> function
@@ -264,3 +200,67 @@ let%expect_test _ =
 (* let%expect_test _ = *)
 (*   pp_route ([%wtr "/home/:int/:int32/:int64/:Fruit"] (fun _ _ _ _ -> ())) ; *)
 (*   [%expect {| /home/:int/:int32/:int64/:Fruit |}] *)
+
+let%expect_test _ =
+  Wtr.pp Format.std_formatter router ;
+  [%expect
+    {|
+    GET
+      /home
+        /about
+          /
+
+        /:float
+          /
+
+        /:string
+          /**
+
+      /contact
+        /:string
+          /:int
+
+          /:bool
+
+      /product
+        /:string
+          /section
+            /:int
+              /q1
+                /yes
+
+      /fruit
+        /:Fruit
+
+      /
+
+    POST
+      /home
+        /about
+          /
+
+        /products
+          /**
+
+      /product
+        /:string
+          /section
+            /:int
+              /q
+                /:bool
+
+    HEAD
+      /home
+        /:int
+          /
+
+      /numbers
+        /:int32
+          /code
+            /:int64
+              /
+
+    DELETE
+      /home
+        /:int
+          / |}]
