@@ -17,9 +17,12 @@ let fruit_page = function
   | Pineapple -> Printf.sprintf "Pineapple has scaly skin"
 
 let about_page = "about_page"
+let full_splat_page = "full splat page"
 let home_int_page i = Printf.sprintf "Product Page. Product Id : %d" i
 let home_float_page f = Printf.sprintf "Float page. number : %f" f
 let wildcard_page s = Printf.sprintf "Wildcard page. %s" s
+let numbers_page id code = Printf.sprintf "int32: %ld, int64: %Ld." id code
+let not_found_page = "404 Not found"
 
 let contact_page name number =
   Printf.sprintf "Contact page. Hi, %s. Number %i" name number
@@ -34,22 +37,20 @@ let product_page name section_id q =
 let product_page2 name section_id =
   Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id
 
-let numbers_page id code = Printf.sprintf "int32: %ld, int64: %Ld." id code
-
 let router =
   Wtr.create
-    [ {%wtr| get,post  ;         /home/about/            |} about_page
-    ; {%wtr| head,delete;        /home/:int/             |} home_int_page
-    ; {%wtr| get; /home/:float/                          |} home_float_page
-    ; {%wtr| get; /contact/*/:int                        |} contact_page
-    ; {%wtr| post; /home/products/**                     |} "full splat page"
-    ; {%wtr| get; /home/*/**                             |} wildcard_page
-    ; {%wtr| get;/contact/:string/:bool                  |} contact_page2
-    ; {%wtr| post; /product/:string?section=:int&q=:bool |} product_page
-    ; {%wtr| get; /product/:string?section=:int&q1=yes   |} product_page2
-    ; {%wtr| get;/fruit/:Fruit                           |} fruit_page
-    ; {%wtr| get; /                                      |} "404 Not found"
-    ; {%wtr| head;/numbers/:int32/code/:int64/           |} numbers_page ]
+    [ {%wtr| get,post  ;         /home/about/              |} about_page
+    ; {%wtr| head,delete;        /home/:int/               |} home_int_page
+    ; {%wtr| get;   /home/:float/                          |} home_float_page
+    ; {%wtr| get;   /contact/*/:int                        |} contact_page
+    ; {%wtr| post;  /home/products/**                      |} full_splat_page
+    ; {%wtr| get;   /home/*/**                             |} wildcard_page
+    ; {%wtr| get;   /contact/:string/:bool                 |} contact_page2
+    ; {%wtr| post;  /product/:string?section=:int&q=:bool  |} product_page
+    ; {%wtr| get;   /product/:string?section=:int&q1=yes   |} product_page2
+    ; {%wtr| get;   /fruit/:Fruit                          |} fruit_page
+    ; {%wtr| get;   /                                      |} not_found_page
+    ; {%wtr| head;  /numbers/:int32/code/:int64/           |} numbers_page ]
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter
 
@@ -122,18 +123,19 @@ let pp_match method' uri =
   |> function
   | Some s -> Printf.printf {|"%s%!"|} s | None -> Printf.printf "None%!"
 
-(* let%expect_test _ = *)
-(*   pp_match "/home/100001.1/" ; *)
-(* [%expect {| *)
-   (*     "Float page. number : 100001.100000" |}] *)
+let%expect_test _ =
+  pp_match `GET "/home/100001.1/" ;
+  [%expect {|
+       "Float page. number : 100001.100000" |}]
 
-(* let%expect_test _ = pp_match "/home/100001.1" ; [%expect {| *)
-   (*   None |}] *)
+let%expect_test _ =
+  pp_match `POST "/home/100001.1" ;
+  [%expect {|
+     None |}]
 
 let%expect_test _ =
   pp_match `HEAD "/home/100001/" ;
-  [%expect.unreachable]
-[@@expect.uncaught_exn {| (Invalid_argument "index out of bounds") |}]
+  [%expect {| "Product Page. Product Id : 100001" |}]
 
 (* let%expect_test "about route" = pp_match "/home/about" ; [%expect {| *)
    (*   None |}] *)
