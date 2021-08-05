@@ -216,8 +216,9 @@ let pp fmt t =
 
 type decoded_value = D : 'c decoder * 'c -> decoded_value
 
-let rec match' method' (t : 'a t) uri =
-  let rec try_match t decoded_values = function
+let rec match' method' uri (t : 'a t) =
+  let rec try_match t decoded_values uri_toks =
+    match uri_toks with
     | [] ->
         Option.map
           (fun (Route (uri, f)) ->
