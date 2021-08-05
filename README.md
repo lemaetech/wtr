@@ -92,6 +92,8 @@ let p () =
        | None -> Printf.printf "%3d: None\n" (i + 1) );;
 ```
 
+## Demo Output
+
 ```ocaml
 # p () ;;
 ====Router Match Results====
