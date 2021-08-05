@@ -43,7 +43,6 @@ depends: [
   "octavius" {= "1.2.2" & with-test}
   "odoc" {= "dev" & with-doc}
   "odoc-parser" {= "0.9.0" & with-test}
-  "pprint" {= "20200410"}
   "ppx_assert" {= "v0.14.0" & with-test}
   "ppx_base" {= "v0.14.0" & with-test}
   "ppx_cold" {= "v0.14.0" & with-test}

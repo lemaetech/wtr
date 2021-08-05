@@ -205,15 +205,6 @@ and compile : 'a node -> 'a t =
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
 
-let _pp fmt t =
-  let open PPrint in
-  let rec doc t =
-    separate_map hardline
-      (fun (node_type, t') -> string (node_type_to_string node_type) ^//^ doc t')
-      (Array.to_list t.node_types)
-  in
-  ToFormatter.pretty 0. 80 fmt (doc t)
-
 let rec pp fmt t =
   let open Format in
   let nodes = t.node_types |> Array.to_list in

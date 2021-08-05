@@ -28,8 +28,6 @@
    (>= 4.12.0))
   (uri
    (>= 4.2.0))
-  (pprint
-   (>= 20200410))
   (ppxlib
    (>= 0.22.0))
   (ppx_expect :with-test)
