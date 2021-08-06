@@ -9,7 +9,8 @@
 
 (** {1 Types} *)
 
-(** ['a t] represents a Trie based router. *)
+(** ['a t] represents a Trie based router.
+    {i {{!section:pp} Pretty printing/debugging a router}} *)
 type 'a t
 
 (** ['c route] is a [uri] and its handler. ['c] represents the value returned by
@@ -20,7 +21,7 @@ and 'c route
     [/home/about/,
     /home/contact, /home/contact?name=a&no=123] etc.
 
-    A uri is created via [%wtr] ppx. *)
+    {i {{!section:uri} Specifying a URI}} *)
 and ('a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
@@ -36,7 +37,9 @@ and method' =
   | `TRACE
   | `Method of string ]
 
-(** Represents a uri component decoder, such as [:int, :float, :bool] etc.*)
+(** Represents a uri component decoder, such as [:int, :float, :bool] etc.
+
+    {i {{!section:decoders} Decoders}} *)
 and 'a decoder
 
 (** {1 Router} *)
@@ -44,6 +47,8 @@ and 'a decoder
 val create : 'a route list list -> 'a t
 (** [create routes] creates a router from a list of [route]s. Values of [routes]
     are created by [%wtr] ppx.
+
+    A full example demonstrating creating a router, route and route handlers:
 
     {[
       module Fruit = struct
@@ -57,10 +62,17 @@ val create : 'a route list list -> 'a t
             | _ -> None )
       end
 
+      (* Route handlers. *)
+      let about_page = "about page"
       let prod_page i = "Int page. number : " ^ string_of_int i
       let float_page f = "Float page. number : " ^ string_of_float f
-      let contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
-      let product1 name id q = Format.sprintf "Product1 %s. Id: %d. q = %b" name id q
+
+      let contact_page nm num =
+        "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
+
+      let product1 name id q =
+        Format.sprintf "Product1 %s. Id: %d. q = %b" name id q
+
       let product2 name id = Format.sprintf "Product2 %s. Id: %d." name id
 
       let fruit_page = function
@@ -81,43 +93,115 @@ val create : 'a route list list -> 'a t
       let router =
         Wtr.(
           create
-            [ {%wtr\| get,post,head,delete  ; /home/about/:int   \|} (fun _ ->
-                  "about page" )
-            ; {%wtr\| get                   ; /home/:int/        \|} prod_page
-            ; {%wtr\| get,post              ; /home/:float/      \|} float_page
-            ; {%wtr\| /contact/*/:int                            \|} contact_page
-            ; {%wtr\| /product/:string?section=:int&q=:bool      \|} product1
-            ; {%wtr\| /product/:string?section=:int&q1=yes       \|} product2
-            ; {%wtr\| /fruit/:Fruit                              \|} fruit_page
-            ; {%wtr\| /faq/:int/**                               \|} faq ])
+            [ {%wtr| get,post,head,delete  ; /home/about/       |} about_page
+            ; {%wtr| head,delete           ; /home/:int/        |} prod_page
+            ; {%wtr| get,post              ; /home/:float/      |} float_page
+            ; {%wtr| get; /contact/*/:int                       |} contact_page
+            ; {%wtr| get; /product/:string?section=:int&q=:bool |} product1
+            ; {%wtr| get; /product/:string?section=:int&q1=yes  |} product2
+            ; {%wtr| get; /fruit/:Fruit                         |} fruit_page
+            ; {%wtr| GET; /faq/:int/**                          |} faq ])
     ]} *)
 
 val match' : method' -> string -> 'a t -> 'a option
-(** [match method' uri t ] matches a route to a given [uri], executes its
-    handler and returns the computed value. [None] is returned if [uri] is not
-    matched. *)
+(** [match method' uri t] matches a route to a given [uri] and [method'],
+    executes its handler and returns the computed value. [None] is returned if
+    both [uri] {b and} [method'] are not matched.
 
-(** {1 Decoders}
+    Examples of calling [match'] and its results:
 
-    [Wtr] provides the following built in decoders that can be used in
-    [{%wtr\|\|}] ppx:
+    {[
+      let () =
+        Format.(fprintf std_formatter "@.@.====Router Match Results====@.") ;
+        [ Wtr.match' `GET "/home/100001.1/" router
+        ; Wtr.match' `DELETE "/home/100001/" router
+        ; Wtr.match' `GET "/home/about/" router
+        ; Wtr.match' `GET "/product/dyson350?section=233&q=true" router
+        ; Wtr.match' `GET "/product/dyson350?section=2&q=false" router
+        ; Wtr.match' `GET "/product/dyson350?section=2&q1=yes" router
+        ; Wtr.match' `GET "/product/dyson350?section=2&q1=no" router
+        ; Wtr.match' `GET "/fruit/apple" router
+        ; Wtr.match' `GET "/fruit/orange" router
+        ; Wtr.match' `GET "/fruit/pineapple" router
+        ; Wtr.match' `GET "/fruit/guava" router
+        ; Wtr.match' `GET "/faq/1/" router
+        ; Wtr.match' `GET "/faq/1/whatever" router
+        ; Wtr.match' `GET "/faq/2/whateasdfasdfasdf" router ]
+        |> List.iteri (fun i -> function
+             | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
+             | None -> Printf.printf "%3d: None\n" (i + 1) )
+    ]}
 
-    - [:int]
-    - [:int32]
-    - [:int64]
-    - [:float]
-    - [:bool]
-    - [:string]
+    The match call results in the following results:
 
-    e.g. [{%wtr\| /home/:int \|}], [{%wtr\|/home/:bool\|}].
+    {[
+      ====Router Match Results====
+      1: Float page. number : 100001.1
+          2: Int page. number : 100001
+          3: about page
+          4: Product1 dyson350. Id: 233. q = true
+                                      5: Product1 dyson350. Id: 2. q = false
+                                                                  6: Product2 dyson350. Id: 2.
+          7: None
+          8: Apples are juicy!
+          9: Orange is a citrus fruit.
+                                  10: Pineapple has scaly skin
+          11: None
+          12: FAQ page for category : products
+                               13: FAQ page for category : products
+                                                    14: FAQ page for category : insurance
+    ]} *)
 
-    Additionally creating custom, user defined decoder is also supported. The
-    convention for user defined decoders is as follows:
+(** {1:uri Specifying a URI}
+
+    Specifying a URI in a [%wtr] ppx follows the following syntax:
+
+    [wtr uri spec = http methods separated by comma ';' http uri]
+
+    A URI in a [%wtr] ppx is syntactically and sematically a HTTP URI with the
+    addition of decoders and some some useful additions listed below.
+
+    + {b Full splat [**]} - Full spat operator matches any/all path following a
+      full splat. For example in [/home/**] matches the following uri paths,
+      [/home/about/, home/contact, /home/product] etc. Full splat must be the
+      last component of an uri. It is an error to specify other uri path
+      component after full splat operator.
+    + {b Wildward [*]} - A wildcard operator matches any text appearing on the
+      path component position. For example, uri [/home/*/page1] matches the
+      following [/home/23/page1, /home/true/page1, /home/234.4/page1] etc. The
+      semantics of wildcard operator is the same as using [:string] decoder in a
+      uri, i.e. it affects the route handler function signature.
+    + {b Trailing slash [/]} - A trailing slash ensures that Wtr will match a
+      trailing [/] in a uri. For example, uri [/home/about/] matches
+      [/home/about/] but not [/home/about]. *)
+
+(** {1:decoders Decoders}
+
+    {2 Built-in Decoders}
+
+    [Wtr] provides the following built in decoders that can be used as when
+    specifying wtr URI in [{%wtr| |}] ppx:
+
+    - [:int] - decodes a [int]
+    - [:int32] - decodes a [int32]
+    - [:int64] - decodes a [int64]
+    - [:float] - decodes a [float] or [int]
+    - [:bool] - decodes a [bool]
+    - [:string] - decodes a [string]
+
+    The built-in decoders can be used as follows:
+
+    [{%wtr|get; /home/:int |}], [{%wtr| /home/:bool |}] *)
+
+(** {2 Custom Decoders}
+
+    Wtr also supports creating custom, user defined decoders. The convention for
+    user defined decoders is as follows:
 
     It should be defined in a module. The module should define a type called [t]
     and a value called [t] which returns [t Wtr.decoder].
 
-    For e.g.
+    Example of defining custom decoder:
 
     {[
       module Fruit = struct
@@ -130,7 +214,22 @@ val match' : method' -> string -> 'a t -> 'a option
             | "pineapple" -> Some Pineapple
             | _ -> None )
       end
-    ]} *)
+    ]}
+
+    The custom decoder then can be used in [%wtr] ppx as follows,
+
+    [{%wtr| get ; /fruit/:Fruit  |} fruit_page] *)
+
+(** {2 Decoders and Route Handlers}
+
+    Usage of decoders in a URI directly affect the function signature of a route
+    handler. For e.g.
+
+    - A uri spec [/home/:int/:bool] expects a route handler as
+      [fun (i:int) (b:bool) -> ....]
+
+    - A uri spec [/home/:string] expects a route handler as
+      [(fun (s:string) -> ...)] *)
 
 val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** [create_decoder ~name ~decode] creates a user defined decoder uri component.
@@ -143,11 +242,63 @@ val method_equal : method' -> method' -> bool
 val method' : string -> method'
 (** [method' m] creates a {!type:method'} from value [m]. *)
 
-(** {1 Pretty Printers} *)
+(** {1:pp Pretty Printers} *)
+
+val pp : Format.formatter -> 'a t -> unit
+(** [pp fmt t] pretty prints router routes. This can be useful for debugging
+    router/routing issues as it displays hierarchially possible routes a
+    matching engine may take in matching a given uri and method.
+
+    HTTP method names are capitalized.
+
+    Printing the [router] from the example givn in {!val:create} method pretty
+    prints the following:
+
+    {[
+      GET
+        /home
+          /about
+            /
+          /:float
+            /
+        /contact
+          /:string
+            /:int
+        /product
+          /:string
+            /section
+              /:int
+                /q
+                  /:bool
+                /q1
+                  /yes
+        /fruit
+          /:fruit
+        /faq
+          /:int
+            /**
+      POST
+        /home
+          /about
+            /
+          /:float
+            /
+      HEAD
+        /home
+          /about
+            /
+          /:int
+            /
+      DELETE
+        /home
+          /about
+            /
+          /:int
+            /
+    ]} *)
 
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
-val pp : Format.formatter -> 'a t -> unit
 
 (**/**)
 
