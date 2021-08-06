@@ -67,21 +67,21 @@ let router =
   ; Wtr.match' `GET &quot;/faq/2/whateasdfasdfasdf&quot; router ]
   |&gt; List.iteri (fun i -&gt; function
        | Some s -&gt; Printf.printf &quot;%3d: %s\n&quot; (i + 1) s
-       | None -&gt; Printf.printf &quot;%3d: None\n&quot; (i + 1) )</code></pre><p>The match call results in the following results:</p><pre><code>====Router Match Results====
-1: Float page. number : 100001.1
-    2: Int page. number : 100001
-    3: about page
-    4: Product1 dyson350. Id: 233. q = true
-                                5: Product1 dyson350. Id: 2. q = false
-                                                            6: Product2 dyson350. Id: 2.
-    7: None
-    8: Apples are juicy!
-    9: Orange is a citrus fruit.
-                            10: Pineapple has scaly skin
-    11: None
-    12: FAQ page for category : products
-                         13: FAQ page for category : products
-                                              14: FAQ page for category : insurance</code></pre></div></div><h2 id="uri"><a href="#uri" class="anchor"></a>Specifying a URI</h2><p>Specifying a URI in a <code>%wtr</code> ppx follows the following syntax:</p><p><code>wtr uri spec = http methods separated by comma ';' http uri</code></p><p>A URI in a <code>%wtr</code> ppx is syntactically and sematically a HTTP URI with the addition of decoders and some some useful additions listed below.</p><ol><li><b>Full splat <code>**</code></b> - Full spat operator matches any/all path following a full splat. For example in <code>/home/**</code> matches the following uri paths, <code>/home/about/, home/contact, /home/product</code> etc. Full splat must be the last component of an uri. It is an error to specify other uri path component after full splat operator.</li><li><b>Wildward <code>*</code></b> - A wildcard operator matches any text appearing on the path component position. For example, uri <code>/home/*/page1</code> matches the following <code>/home/23/page1, /home/true/page1, /home/234.4/page1</code> etc. The semantics of wildcard operator is the same as using <code>:string</code> decoder in a uri, i.e. it affects the route handler function signature.</li><li><b>Trailing slash <code>/</code></b> - A trailing slash ensures that Wtr will match a trailing <code>/</code> in a uri. For example, uri <code>/home/about/</code> matches <code>/home/about/</code> but not <code>/home/about</code>.</li></ol><h2 id="decoders"><a href="#decoders" class="anchor"></a>Decoders</h2><h3 id="built-in-decoders"><a href="#built-in-decoders" class="anchor"></a>Built-in Decoders</h3><p><code>Wtr</code> provides the following built in decoders that can be used as when specifying wtr URI in <code>{%wtr| |}</code> ppx:</p><ul><li><code>:int</code> - decodes a <code>int</code></li><li><code>:int32</code> - decodes a <code>int32</code></li><li><code>:int64</code> - decodes a <code>int64</code></li><li><code>:float</code> - decodes a <code>float</code> or <code>int</code></li><li><code>:bool</code> - decodes a <code>bool</code></li><li><code>:string</code> - decodes a <code>string</code></li></ul><p>The built-in decoders can be used as follows:</p><p><code>{%wtr|get; /home/:int |}</code>, <code>{%wtr| /home/:bool |}</code></p><h3 id="custom-decoders"><a href="#custom-decoders" class="anchor"></a>Custom Decoders</h3><p>Wtr also supports creating custom, user defined decoders. The convention for user defined decoders is as follows:</p><p>It should be defined in a module. The module should define a type called <code>t</code> and a value called <code>t</code> which returns <code>t Wtr.decoder</code>.</p><p>Example of defining custom decoder:</p><pre><code>module Fruit = struct
+       | None -&gt; Printf.printf &quot;%3d: None\n&quot; (i + 1) )</code></pre><p>The match call results in the following results:</p><pre>     ====Router Match Results====
+      1: Float page. number : 100001.1
+      2: Int page. number : 100001
+      3: about page
+      4: Product1 dyson350. Id: 233. q = true
+      5: Product1 dyson350. Id: 2. q = false
+      6: Product2 dyson350. Id: 2.
+      7: None
+      8: Apples are juicy!
+      9: Orange is a citrus fruit.
+     10: Pineapple has scaly skin
+     11: None
+     12: FAQ page for category : products
+     13: FAQ page for category : products
+     14: FAQ page for category : insurance</pre></div></div><h2 id="uri"><a href="#uri" class="anchor"></a>Specifying a URI</h2><p>Specifying a URI in a <code>%wtr</code> ppx follows the following syntax:</p><p><code>wtr uri spec = http methods separated by comma ';' http uri</code></p><p>A URI in a <code>%wtr</code> ppx is syntactically and sematically a HTTP URI with the addition of decoders and some some useful additions listed below.</p><ol><li><b>Full splat <code>**</code></b> - Full spat operator matches any/all path following a full splat. For example in <code>/home/**</code> matches the following uri paths, <code>/home/about/, home/contact, /home/product</code> etc. Full splat must be the last component of an uri. It is an error to specify other uri path component after full splat operator.</li><li><b>Wildward <code>*</code></b> - A wildcard operator matches any text appearing on the path component position. For example, uri <code>/home/*/page1</code> matches the following <code>/home/23/page1, /home/true/page1, /home/234.4/page1</code> etc. The semantics of wildcard operator is the same as using <code>:string</code> decoder in a uri, i.e. it affects the route handler function signature.</li><li><b>Trailing slash <code>/</code></b> - A trailing slash ensures that Wtr will match a trailing <code>/</code> in a uri. For example, uri <code>/home/about/</code> matches <code>/home/about/</code> but not <code>/home/about</code>.</li></ol><h2 id="decoders"><a href="#decoders" class="anchor"></a>Decoders</h2><h3 id="built-in-decoders"><a href="#built-in-decoders" class="anchor"></a>Built-in Decoders</h3><p><code>Wtr</code> provides the following built in decoders that can be used as when specifying wtr URI in <code>{%wtr| |}</code> ppx:</p><ul><li><code>:int</code> - decodes a <code>int</code></li><li><code>:int32</code> - decodes a <code>int32</code></li><li><code>:int64</code> - decodes a <code>int64</code></li><li><code>:float</code> - decodes a <code>float</code> or <code>int</code></li><li><code>:bool</code> - decodes a <code>bool</code></li><li><code>:string</code> - decodes a <code>string</code></li></ul><p>The built-in decoders can be used as follows:</p><p><code>{%wtr|get; /home/:int |}</code>, <code>{%wtr| /home/:bool |}</code></p><h3 id="custom-decoders"><a href="#custom-decoders" class="anchor"></a>Custom Decoders</h3><p>Wtr also supports creating custom, user defined decoders. The convention for user defined decoders is as follows:</p><p>It should be defined in a module. The module should define a type called <code>t</code> and a value called <code>t</code> which returns <code>t Wtr.decoder</code>.</p><p>Example of defining custom decoder:</p><pre><code>module Fruit = struct
   type t = Apple | Orange | Pineapple
 
   let t : t Wtr.decoder =
