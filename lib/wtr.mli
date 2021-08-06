@@ -9,8 +9,7 @@
 
 (** {1 Types} *)
 
-(** ['a t] represents a Trie based router.
-    {i {{!section:pp} Pretty printing/debugging a router}} *)
+(** ['a t] represents a Trie based router. *)
 type 'a t
 
 (** ['c route] is a [uri] and its handler. ['c] represents the value returned by
@@ -19,9 +18,7 @@ and 'c route
 
 (** [('a, 'b) uri] represents a route URI - both the path and query, e.g.
     [/home/about/,
-    /home/contact, /home/contact?name=a&no=123] etc.
-
-    {i {{!section:uri} Specifying a URI}} *)
+    /home/contact, /home/contact?name=a&no=123] etc. *)
 and ('a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
@@ -37,9 +34,7 @@ and method' =
   | `TRACE
   | `Method of string ]
 
-(** Represents a uri component decoder, such as [:int, :float, :bool] etc.
-
-    {i {{!section:decoders} Decoders}} *)
+(** Represents a uri component decoder, such as [:int, :float, :bool] etc. *)
 and 'a decoder
 
 (** {1 Router} *)
@@ -251,8 +246,10 @@ val pp : Format.formatter -> 'a t -> unit
 
     HTTP method names are capitalized.
 
-    Printing the [router] from the example givn in {!val:create} method pretty
-    prints the following:
+    Printing the [router] from the example given in {!val:create} method pretty
+    prints the following to the terminal console:
+
+    [Wtr.pp Format.std_formatter router;;]
 
     {[
       GET
