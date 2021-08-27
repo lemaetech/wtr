@@ -160,7 +160,17 @@ val match' : method' -> string -> 'a t -> 'a option
       full splat. For example in [/home/**] matches the following uri paths,
       [/home/about/, home/contact, /home/product] etc. Full splat must be the
       last component of an uri. It is an error to specify other uri path
-      component after full splat operator.
+      component after full splat operator. Additionally [wtr] decodes the
+      remaining matched url in the route handler. For example,
+
+    {[
+      let r =
+        Wtr.create
+          [{%wtr|get; /public/** |} (fun url -> Format.sprintf "%s" url)]
+      in
+      let s = Wtr.match' `GET "/public/css/style.css" in
+      s = Some "css/style.css"
+    ]}
     + {b Wildward [*]} - A wildcard operator matches any text appearing on the
       path component position. For example, uri [/home/*/page1] matches the
       following [/home/23/page1, /home/true/page1, /home/234.4/page1] etc. The
@@ -306,7 +316,7 @@ module Private : sig
 
   (** uri components *)
 
-  val full_splat : ('b, 'b) uri
+  val full_splat : (string -> 'b, 'b) uri
   val trailing_slash : ('b, 'b) uri
   val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
   val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri

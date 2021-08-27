@@ -1,3 +1,9 @@
+## v3.0.0 2021-08-02 
+
+- BREAKING CHANGE: A `full_splat` operator (`**`) now expects a last string paramter
+  in the handler. The parameter holds the remaining url matched by the
+`full_plat` operator
+
 ## v2.0.0 2021-08-02 
 
 - Convert `assert` based tests to `ppx_expect` tests

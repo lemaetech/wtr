@@ -50,7 +50,7 @@ let fruit_page = function
   | Orange -> "Orange is a citrus fruit."
   | Pineapple -> "Pineapple has scaly skin"
 
-let faq category_id =
+let faq category_id _ =
   let category_name =
     match category_id with
     | 1 -> "products"

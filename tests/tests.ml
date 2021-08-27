@@ -17,10 +17,13 @@ let fruit_page = function
   | Pineapple -> Printf.sprintf "Pineapple has scaly skin"
 
 let about_page i = Format.sprintf "about_page - %d" i
-let full_splat_page = "full splat page"
+let full_splat_page url = Format.sprintf "full splat page: %s" url
 let home_int_page i = Printf.sprintf "Product Page. Product Id : %d" i
 let home_float_page f = Printf.sprintf "Float page. number : %f" f
-let wildcard_page s = Printf.sprintf "Wildcard page. %s" s
+
+let wildcard_page s url =
+  Printf.sprintf "Wildcard page. %s. Remaining url: %s" s url
+
 let numbers_page id code = Printf.sprintf "int32: %ld, int64: %Ld." id code
 let not_found_page = "404 Not found"
 
@@ -37,6 +40,8 @@ let product_page name section_id q =
 let product_page2 name section_id =
   Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id
 
+let public url = Format.sprintf "file path: %s" url
+
 let router =
   Wtr.create
     [ {%wtr| get,post  ;         /home/about/:int          |} about_page
@@ -50,6 +55,7 @@ let router =
     ; {%wtr| get;   /product/:string?section=:int&q1=yes   |} product_page2
     ; {%wtr| get;   /fruit/:Fruit                          |} fruit_page
     ; {%wtr| get;   /                                      |} not_found_page
+    ; {%wtr| get;   /public/**                             |} public
     ; {%wtr| head;  /numbers/:int32/code/:int64/           |} numbers_page ]
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter
@@ -58,6 +64,21 @@ let pp_match method' uri =
   Wtr.match' method' uri router
   |> function
   | Some s -> Printf.printf {|"%s%!"|} s | None -> Printf.printf "None%!"
+
+let%expect_test _ =
+  pp_match `GET "/public/css/style.css" ;
+  [%expect {|
+       "file path: css/style.css" |}]
+
+let%expect_test _ =
+  pp_match `GET "/public/js/prog.js" ;
+  [%expect {|
+       "file path: js/prog.js" |}]
+
+let%expect_test _ =
+  pp_match `GET "/public/images/image1.jpg" ;
+  [%expect {|
+       "file path: images/image1.jpg" |}]
 
 let%expect_test _ =
   pp_match `GET "/home/100001.1/" ;
@@ -100,19 +121,19 @@ let%expect_test _ =
        "Contact page. Hi, bikal. Number 123456" |}]
 
 let%expect_test _ =
-  pp_match `POST "/home/products/asdfasdf\nasdfasdfasd" ;
+  pp_match `POST "/home/products/asdfasdf?a=1&b=2" ;
   [%expect {|
-       "full splat page" |}]
+       "full splat page: asdfasdf?a=1&b=2" |}]
 
 let%expect_test _ =
-  pp_match `POST "/home/products/" ;
+  pp_match `POST "/home/products/product1/locate" ;
   [%expect {|
-       "full splat page" |}]
+       "full splat page: product1/locate" |}]
 
 let%expect_test _ =
   pp_match `GET "/home/product1/" ;
   [%expect {|
-       "Wildcard page. product1" |}]
+       "Wildcard page. product1. Remaining url: " |}]
 
 let%expect_test _ =
   pp_match `GET "/contact/bikal/true" ;
@@ -228,6 +249,8 @@ let%expect_test _ =
       /fruit
         /:Fruit
       /
+      /public
+        /**
     POST
       /home
         /about

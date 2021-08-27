@@ -99,7 +99,7 @@ let method' meth =
 type ('a, 'b) uri =
   | Nil : ('b, 'b) uri
   | Method : method' * ('a, 'b) uri -> ('a, 'b) uri
-  | Full_splat : ('b, 'b) uri
+  | Full_splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
   | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
@@ -206,32 +206,47 @@ and compile : 'a node -> 'a t =
       |> Array.of_list }
 
 let rec pp fmt t =
-  let open Format in
   let nodes = t.node_types |> Array.to_list in
   let len = List.length nodes in
   nodes
-  |> pp_print_list
-       ~pp_sep:(if len > 1 then pp_force_newline else fun _ () -> ())
+  |> Format.pp_print_list
+       ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
        (fun fmt (nt, t') ->
-         pp_open_vbox fmt 2 ;
-         pp_print_string fmt (node_type_to_string nt) ;
+         Format.pp_open_vbox fmt 2 ;
+         Format.pp_print_string fmt (node_type_to_string nt) ;
          if Array.length t'.node_types > 0 then (
-           pp_print_break fmt 0 0 ; pp fmt t' ) ;
-         pp_close_box fmt () ;
+           Format.pp_print_break fmt 0 0 ;
+           pp fmt t' ) ;
+         Format.pp_close_box fmt () ;
          () )
        fmt
 
 type decoded_value = D : 'c decoder * 'c -> decoded_value
 
 let rec match' method' uri (t : 'a t) =
-  let rec try_match t decoded_values uri_toks =
+  (* split uri path and query into tokens *)
+  let uri' = uri |> String.trim |> Uri.of_string in
+  let path_tokens = Uri.path uri' |> String.split_on_char '/' |> List.tl in
+  let query_tokens =
+    Uri.query uri'
+    |> List.map (fun (k, v) ->
+           if List.length v > 0 then [k; List.hd v] else [k] )
+    |> List.concat
+  in
+  let uri_toks = path_tokens @ query_tokens in
+  (* Matching algorithm overview:
+
+     1. First match the HTTP method as all routes always start with a HTTP method
+     2. Then follow the trie nodes as suggested by the trie algorithm.
+  *)
+  let rec try_match t decoded_values uri_toks matched_token_count =
     match uri_toks with
     | [] ->
         Option.map
           (fun (Route (uri, f)) ->
             exec_route_handler f (uri, List.rev decoded_values) )
           t.route
-    | uri :: uris ->
+    | uri_part :: uris ->
         let continue = ref true in
         let index = ref 0 in
         let matched_node = ref None in
@@ -239,42 +254,38 @@ let rec match' method' uri (t : 'a t) =
         while !continue && !index < Array.length t.node_types do
           match t.node_types.(!index) with
           | PDecoder decoder, t' -> (
-            match decoder.decode uri with
+            match decoder.decode uri_part with
             | Some v ->
                 matched_node := Some (t', D (decoder, v) :: decoded_values) ;
                 continue := false
             | None -> incr index )
-          | PLiteral lit, t' when String.equal lit uri ->
+          | PLiteral lit, t' when String.equal lit uri_part ->
               matched_node := Some (t', decoded_values) ;
               continue := false
-          | PTrailing_slash, t' when String.equal "" uri ->
+          | PTrailing_slash, t' when String.equal "" uri_part ->
               matched_node := Some (t', decoded_values) ;
               continue := false
           | PFull_splat, t' ->
-              matched_node := Some (t', decoded_values) ;
+              let path =
+                drop path_tokens matched_token_count |> String.concat "/"
+              in
+              let splat_url =
+                String.split_on_char '?' uri
+                |> fun l ->
+                if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
+              in
+              matched_node := Some (t', D (string, splat_url) :: decoded_values) ;
               continue := false ;
               full_splat_matched := true
           | _ -> incr index
         done ;
         Option.bind !matched_node (fun (t', decoded_values) ->
+            let matched_tok_count = matched_token_count + 1 in
             if !full_splat_matched then
-              (try_match [@tailcall]) t' decoded_values []
-            else (try_match [@tailcall]) t' decoded_values uris )
+              (try_match [@tailcall]) t' decoded_values [] matched_tok_count
+            else
+              (try_match [@tailcall]) t' decoded_values uris matched_tok_count )
   in
-  (* split uri path and query into tokens *)
-  let uri_toks =
-    let uri = String.trim uri |> Uri.of_string in
-    let uri_tokens = Uri.path uri |> String.split_on_char '/' |> List.tl in
-    Uri.query uri
-    |> List.map (fun (k, v) ->
-           if List.length v > 0 then [k; List.hd v] else [k] )
-    |> List.concat |> List.append uri_tokens
-  in
-  (* Matching algorithm overview:
-
-     1. First match the HTTP method as all routes always start with a HTTP method
-     2. Then follow the trie nodes as suggested by the trie algorithm.
-  *)
   if List.length uri_toks > 0 then
     let n = Array.length t.node_types in
     let rec loop i =
@@ -282,16 +293,19 @@ let rec match' method' uri (t : 'a t) =
       else
         match t.node_types.(i) with
         | PMethod method'', t' when method_equal method' method'' ->
-            try_match t' [] uri_toks
+            try_match t' [] uri_toks 0
         | _ -> (loop [@tailcall]) (i + 1)
     in
     loop 0
   else None
 
+and drop l n = match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
+
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
   | Nil, [] -> f
-  | Full_splat, [] -> f
+  | Full_splat, [D (d, v)] -> (
+    match eq string.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Method (_, uri), decoded_values -> exec_route_handler f (uri, decoded_values)
   | Literal (_, uri), decoded_values ->
