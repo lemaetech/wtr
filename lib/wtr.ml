@@ -89,12 +89,6 @@ let method' meth =
   | "TRACE" -> `TRACE
   | header -> `Method header
 
-(** [('a, 'b) uri] represents a uniform resource identifier. The variant members
-    describe the uri component types.
-
-    - Literal Uri path literal string component eg. 'home' in '/home'
-    - Decoder Uri path argument component, i.e. the value is determined during
-      runtime, eg. ':int' in '/home/:int' *)
 type ('a, 'b) uri =
   | Nil : ('b, 'b) uri
   | Full_splat : (string -> 'b, 'b) uri
