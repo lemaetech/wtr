@@ -4,7 +4,7 @@ module Fruit = struct
   type t = Apple | Orange | Pineapple
 
   let t : t Wtr.decoder =
-    Wtr.create_decoder ~name:"Fruit" ~decode:(function
+    Wtr.decoder ~name:"Fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -43,7 +43,7 @@ let product_page2 name section_id =
 let public url = Format.sprintf "file path: %s" url
 
 let router =
-  Wtr.create
+  Wtr.wtr
     [ {%wtr| get,post  ;         /home/about/:int          |} about_page
     ; {%wtr| head,delete;        /home/:int/               |} home_int_page
     ; {%wtr| get;   /home/:float/                          |} home_float_page

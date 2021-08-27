@@ -108,38 +108,25 @@ and split_on f l =
   | None -> (l, [])
 
 and make_uri ~loc = function
-  | [] -> [%expr Wtr.Private.nil]
-  | [""] -> [%expr Wtr.Private.trailing_slash]
-  | ["**"] -> [%expr Wtr.Private.full_splat]
+  | [] -> [%expr Wtr.nil]
+  | [""] -> [%expr Wtr.trailing_slash]
+  | ["**"] -> [%expr Wtr.full_splat]
   | "*" :: components ->
-      [%expr
-        Wtr.Private.decoder Wtr.Private.string [%e make_uri ~loc components]]
+      [%expr Wtr.decode Wtr.string [%e make_uri ~loc components]]
   | comp :: components when Char.equal comp.[0] ':' -> (
       (* Decoders *)
       let comp = String.sub comp 1 (String.length comp - 1) in
       match comp with
-      | "int" ->
-          [%expr
-            Wtr.Private.decoder Wtr.Private.int [%e make_uri ~loc components]]
-      | "int32" ->
-          [%expr
-            Wtr.Private.decoder Wtr.Private.int32 [%e make_uri ~loc components]]
-      | "int64" ->
-          [%expr
-            Wtr.Private.decoder Wtr.Private.int64 [%e make_uri ~loc components]]
-      | "float" ->
-          [%expr
-            Wtr.Private.decoder Wtr.Private.float [%e make_uri ~loc components]]
-      | "string" ->
-          [%expr
-            Wtr.Private.decoder Wtr.Private.string [%e make_uri ~loc components]]
-      | "bool" ->
-          [%expr
-            Wtr.Private.decoder Wtr.Private.bool [%e make_uri ~loc components]]
+      | "int" -> [%expr Wtr.decode Wtr.int [%e make_uri ~loc components]]
+      | "int32" -> [%expr Wtr.decode Wtr.int32 [%e make_uri ~loc components]]
+      | "int64" -> [%expr Wtr.decode Wtr.int64 [%e make_uri ~loc components]]
+      | "float" -> [%expr Wtr.decode Wtr.float [%e make_uri ~loc components]]
+      | "string" -> [%expr Wtr.decode Wtr.string [%e make_uri ~loc components]]
+      | "bool" -> [%expr Wtr.decode Wtr.bool [%e make_uri ~loc components]]
       | custom_arg when capitalized custom_arg ->
           let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
-            Wtr.Private.decoder
+            Wtr.decode
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_uri ~loc components]]
       | x ->
@@ -149,9 +136,7 @@ and make_uri ~loc = function
             x )
   | comp :: components ->
       [%expr
-        Wtr.Private.lit
-          [%e Ast_builder.estring ~loc comp]
-          [%e make_uri ~loc components]]
+        Wtr.lit [%e Ast_builder.estring ~loc comp] [%e make_uri ~loc components]]
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 

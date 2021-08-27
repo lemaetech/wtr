@@ -40,16 +40,9 @@ type 'a decoder =
   ; decode: string -> 'a option
   ; id: 'a id }
 
-let create_decoder ~name ~decode =
+let decoder ~name ~decode =
   let id = new_id () in
   {name; decode; id}
-
-let int = create_decoder ~name:"int" ~decode:int_of_string_opt
-let int32 = create_decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64 = create_decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float = create_decoder ~name:"float" ~decode:float_of_string_opt
-let string = create_decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool = create_decoder ~name:"bool" ~decode:bool_of_string_opt
 
 type method' =
   [ `GET
@@ -95,6 +88,18 @@ type ('a, 'b) uri =
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
   | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+
+let nil = Nil
+let trailing_slash = Trailing_slash
+let full_splat = Full_splat
+let lit s uri = Literal (s, uri)
+let int = decoder ~name:"int" ~decode:int_of_string_opt
+let int32 = decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64 = decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float = decoder ~name:"float" ~decode:float_of_string_opt
+let string = decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool = decoder ~name:"bool" ~decode:bool_of_string_opt
+let decode d uri = Decoder (d, uri)
 
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
@@ -187,7 +192,7 @@ and empty_node : 'a node = {route= None; node_types= []}
    that iterating nodes via array is faster than via the list. *)
 type 'a t = {route: 'a route option; node_types: (node_type * 'a t) array}
 
-let rec create routes =
+let rec wtr routes =
   List.concat routes |> List.fold_left node empty_node |> compile
 
 and compile : 'a node -> 'a t =
@@ -307,17 +312,3 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
     | Some Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false )
   | _, _ -> assert false
-
-module Private = struct
-  let nil = Nil
-  let trailing_slash = Trailing_slash
-  let full_splat = Full_splat
-  let lit s uri = Literal (s, uri)
-  let decoder d uri = Decoder (d, uri)
-  let int = int
-  let int32 = int32
-  let int64 = int64
-  let float = float
-  let bool = bool
-  let string = string
-end

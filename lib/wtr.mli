@@ -37,12 +37,22 @@ and method' =
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc. *)
 and 'a decoder
 
-(** {1 Router} *)
+(** {1 URI} *)
+
+val nil : ('b, 'b) uri
+val full_splat : (string -> 'b, 'b) uri
+val trailing_slash : ('b, 'b) uri
+val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
+val decode : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
+
+(** {1 Route} *)
 
 val route : method' -> ('a, 'b) uri -> 'a -> 'b route
 val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
 
-val create : 'a route list list -> 'a t
+(** {1 Router} *)
+
+val wtr : 'a route list list -> 'a t
 (** [create routes] creates a router from a list of [route]s. Values of [routes]
     are created by [%wtr] ppx.
 
@@ -238,9 +248,16 @@ val match' : method' -> string -> 'a t -> 'a option
     - A uri spec [/home/:string] expects a route handler as
       [(fun (s:string) -> ...)] *)
 
-val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
+val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** [create_decoder ~name ~decode] creates a user defined decoder uri component.
     [name] is used during the pretty printing of [uri]. *)
+
+val int : int decoder
+val int32 : int32 decoder
+val int64 : int64 decoder
+val float : float decoder
+val bool : bool decoder
+val string : string decoder
 
 (** {1 HTTP Method} *)
 
@@ -308,22 +325,3 @@ val pp : Format.formatter -> 'a t -> unit
 
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
-
-(**/**)
-
-(** Only to be used by PPX *)
-module Private : sig
-  val nil : ('b, 'b) uri
-  val full_splat : (string -> 'b, 'b) uri
-  val trailing_slash : ('b, 'b) uri
-  val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
-  val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
-  val int : int decoder
-  val int32 : int32 decoder
-  val int64 : int64 decoder
-  val float : float decoder
-  val bool : bool decoder
-  val string : string decoder
-end
-
-(**/**)

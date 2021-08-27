@@ -18,7 +18,7 @@ Wtr is typed router for OCaml web applications.
 - Minimal learning overhead. `Wtr` is centered around 3 API calls, a ppx -`%wtr` - and your existing HTTP url/uri knowledge:
   - `Wtr.create` - creates a router - *'a Wtr.t* - from a list of `route` values.
   - `Wtr.match'` - matches a given uri path in a router.
-  - `Wtr.create_decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
+  - `Wtr.decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
 
 ## Wtr Demo
 
@@ -31,7 +31,7 @@ module Fruit = struct
   type t = Apple | Orange | Pineapple
 
   let t : t Wtr.decoder =
-    Wtr.create_decoder ~name:"fruit" ~decode:(function
+    Wtr.decoder ~name:"fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -61,8 +61,7 @@ let faq category_id _ =
   "FAQ page for category : " ^ category_name
 
 let router =
-  Wtr.(
-    create
+  Wtr.wtr       
       [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
       ; {%wtr| head,delete           ; /home/:int/             |} prod_page
       ; {%wtr| get,post              ; /home/:float/           |} float_page
@@ -70,7 +69,7 @@ let router =
       ; {%wtr| get; /product/:string?section=:int&q=:bool      |} product1
       ; {%wtr| get; /product/:string?section=:int&q1=yes       |} product2
       ; {%wtr| get; /fruit/:Fruit                              |} fruit_page
-      ; {%wtr| GET; /faq/:int/**                               |} faq ])
+      ; {%wtr| GET; /faq/:int/**                               |} faq ]
 
 let p () = 
   Printf.printf "\n====Router Match Results====\n" ;
