@@ -4,6 +4,9 @@
   in the handler. The parameter holds the remaining url matched by the
 `full_plat` operator
 - BREAKING CHANGE: 'create_decoder' has been renamed to 'decoder'
+- BREAKING CHANGE: 'create' has been renamed to 'wtr'
+- NEW: Add `route` and `routes` functions
+- NEW: Add standard decoder functions
 
 ## v2.0.0 2021-08-02 
 

@@ -112,17 +112,22 @@ and make_uri ~loc = function
   | [""] -> [%expr Wtr.trailing_slash]
   | ["**"] -> [%expr Wtr.full_splat]
   | "*" :: components ->
-      [%expr Wtr.decode Wtr.string [%e make_uri ~loc components]]
+      [%expr Wtr.(decode string_decoder [%e make_uri ~loc components])]
   | comp :: components when Char.equal comp.[0] ':' -> (
       (* Decoders *)
       let comp = String.sub comp 1 (String.length comp - 1) in
       match comp with
-      | "int" -> [%expr Wtr.decode Wtr.int [%e make_uri ~loc components]]
-      | "int32" -> [%expr Wtr.decode Wtr.int32 [%e make_uri ~loc components]]
-      | "int64" -> [%expr Wtr.decode Wtr.int64 [%e make_uri ~loc components]]
-      | "float" -> [%expr Wtr.decode Wtr.float [%e make_uri ~loc components]]
-      | "string" -> [%expr Wtr.decode Wtr.string [%e make_uri ~loc components]]
-      | "bool" -> [%expr Wtr.decode Wtr.bool [%e make_uri ~loc components]]
+      | "int" -> [%expr Wtr.(decode int_decoder [%e make_uri ~loc components])]
+      | "int32" ->
+          [%expr Wtr.(decode int32_decoder [%e make_uri ~loc components])]
+      | "int64" ->
+          [%expr Wtr.(decode int64_decoder [%e make_uri ~loc components])]
+      | "float" ->
+          [%expr Wtr.(decode float_decoder [%e make_uri ~loc components])]
+      | "string" ->
+          [%expr Wtr.(decode string_decoder [%e make_uri ~loc components])]
+      | "bool" ->
+          [%expr Wtr.(decode bool_decoder [%e make_uri ~loc components])]
       | custom_arg when capitalized custom_arg ->
           let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr

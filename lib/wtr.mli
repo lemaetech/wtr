@@ -44,6 +44,7 @@ val full_splat : (string -> 'b, 'b) uri
 val trailing_slash : ('b, 'b) uri
 val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
 val decode : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
+(* val int : (int -> 'b, 'c) uri *)
 
 (** {1 Route} *)
 
@@ -252,12 +253,12 @@ val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** [create_decoder ~name ~decode] creates a user defined decoder uri component.
     [name] is used during the pretty printing of [uri]. *)
 
-val int : int decoder
-val int32 : int32 decoder
-val int64 : int64 decoder
-val float : float decoder
-val bool : bool decoder
-val string : string decoder
+val int_decoder : int decoder
+val int32_decoder : int32 decoder
+val int64_decoder : int64 decoder
+val float_decoder : float decoder
+val bool_decoder : bool decoder
+val string_decoder : string decoder
 
 (** {1 HTTP Method} *)
 

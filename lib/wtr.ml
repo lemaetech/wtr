@@ -93,13 +93,14 @@ let nil = Nil
 let trailing_slash = Trailing_slash
 let full_splat = Full_splat
 let lit s uri = Literal (s, uri)
-let int = decoder ~name:"int" ~decode:int_of_string_opt
-let int32 = decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64 = decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float = decoder ~name:"float" ~decode:float_of_string_opt
-let string = decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool = decoder ~name:"bool" ~decode:bool_of_string_opt
+let int_decoder = decoder ~name:"int" ~decode:int_of_string_opt
+let int32_decoder = decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64_decoder = decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float_decoder = decoder ~name:"float" ~decode:float_of_string_opt
+let string_decoder = decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool_decoder = decoder ~name:"bool" ~decode:bool_of_string_opt
 let decode d uri = Decoder (d, uri)
+(* let int = decode int_decoder *)
 
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
@@ -272,7 +273,8 @@ let rec match' method' uri (t : 'a t) =
                 |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
-              matched_node := Some (t', D (string, splat_url) :: decoded_values) ;
+              matched_node :=
+                Some (t', D (string_decoder, splat_url) :: decoded_values) ;
               continue := false ;
               full_splat_matched := true
           | _ -> incr index
@@ -303,7 +305,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
   | Nil, [] -> f
   | Full_splat, [D (d, v)] -> (
-    match eq string.id d.id with Some Eq -> f v | None -> assert false )
+    match eq string_decoder.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
