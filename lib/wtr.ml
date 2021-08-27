@@ -78,8 +78,7 @@ let pp_method fmt t =
   |> Format.fprintf fmt "%s"
 
 let method' meth =
-  String.uppercase_ascii meth
-  |> function
+  match String.uppercase_ascii meth with
   | "GET" -> `GET
   | "HEAD" -> `HEAD
   | "POST" -> `POST
