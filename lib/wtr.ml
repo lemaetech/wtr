@@ -97,7 +97,6 @@ let method' meth =
       runtime, eg. ':int' in '/home/:int' *)
 type ('a, 'b) uri =
   | Nil : ('b, 'b) uri
-  | Method : method' * ('a, 'b) uri -> ('a, 'b) uri
   | Full_splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
@@ -106,20 +105,22 @@ type ('a, 'b) uri =
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
   | Nil -> Format.fprintf fmt "%!"
-  | Method (meth, uri) -> Format.fprintf fmt "%a%a" pp_method meth pp_uri uri
   | Full_splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
   | Decoder (decoder, uri) ->
       Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
 
-type 'c route = Route : ('a, 'c) uri * 'a -> 'c route
+type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
-let route : ('a, 'b) uri list -> 'a -> 'b route list =
- fun uris f -> List.map (fun uri' -> Route (uri', f)) uris
+let route : method' -> ('a, 'b) uri -> 'a -> 'b route =
+ fun method' uri f -> Route (method', uri, f)
+
+let routes methods uri f = List.map (fun method' -> route method' uri f) methods
 
 let pp_route : Format.formatter -> 'b route -> unit =
- fun fmt (Route (uri, _)) -> pp_uri fmt uri
+ fun fmt (Route (method', uri, _)) ->
+  Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
 
 (** Existential to encode uri component/node type. *)
 type node_type =
@@ -133,7 +134,7 @@ let node_type_equal a b =
   match (a, b) with
   | PTrailing_slash, PTrailing_slash -> true
   | PFull_splat, PFull_splat -> true
-  | PLiteral lit', PLiteral lit -> String.equal lit lit'
+  | PLiteral lit1, PLiteral lit2 -> String.equal lit2 lit1
   | PMethod meth1, PMethod meth2 -> method_equal meth1 meth2
   | PDecoder decoder, PDecoder decoder' -> (
     match eq decoder'.id decoder.id with Some Eq -> true | None -> false )
@@ -143,7 +144,6 @@ let node_type_equal a b =
    type inference issue when using [uri] type in the [node] function below. *)
 let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Nil -> []
-  | Method (meth, uri) -> PMethod meth :: node_type_of_uri uri
   | Trailing_slash -> [PTrailing_slash]
   | Full_splat -> [PFull_splat]
   | Literal (lit, uri) -> PLiteral lit :: node_type_of_uri uri
@@ -161,7 +161,7 @@ let node_type_to_string node_type =
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
 
 let rec node : 'a node -> 'a route -> 'a node =
- fun node' (Route (uri, _) as route) ->
+ fun node' (Route (method', uri, _) as route) ->
   let rec loop node node_types =
     match node_types with
     | [] -> {node with route= Some route}
@@ -184,7 +184,7 @@ let rec node : 'a node -> 'a route -> 'a node =
             | None -> (node_type, loop empty_node node_types) :: node.node_types
             ) }
   in
-  let node_types = node_type_of_uri uri in
+  let node_types = PMethod method' :: node_type_of_uri uri in
   loop node' node_types
 
 and empty_node : 'a node = {route= None; node_types= []}
@@ -242,7 +242,7 @@ let rec match' method' uri (t : 'a t) =
     match uri_toks with
     | [] ->
         Option.map
-          (fun (Route (uri, f)) ->
+          (fun (Route (_, uri, f)) ->
             exec_route_handler f (uri, List.rev decoded_values) )
           t.route
     | uri_part :: uris ->
@@ -306,7 +306,6 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | Full_splat, [D (d, v)] -> (
     match eq string.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
-  | Method (_, uri), decoded_values -> exec_route_handler f (uri, decoded_values)
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
   | Decoder ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
@@ -316,13 +315,11 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | _, _ -> assert false
 
 module Private = struct
-  let route = route
   let nil = Nil
   let trailing_slash = Trailing_slash
   let full_splat = Full_splat
   let lit s uri = Literal (s, uri)
   let decoder d uri = Decoder (d, uri)
-  let method' meth uri = Method (meth, uri)
   let int = int
   let int32 = int32
   let int64 = int64

@@ -39,6 +39,9 @@ and 'a decoder
 
 (** {1 Router} *)
 
+val route : method' -> ('a, 'b) uri -> 'a -> 'b route
+val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
+
 val create : 'a route list list -> 'a t
 (** [create routes] creates a router from a list of [route]s. Values of [routes]
     are created by [%wtr] ppx.
@@ -311,7 +314,6 @@ val pp_route : Format.formatter -> 'b route -> unit
 
 (** Only to be used by PPX *)
 module Private : sig
-  val route : ('a, 'b) uri list -> 'a -> 'b route list
   val nil : ('b, 'b) uri
 
   (** uri components *)
@@ -320,7 +322,6 @@ module Private : sig
   val trailing_slash : ('b, 'b) uri
   val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
   val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
-  val method' : method' -> ('a, 'b) uri -> ('a, 'b) uri
 
   (** decoders *)
 
