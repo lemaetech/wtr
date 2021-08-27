@@ -89,16 +89,15 @@ val create : 'a route list list -> 'a t
         "FAQ page for category : " ^ category_name
 
       let router =
-        Wtr.(
-          create
-            [ {%wtr| get,post,head,delete  ; /home/about/       |} about_page
-            ; {%wtr| head,delete           ; /home/:int/        |} prod_page
-            ; {%wtr| get,post              ; /home/:float/      |} float_page
-            ; {%wtr| get; /contact/*/:int                       |} contact_page
-            ; {%wtr| get; /product/:string?section=:int&q=:bool |} product1
-            ; {%wtr| get; /product/:string?section=:int&q1=yes  |} product2
-            ; {%wtr| get; /fruit/:Fruit                         |} fruit_page
-            ; {%wtr| GET; /faq/:int/**                          |} faq ])
+        Wtr.create
+          [ {%wtr| get,post,head,delete  ; /home/about/       |} about_page
+          ; {%wtr| head,delete           ; /home/:int/        |} prod_page
+          ; {%wtr| get,post              ; /home/:float/      |} float_page
+          ; {%wtr| get; /contact/*/:int                       |} contact_page
+          ; {%wtr| get; /product/:string?section=:int&q=:bool |} product1
+          ; {%wtr| get; /product/:string?section=:int&q1=yes  |} product2
+          ; {%wtr| get; /fruit/:Fruit                         |} fruit_page
+          ; {%wtr| GET; /faq/:int/**                          |} faq ]
     ]} *)
 
 val match' : method' -> string -> 'a t -> 'a option
@@ -315,16 +314,10 @@ val pp_route : Format.formatter -> 'b route -> unit
 (** Only to be used by PPX *)
 module Private : sig
   val nil : ('b, 'b) uri
-
-  (** uri components *)
-
   val full_splat : (string -> 'b, 'b) uri
   val trailing_slash : ('b, 'b) uri
   val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
   val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
-
-  (** decoders *)
-
   val int : int decoder
   val int32 : int32 decoder
   val int64 : int64 decoder
