@@ -24,7 +24,7 @@ and ('a, 'b) uri =
   | Splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
     {!type:uri} in [%wtr] ppx. *)

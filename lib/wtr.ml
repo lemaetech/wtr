@@ -87,7 +87,7 @@ type ('a, 'b) uri =
   | Splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
 let end' = End
 let trailing_slash = Trailing_slash
@@ -99,7 +99,7 @@ let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
 let float_d = decoder ~name:"float" ~decode:float_of_string_opt
 let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
 let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
-let decode d uri = Decoder (d, uri)
+let decode d uri = Decode (d, uri)
 (* let int = decode int_decoder *)
 
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
@@ -108,8 +108,7 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
   | Splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
-  | Decoder (decoder, uri) ->
-      Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
+  | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
@@ -147,7 +146,7 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Trailing_slash -> [PTrailing_slash]
   | Splat -> [PFull_splat]
   | Literal (lit, uri) -> PLiteral lit :: node_type_of_uri uri
-  | Decoder (decoder, uri) -> PDecoder decoder :: node_type_of_uri uri
+  | Decode (decoder, uri) -> PDecoder decoder :: node_type_of_uri uri
 
 let node_type_to_string node_type =
   match node_type with
@@ -309,7 +308,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
-  | Decoder ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
+  | Decode ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
     match eq id id' with
     | Some Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false )
