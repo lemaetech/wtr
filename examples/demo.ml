@@ -3,7 +3,7 @@ module Fruit = struct
   type t = Apple | Orange | Pineapple
 
   let t : t Wtr.decoder =
-    Wtr.create_decoder ~name:"fruit" ~decode:(function
+    Wtr.decoder ~name:"fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -23,7 +23,7 @@ let fruit_page = function
   | Orange -> "Orange is a citrus fruit."
   | Pineapple -> "Pineapple has scaly skin"
 
-let faq category_id =
+let faq category_id _url =
   let category_name =
     match category_id with
     | 1 -> "products"
@@ -34,16 +34,15 @@ let faq category_id =
   "FAQ page for category : " ^ category_name
 
 let router =
-  Wtr.(
-    create
-      [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
-      ; {%wtr| head,delete           ; /home/:int/             |} prod_page
-      ; {%wtr| get,post              ; /home/:float/           |} float_page
-      ; {%wtr| get; /contact/*/:int                            |} contact_page
-      ; {%wtr| get; /product/:string?section=:int&q=:bool      |} product1
-      ; {%wtr| get; /product/:string?section=:int&q1=yes       |} product2
-      ; {%wtr| get; /fruit/:Fruit                              |} fruit_page
-      ; {%wtr| GET; /faq/:int/**                               |} faq ])
+  Wtr.wtr
+    [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
+    ; {%wtr| head,delete           ; /home/:int/             |} prod_page
+    ; {%wtr| get,post              ; /home/:float/           |} float_page
+    ; {%wtr| get; /contact/*/:int                            |} contact_page
+    ; {%wtr| get; /product/:string?section=:int&q=:bool      |} product1
+    ; {%wtr| get; /product/:string?section=:int&q1=yes       |} product2
+    ; {%wtr| get; /fruit/:Fruit                              |} fruit_page
+    ; {%wtr| GET; /faq/:int/**                               |} faq ]
 
 let () =
   Printexc.record_backtrace true ;

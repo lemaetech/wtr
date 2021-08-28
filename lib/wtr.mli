@@ -44,11 +44,12 @@ and 'a decoder
 
 (** {1 URI} *)
 
-val end' : ('b, 'b) uri
-val splat : (string -> 'b, 'b) uri
-val trailing_slash : ('b, 'b) uri
-val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
-val decode : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
+val root : ('b, 'b) uri
+val decode : ('b, 'c) uri -> 'a decoder -> ('a -> 'b, 'c) uri
+val ( /: ) : ('b, 'c) uri -> 'a decoder -> ('a -> 'b, 'c) uri
+val suffix : ('a, 'b) uri -> string -> ('a, 'b) uri
+val ( / ) : ('a, 'b) uri -> string -> ('a, 'b) uri
+
 (* val int : (int -> 'b, 'c) uri *)
 
 (** {1 Route} *)
