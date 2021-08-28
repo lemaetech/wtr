@@ -108,12 +108,11 @@ and split_on f l =
   | None -> (l, [])
 
 and make_uri ~loc = function
-  | [] -> [%expr Wtr.nil]
-  | [""] -> [%expr Wtr.trailing_slash]
-  | ["**"] -> [%expr Wtr.full_splat]
+  | [] -> [%expr Wtr.End]
+  | [""] -> [%expr Wtr.Trailing_slash]
+  | ["**"] -> [%expr Wtr.Splat]
   | "*" :: uris -> [%expr Wtr.(decode string_d [%e make_uri ~loc uris])]
   | uri :: uris when Char.equal uri.[0] ':' -> (
-      (* Decoders *)
       let comp = String.sub uri 1 (String.length uri - 1) in
       match comp with
       | "int" -> [%expr Wtr.(decode int_d [%e make_uri ~loc uris])]
@@ -134,7 +133,8 @@ and make_uri ~loc = function
              name must be a valid module name."
             x )
   | uri :: uris ->
-      [%expr Wtr.lit [%e Ast_builder.estring ~loc uri] [%e make_uri ~loc uris]]
+      [%expr
+        Wtr.Literal ([%e Ast_builder.estring ~loc uri], [%e make_uri ~loc uris])]
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 

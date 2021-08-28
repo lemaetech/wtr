@@ -84,14 +84,14 @@ let method' meth =
 
 type ('a, 'b) uri =
   | End : ('b, 'b) uri
-  | Full_splat : (string -> 'b, 'b) uri
+  | Splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
   | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
-let nil = End
+let end' = End
 let trailing_slash = Trailing_slash
-let full_splat = Full_splat
+let splat = Splat
 let lit s uri = Literal (s, uri)
 let int_d = decoder ~name:"int" ~decode:int_of_string_opt
 let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
@@ -105,7 +105,7 @@ let decode d uri = Decoder (d, uri)
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
   | End -> Format.fprintf fmt "%!"
-  | Full_splat -> Format.fprintf fmt "/**%!"
+  | Splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
   | Decoder (decoder, uri) ->
@@ -145,7 +145,7 @@ let node_type_equal a b =
 let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | End -> []
   | Trailing_slash -> [PTrailing_slash]
-  | Full_splat -> [PFull_splat]
+  | Splat -> [PFull_splat]
   | Literal (lit, uri) -> PLiteral lit :: node_type_of_uri uri
   | Decoder (decoder, uri) -> PDecoder decoder :: node_type_of_uri uri
 
@@ -304,7 +304,7 @@ and drop l n = match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
   | End, [] -> f
-  | Full_splat, [D (d, v)] -> (
+  | Splat, [D (d, v)] -> (
     match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->

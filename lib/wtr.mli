@@ -21,7 +21,7 @@ and 'c route
     /home/contact, /home/contact?name=a&no=123] etc. *)
 and ('a, 'b) uri =
   | End : ('b, 'b) uri
-  | Full_splat : (string -> 'b, 'b) uri
+  | Splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
   | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
@@ -44,8 +44,8 @@ and 'a decoder
 
 (** {1 URI} *)
 
-val nil : ('b, 'b) uri
-val full_splat : (string -> 'b, 'b) uri
+val end' : ('b, 'b) uri
+val splat : (string -> 'b, 'b) uri
 val trailing_slash : ('b, 'b) uri
 val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
 val decode : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
