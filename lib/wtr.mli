@@ -19,7 +19,12 @@ and 'c route
 (** [('a, 'b) uri] represents a route URI - both the path and query, e.g.
     [/home/about/,
     /home/contact, /home/contact?name=a&no=123] etc. *)
-and ('a, 'b) uri
+and ('a, 'b) uri =
+  | End : ('b, 'b) uri
+  | Full_splat : (string -> 'b, 'b) uri
+  | Trailing_slash : ('b, 'b) uri
+  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
+  | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
     {!type:uri} in [%wtr] ppx. *)
@@ -253,12 +258,12 @@ val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** [create_decoder ~name ~decode] creates a user defined decoder uri component.
     [name] is used during the pretty printing of [uri]. *)
 
-val int_decoder : int decoder
-val int32_decoder : int32 decoder
-val int64_decoder : int64 decoder
-val float_decoder : float decoder
-val bool_decoder : bool decoder
-val string_decoder : string decoder
+val int_d : int decoder
+val int32_d : int32 decoder
+val int64_d : int64 decoder
+val float_d : float decoder
+val bool_d : bool decoder
+val string_d : string decoder
 
 (** {1 HTTP Method} *)
 

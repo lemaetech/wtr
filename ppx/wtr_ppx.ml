@@ -111,37 +111,30 @@ and make_uri ~loc = function
   | [] -> [%expr Wtr.nil]
   | [""] -> [%expr Wtr.trailing_slash]
   | ["**"] -> [%expr Wtr.full_splat]
-  | "*" :: components ->
-      [%expr Wtr.(decode string_decoder [%e make_uri ~loc components])]
-  | comp :: components when Char.equal comp.[0] ':' -> (
+  | "*" :: uris -> [%expr Wtr.(decode string_d [%e make_uri ~loc uris])]
+  | uri :: uris when Char.equal uri.[0] ':' -> (
       (* Decoders *)
-      let comp = String.sub comp 1 (String.length comp - 1) in
+      let comp = String.sub uri 1 (String.length uri - 1) in
       match comp with
-      | "int" -> [%expr Wtr.(decode int_decoder [%e make_uri ~loc components])]
-      | "int32" ->
-          [%expr Wtr.(decode int32_decoder [%e make_uri ~loc components])]
-      | "int64" ->
-          [%expr Wtr.(decode int64_decoder [%e make_uri ~loc components])]
-      | "float" ->
-          [%expr Wtr.(decode float_decoder [%e make_uri ~loc components])]
-      | "string" ->
-          [%expr Wtr.(decode string_decoder [%e make_uri ~loc components])]
-      | "bool" ->
-          [%expr Wtr.(decode bool_decoder [%e make_uri ~loc components])]
+      | "int" -> [%expr Wtr.(decode int_d [%e make_uri ~loc uris])]
+      | "int32" -> [%expr Wtr.(decode int32_d [%e make_uri ~loc uris])]
+      | "int64" -> [%expr Wtr.(decode int64_d [%e make_uri ~loc uris])]
+      | "float" -> [%expr Wtr.(decode float_d [%e make_uri ~loc uris])]
+      | "string" -> [%expr Wtr.(decode string_d [%e make_uri ~loc uris])]
+      | "bool" -> [%expr Wtr.(decode bool_d [%e make_uri ~loc uris])]
       | custom_arg when capitalized custom_arg ->
           let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
             Wtr.decode
               [%e Ast_builder.pexp_ident ~loc longident_loc]
-              [%e make_uri ~loc components]]
+              [%e make_uri ~loc uris]]
       | x ->
           Location.raise_errorf ~loc
             "wtr: Invalid custom argument name '%s'. Custom argument component \
              name must be a valid module name."
             x )
-  | comp :: components ->
-      [%expr
-        Wtr.lit [%e Ast_builder.estring ~loc comp] [%e make_uri ~loc components]]
+  | uri :: uris ->
+      [%expr Wtr.lit [%e Ast_builder.estring ~loc uri] [%e make_uri ~loc uris]]
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 

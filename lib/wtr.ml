@@ -83,28 +83,28 @@ let method' meth =
   | header -> `Method header
 
 type ('a, 'b) uri =
-  | Nil : ('b, 'b) uri
+  | End : ('b, 'b) uri
   | Full_splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
   | Decoder : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
-let nil = Nil
+let nil = End
 let trailing_slash = Trailing_slash
 let full_splat = Full_splat
 let lit s uri = Literal (s, uri)
-let int_decoder = decoder ~name:"int" ~decode:int_of_string_opt
-let int32_decoder = decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64_decoder = decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float_decoder = decoder ~name:"float" ~decode:float_of_string_opt
-let string_decoder = decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool_decoder = decoder ~name:"bool" ~decode:bool_of_string_opt
+let int_d = decoder ~name:"int" ~decode:int_of_string_opt
+let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float_d = decoder ~name:"float" ~decode:float_of_string_opt
+let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
 let decode d uri = Decoder (d, uri)
 (* let int = decode int_decoder *)
 
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
-  | Nil -> Format.fprintf fmt "%!"
+  | End -> Format.fprintf fmt "%!"
   | Full_splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
@@ -143,7 +143,7 @@ let node_type_equal a b =
 (* [node_type_of_uri uri] converts [uri] to [node_type list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [node] function below. *)
 let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
-  | Nil -> []
+  | End -> []
   | Trailing_slash -> [PTrailing_slash]
   | Full_splat -> [PFull_splat]
   | Literal (lit, uri) -> PLiteral lit :: node_type_of_uri uri
@@ -274,7 +274,7 @@ let rec match' method' uri (t : 'a t) =
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
               matched_node :=
-                Some (t', D (string_decoder, splat_url) :: decoded_values) ;
+                Some (t', D (string_d, splat_url) :: decoded_values) ;
               continue := false ;
               full_splat_matched := true
           | _ -> incr index
@@ -303,9 +303,9 @@ and drop l n = match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
 
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
-  | Nil, [] -> f
+  | End, [] -> f
   | Full_splat, [D (d, v)] -> (
-    match eq string_decoder.id d.id with Some Eq -> f v | None -> assert false )
+    match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
