@@ -186,7 +186,7 @@ and empty_node : 'a node = {route= None; node_types= []}
    that iterating nodes via array is faster than via the list. *)
 type 'a t = {route: 'a route option; node_types: (node_type * 'a t) array}
 
-let rec wtr routes =
+let rec t routes =
   List.concat routes |> List.fold_left node empty_node |> compile
 
 and compile : 'a node -> 'a t =

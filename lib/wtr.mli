@@ -44,9 +44,9 @@ val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
 
 (** {1 Router} *)
 
-val wtr : 'a route list list -> 'a t
-(** [create routes] creates a router from a list of [route]s. Values of [routes]
-    are created by [%wtr] ppx.
+val t : 'a route list list -> 'a t
+(** [t routes] is a router from a list of [route]s. Values of [routes] are
+    created by [%wtr] ppx.
 
     A full example demonstrating creating a router, route and route handlers:
 
@@ -91,7 +91,7 @@ val wtr : 'a route list list -> 'a t
         "FAQ page for category : " ^ category_name
 
       let router =
-        Wtr.create
+        Wtr.t
           [ {%wtr| get,post,head,delete  ; /home/about/       |} about_page
           ; {%wtr| head,delete           ; /home/:int/        |} prod_page
           ; {%wtr| get,post              ; /home/:float/      |} float_page
@@ -169,8 +169,7 @@ val match' : method' -> string -> 'a t -> 'a option
 
     {[
       let r =
-        Wtr.create
-          [{%wtr|get; /public/** |} (fun url -> Format.sprintf "%s" url)]
+        Wtr.t [{%wtr|get; /public/** |} (fun url -> Format.sprintf "%s" url)]
       in
       let s = Wtr.match' `GET "/public/css/style.css" in
       s = Some "css/style.css"
@@ -217,7 +216,7 @@ val match' : method' -> string -> 'a t -> 'a option
         type t = Apple | Orange | Pineapple
 
         let t : t Wtr.decoder =
-          Wtr.create_decoder ~name:"fruit" ~decode:(function
+          Wtr.decoder ~name:"fruit" ~decode:(function
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
