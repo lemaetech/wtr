@@ -116,42 +116,42 @@ let pp_route : Format.formatter -> 'b route -> unit =
   Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
 
 (** Existential to encode uri component/node type. *)
-type node_type =
-  | PTrailing_slash : node_type
-  | PFull_splat : node_type
-  | PLiteral : string -> node_type
-  | PMethod : method' -> node_type
-  | PDecoder : 'c decoder -> node_type
+type uri' =
+  | UTrailing_slash : uri'
+  | USplat : uri'
+  | ULiteral : string -> uri'
+  | UMethod : method' -> uri'
+  | UDecoder : 'c decoder -> uri'
 
-let node_type_equal a b =
+let uri'_equal a b =
   match (a, b) with
-  | PTrailing_slash, PTrailing_slash -> true
-  | PFull_splat, PFull_splat -> true
-  | PLiteral lit1, PLiteral lit2 -> String.equal lit2 lit1
-  | PMethod meth1, PMethod meth2 -> method_equal meth1 meth2
-  | PDecoder decoder, PDecoder decoder' -> (
+  | UTrailing_slash, UTrailing_slash -> true
+  | USplat, USplat -> true
+  | ULiteral lit1, ULiteral lit2 -> String.equal lit2 lit1
+  | UMethod meth1, UMethod meth2 -> method_equal meth1 meth2
+  | UDecoder decoder, UDecoder decoder' -> (
     match eq decoder'.id decoder.id with Some Eq -> true | None -> false )
   | _ -> false
 
-(* [node_type_of_uri uri] converts [uri] to [node_type list]. This is done to get around OCaml
+(* [uri'_of_uri uri] converts [uri] to [node_type list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [node] function below. *)
-let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
+let rec uri'_of_uri : type a b. (a, b) uri -> uri' list = function
   | Nil -> []
-  | Trailing_slash -> [PTrailing_slash]
-  | Splat -> [PFull_splat]
-  | Literal (lit, uri) -> PLiteral lit :: node_type_of_uri uri
-  | Decode (decoder, uri) -> PDecoder decoder :: node_type_of_uri uri
+  | Trailing_slash -> [UTrailing_slash]
+  | Splat -> [USplat]
+  | Literal (lit, uri) -> ULiteral lit :: uri'_of_uri uri
+  | Decode (decoder, uri) -> UDecoder decoder :: uri'_of_uri uri
 
-let node_type_to_string node_type =
+let uri'_to_string node_type =
   match node_type with
-  | PFull_splat -> Format.sprintf "/**%!"
-  | PTrailing_slash -> Format.sprintf "/%!"
-  | PLiteral lit -> Format.sprintf "/%s" lit
-  | PDecoder decoder -> Format.sprintf "/:%s" decoder.name
-  | PMethod method' -> Format.asprintf "%a" pp_method method'
+  | USplat -> Format.sprintf "/**%!"
+  | UTrailing_slash -> Format.sprintf "/%!"
+  | ULiteral lit -> Format.sprintf "/%s" lit
+  | UDecoder decoder -> Format.sprintf "/:%s" decoder.name
+  | UMethod method' -> Format.asprintf "%a" pp_method method'
 
 (** ['a t] is a node in a trie based router. *)
-type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
+type 'a node = {route: 'a route option; node_types: (uri' * 'a node) list}
 
 let rec node : 'a node -> 'a route -> 'a node =
  fun node' (Route (method', uri, _) as route) ->
@@ -161,7 +161,7 @@ let rec node : 'a node -> 'a route -> 'a node =
     | node_type :: node_types ->
         let node'' =
           List.find_opt
-            (fun (node_type', _) -> node_type_equal node_type node_type')
+            (fun (node_type', _) -> uri'_equal node_type node_type')
             node.node_types
         in
         { node with
@@ -170,21 +170,21 @@ let rec node : 'a node -> 'a route -> 'a node =
             | Some _ ->
                 List.map
                   (fun (node_type', t') ->
-                    if node_type_equal node_type node_type' then
+                    if uri'_equal node_type node_type' then
                       (node_type', loop t' node_types)
                     else (node_type', t') )
                   node.node_types
             | None -> (node_type, loop empty_node node_types) :: node.node_types
             ) }
   in
-  let node_types = PMethod method' :: node_type_of_uri uri in
+  let node_types = UMethod method' :: uri'_of_uri uri in
   loop node' node_types
 
 and empty_node : 'a node = {route= None; node_types= []}
 
 (* We use array for node_types so that we get better cache locality. The hope being
    that iterating nodes via array is faster than via the list. *)
-type 'a t = {route: 'a route option; node_types: (node_type * 'a t) array}
+type 'a t = {route: 'a route option; node_types: (uri' * 'a t) array}
 
 let rec t routes =
   List.concat routes |> List.fold_left node empty_node |> compile
@@ -205,7 +205,7 @@ let rec pp fmt t =
        ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
        (fun fmt (nt, t') ->
          Format.pp_open_vbox fmt 2 ;
-         Format.pp_print_string fmt (node_type_to_string nt) ;
+         Format.pp_print_string fmt (uri'_to_string nt) ;
          if Array.length t'.node_types > 0 then (
            Format.pp_print_break fmt 0 0 ;
            pp fmt t' ) ;
@@ -245,19 +245,19 @@ let rec match' method' uri (t : 'a t) =
         let full_splat_matched = ref false in
         while !continue && !index < Array.length t.node_types do
           match t.node_types.(!index) with
-          | PDecoder decoder, t' -> (
+          | UDecoder decoder, t' -> (
             match decoder.decode uri_part with
             | Some v ->
                 matched_node := Some (t', D (decoder, v) :: decoded_values) ;
                 continue := false
             | None -> incr index )
-          | PLiteral lit, t' when String.equal lit uri_part ->
+          | ULiteral lit, t' when String.equal lit uri_part ->
               matched_node := Some (t', decoded_values) ;
               continue := false
-          | PTrailing_slash, t' when String.equal "" uri_part ->
+          | UTrailing_slash, t' when String.equal "" uri_part ->
               matched_node := Some (t', decoded_values) ;
               continue := false
-          | PFull_splat, t' ->
+          | USplat, t' ->
               let path =
                 drop path_tokens matched_token_count |> String.concat "/"
               in
@@ -284,7 +284,7 @@ let rec match' method' uri (t : 'a t) =
       if i = n then None
       else
         match t.node_types.(i) with
-        | PMethod method'', t' when method_equal method' method'' ->
+        | UMethod method'', t' when method_equal method' method'' ->
             try_match t' [] uri_toks 0
         | _ -> (loop [@tailcall]) (i + 1)
     in
