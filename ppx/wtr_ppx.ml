@@ -108,25 +108,25 @@ and split_on f l =
   | None -> (l, [])
 
 and make_uri ~loc = function
-  | [] -> [%expr Wtr.End]
-  | [""] -> [%expr Wtr.Trailing_slash]
-  | ["**"] -> [%expr Wtr.Splat]
-  | "*" :: uris -> [%expr Wtr.(Decode (string_d, [%e make_uri ~loc uris]))]
+  | [] -> [%expr Wtr.Private.nil]
+  | [""] -> [%expr Wtr.Private.t_slash]
+  | ["**"] -> [%expr Wtr.Private.splat]
+  | "*" :: uris -> [%expr Wtr.Private.(decode string [%e make_uri ~loc uris])]
   | uri :: uris when Char.equal uri.[0] ':' -> (
       let comp = String.sub uri 1 (String.length uri - 1) in
       match comp with
-      | "int" -> [%expr Wtr.(Decode (int_d, [%e make_uri ~loc uris]))]
-      | "int32" -> [%expr Wtr.(Decode (int32_d, [%e make_uri ~loc uris]))]
-      | "int64" -> [%expr Wtr.(Decode (int64_d, [%e make_uri ~loc uris]))]
-      | "float" -> [%expr Wtr.(Decode (float_d, [%e make_uri ~loc uris]))]
-      | "string" -> [%expr Wtr.(Decode (string_d, [%e make_uri ~loc uris]))]
-      | "bool" -> [%expr Wtr.(Decode (bool_d, [%e make_uri ~loc uris]))]
+      | "int" -> [%expr Wtr.Private.(decode int [%e make_uri ~loc uris])]
+      | "int32" -> [%expr Wtr.Private.(decode int32 [%e make_uri ~loc uris])]
+      | "int64" -> [%expr Wtr.Private.(decode int64 [%e make_uri ~loc uris])]
+      | "float" -> [%expr Wtr.Private.(decode float [%e make_uri ~loc uris])]
+      | "string" -> [%expr Wtr.Private.(decode string [%e make_uri ~loc uris])]
+      | "bool" -> [%expr Wtr.Private.(decode bool [%e make_uri ~loc uris])]
       | custom_arg when capitalized custom_arg ->
           let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
-            Wtr.Decode
-              ( [%e Ast_builder.pexp_ident ~loc longident_loc]
-              , [%e make_uri ~loc uris] )]
+            Wtr.Private.decode
+              [%e Ast_builder.pexp_ident ~loc longident_loc]
+              [%e make_uri ~loc uris]]
       | x ->
           Location.raise_errorf ~loc
             "wtr: Invalid custom argument name '%s'. Custom argument component \
@@ -134,7 +134,9 @@ and make_uri ~loc = function
             x )
   | uri :: uris ->
       [%expr
-        Wtr.Literal ([%e Ast_builder.estring ~loc uri], [%e make_uri ~loc uris])]
+        Wtr.Private.lit
+          [%e Ast_builder.estring ~loc uri]
+          [%e make_uri ~loc uris]]
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 

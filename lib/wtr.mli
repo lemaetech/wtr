@@ -19,12 +19,7 @@ and 'c route
 (** [('a, 'b) uri] represents a route URI - both the path and query, e.g.
     [/home/about/,
     /home/contact, /home/contact?name=a&no=123] etc. *)
-and ('a, 'b) uri =
-  | End : ('b, 'b) uri
-  | Splat : (string -> 'b, 'b) uri
-  | Trailing_slash : ('b, 'b) uri
-  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+and ('a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
     {!type:uri} in [%wtr] ppx. *)
@@ -249,19 +244,10 @@ val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** [create_decoder ~name ~decode] creates a user defined decoder uri component.
     [name] is used during the pretty printing of [uri]. *)
 
-val int_d : int decoder
-val int32_d : int32 decoder
-val int64_d : int64 decoder
-val float_d : float decoder
-val bool_d : bool decoder
-val string_d : string decoder
-
 (** {1 HTTP Method} *)
 
 val method_equal : method' -> method' -> bool
-
 val method' : string -> method'
-(** [method' m] creates a {!type:method'} from value [m]. *)
 
 (** {1:pp Pretty Printers} *)
 
@@ -277,7 +263,7 @@ val pp : Format.formatter -> 'a t -> unit
 
     [Wtr.pp Format.std_formatter router;;]
 
-    {[
+    {v
       GET
         /home
           /about
@@ -318,7 +304,25 @@ val pp : Format.formatter -> 'a t -> unit
             /
           /:int
             /
-    ]} *)
+    v} *)
 
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
+
+(**/**)
+
+module Private : sig
+  val nil : ('b, 'b) uri
+  val splat : (string -> 'b, 'b) uri
+  val t_slash : ('b, 'b) uri
+  val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
+  val decode : 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  val int : int decoder
+  val int32 : int32 decoder
+  val int64 : int64 decoder
+  val float : float decoder
+  val bool : bool decoder
+  val string : string decoder
+end
+
+(**/**)

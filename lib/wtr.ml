@@ -44,6 +44,13 @@ let decoder ~name ~decode =
   let id = new_id () in
   {name; decode; id}
 
+let int = decoder ~name:"int" ~decode:int_of_string_opt
+let int32 = decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64 = decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float = decoder ~name:"float" ~decode:float_of_string_opt
+let string = decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool = decoder ~name:"bool" ~decode:bool_of_string_opt
+
 type method' =
   [ `GET
   | `HEAD
@@ -56,6 +63,18 @@ type method' =
   | `Method of string ]
 
 let method_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
+
+let method' meth =
+  match String.uppercase_ascii meth with
+  | "GET" -> `GET
+  | "HEAD" -> `HEAD
+  | "POST" -> `POST
+  | "PUT" -> `PUT
+  | "DELETE" -> `DELETE
+  | "CONNECT" -> `CONNECT
+  | "OPTIONS" -> `OPTIONS
+  | "TRACE" -> `TRACE
+  | header -> `Method header
 
 let pp_method fmt t =
   ( match t with
@@ -70,35 +89,16 @@ let pp_method fmt t =
   | `Method s -> Format.sprintf "Method (%s)" s )
   |> Format.fprintf fmt "%s"
 
-let method' meth =
-  match String.uppercase_ascii meth with
-  | "GET" -> `GET
-  | "HEAD" -> `HEAD
-  | "POST" -> `POST
-  | "PUT" -> `PUT
-  | "DELETE" -> `DELETE
-  | "CONNECT" -> `CONNECT
-  | "OPTIONS" -> `OPTIONS
-  | "TRACE" -> `TRACE
-  | header -> `Method header
-
 type ('a, 'b) uri =
-  | End : ('b, 'b) uri
+  | Nil : ('b, 'b) uri
   | Splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
   | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
-let int_d = decoder ~name:"int" ~decode:int_of_string_opt
-let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float_d = decoder ~name:"float" ~decode:float_of_string_opt
-let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
-
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function
-  | End -> Format.fprintf fmt "%!"
+  | Nil -> Format.fprintf fmt "%!"
   | Splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
@@ -136,7 +136,7 @@ let node_type_equal a b =
 (* [node_type_of_uri uri] converts [uri] to [node_type list]. This is done to get around OCaml
    type inference issue when using [uri] type in the [node] function below. *)
 let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
-  | End -> []
+  | Nil -> []
   | Trailing_slash -> [PTrailing_slash]
   | Splat -> [PFull_splat]
   | Literal (lit, uri) -> PLiteral lit :: node_type_of_uri uri
@@ -266,8 +266,7 @@ let rec match' method' uri (t : 'a t) =
                 |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
-              matched_node :=
-                Some (t', D (string_d, splat_url) :: decoded_values) ;
+              matched_node := Some (t', D (string, splat_url) :: decoded_values) ;
               continue := false ;
               full_splat_matched := true
           | _ -> incr index
@@ -296,9 +295,9 @@ and drop l n = match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
 
 and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
-  | End, [] -> f
+  | Nil, [] -> f
   | Splat, [D (d, v)] -> (
-    match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
+    match eq string.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
@@ -307,3 +306,17 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
     | Some Eq -> exec_route_handler (f v) (uri, decoded_values)
     | None -> assert false )
   | _, _ -> assert false
+
+module Private = struct
+  let nil = Nil
+  let splat = Splat
+  let t_slash = Trailing_slash
+  let lit s uri = Literal (s, uri)
+  let decode d uri = Decode (d, uri)
+  let int = int
+  let int32 = int32
+  let int64 = int64
+  let float = float
+  let string = string
+  let bool = bool
+end
