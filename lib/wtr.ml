@@ -95,25 +95,6 @@ let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
 let float_d = decoder ~name:"float" ~decode:float_of_string_opt
 let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
 let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
-let root = End
-
-let decode : type a b c. (b, c) uri -> a decoder -> (a -> b, c) uri =
- fun uri d ->
-  match uri with
-  | Literal (s, uri') -> Literal (s, Decode (d, uri'))
-  | Decode (d', uri') -> Decode (d', Decode (d, uri'))
-  | _ -> Decode (d, uri)
-
-let ( /: ) = decode
-
-let suffix : type a b. (a, b) uri -> string -> (a, b) uri =
- fun uri s ->
-  match uri with
-  | Literal (lit, uri') -> Literal (lit, Literal (s, uri'))
-  | Decode (d, uri') -> Decode (d, Literal (s, uri'))
-  | _ -> Literal (s, uri)
-
-let ( / ) = suffix
 
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt -> function

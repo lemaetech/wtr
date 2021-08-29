@@ -42,16 +42,6 @@ and method' =
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc. *)
 and 'a decoder
 
-(** {1 URI} *)
-
-val root : ('b, 'b) uri
-val decode : ('b, 'c) uri -> 'a decoder -> ('a -> 'b, 'c) uri
-val ( /: ) : ('b, 'c) uri -> 'a decoder -> ('a -> 'b, 'c) uri
-val suffix : ('a, 'b) uri -> string -> ('a, 'b) uri
-val ( / ) : ('a, 'b) uri -> string -> ('a, 'b) uri
-
-(* val int : (int -> 'b, 'c) uri *)
-
 (** {1 Route} *)
 
 val route : method' -> ('a, 'b) uri -> 'a -> 'b route
