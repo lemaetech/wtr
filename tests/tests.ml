@@ -59,11 +59,20 @@ let router =
     ; {%wtr| head;  /numbers/:int32/code/:int64/           |} numbers_page ]
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter
+let pp_uri u = Wtr.pp_uri Format.std_formatter u
 
 let pp_match method' uri =
   Wtr.match' method' uri router
   |> function
   | Some s -> Printf.printf {|"%s%!"|} s | None -> Printf.printf "None%!"
+
+let%expect_test _ =
+  pp_uri {%uri|/public/images/ |} ;
+  [%expect {| /public/images/ |}]
+
+let%expect_test _ =
+  pp_uri {%uri| /product/:string?section=:int&q=:bool |} ;
+  [%expect {| /product/:string/section/:int/q/:bool |}]
 
 let%expect_test _ =
   pp_match `GET "/public/css/style.css" ;

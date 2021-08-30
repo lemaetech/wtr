@@ -307,6 +307,7 @@ val pp : Format.formatter -> 'a t -> unit
 
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
+val pp_uri : Format.formatter -> ('a, 'b) uri -> unit
 
 (**/**)
 

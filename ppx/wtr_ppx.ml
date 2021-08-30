@@ -13,7 +13,7 @@ module Ast_builder = Ast_builder.Default
 let ( let* ) r f = Result.bind r f
 let ( >>= ) = ( let* )
 
-let rec make_route ~loc ~path:_ wtr =
+let rec wtr ~loc ~path:_ wtr =
   let wtr = String.trim wtr in
   let methods, uri =
     let tokens =
@@ -31,15 +31,16 @@ let rec make_route ~loc ~path:_ wtr =
       (* Default method is `GET *)
     else ("get", List.nth tokens 0)
   in
-  (let* uri = parse_uri uri in
-   let* query_components = parse_query_tokens uri in
-   let* path_components = parse_path_tokens uri in
-   validate_tokens (path_components @ query_components) )
-  |> function
+  match parse_uri_tokens uri with
   | Ok uri_tokens ->
       let methods' = make_methods ~loc methods in
       let uri = make_uri ~loc uri_tokens in
       [%expr Wtr.routes [%e methods'] [%e uri]]
+  | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
+
+and uri ~loc ~path:_ uri =
+  match parse_uri_tokens uri with
+  | Ok uri_tokens -> make_uri ~loc uri_tokens
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
 and make_methods : loc:location -> string -> expression =
@@ -54,9 +55,13 @@ and make_methods : loc:location -> string -> expression =
          [%expr Wtr.method' [%e method'] :: [%e expr]] )
        [%expr []]
 
-and parse_uri wtr =
-  let wtr = String.trim wtr in
-  if String.length wtr > 0 then Ok (Uri.of_string wtr)
+and parse_uri_tokens uri =
+  let wtr = String.trim uri in
+  if String.length wtr > 0 then
+    let uri = Uri.of_string wtr in
+    let* query_components = parse_query_tokens uri in
+    let* path_components = parse_path_tokens uri in
+    validate_tokens (path_components @ query_components)
   else Error "Empty uri path specification"
 
 and parse_query_tokens uri =
@@ -143,11 +148,17 @@ and make_uri ~loc = function
 
 and capitalized s = Char.(uppercase_ascii s.[0] |> equal s.[0])
 
-let ppx_name = "wtr"
+let wtr_ppx = "wtr"
+let uri_ppx = "uri"
 
-let ext =
-  Extension.declare ppx_name Extension.Context.Expression
+let wtr_ext =
+  Extension.declare wtr_ppx Extension.Context.Expression
     Ast_pattern.(single_expr_payload (estring __))
-    make_route
+    wtr
 
-let () = Driver.register_transformation ppx_name ~extensions:[ext]
+let uri_ext =
+  Extension.declare uri_ppx Extension.Context.Expression
+    Ast_pattern.(single_expr_payload (estring __))
+    uri
+
+let () = Driver.register_transformation wtr_ppx ~extensions:[wtr_ext; uri_ext]
