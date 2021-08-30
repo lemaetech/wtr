@@ -39,7 +39,7 @@ and 'a decoder
 
 (** {1 Route} *)
 
-val route : method' -> ('a, 'b) uri -> 'a -> 'b route
+val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
 val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
 
 (** {1 Router} *)

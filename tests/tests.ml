@@ -55,7 +55,7 @@ let router =
     ; {%wtr| get;   /product/:string?section=:int&q1=yes   |} product_page2
     ; {%wtr| get;   /fruit/:Fruit                          |} fruit_page
     ; {%wtr| get;   /                                      |} not_found_page
-    ; {%wtr| get;   /public/**                             |} public
+    ; {%wtr|        /public/**                             |} public
     ; {%wtr| head;  /numbers/:int32/code/:int64/           |} numbers_page ]
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter

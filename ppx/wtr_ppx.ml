@@ -21,12 +21,15 @@ let rec make_route ~loc ~path:_ wtr =
       |> List.map String.trim
       |> List.filter (fun s -> not (String.equal "" s))
     in
-    if List.length tokens != 2 then
+    let len = List.length tokens in
+    if len > 2 then
       Location.raise_errorf ~loc
         "Invalid wtr: %s. Valid wtr is: [HTTP methods separated by comma (,)] \
          ; [URI]"
         wtr
-    else (List.nth tokens 0, List.nth tokens 1)
+    else if len = 2 then (List.nth tokens 0, List.nth tokens 1)
+      (* Default method is `GET *)
+    else ("get", List.nth tokens 0)
   in
   (let* uri = parse_uri uri in
    let* query_components = parse_query_tokens uri in

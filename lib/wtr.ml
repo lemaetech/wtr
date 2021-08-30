@@ -106,10 +106,11 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
-let route : method' -> ('a, 'b) uri -> 'a -> 'b route =
- fun method' uri f -> Route (method', uri, f)
+let route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route =
+ fun ?(method' = `GET) uri f -> Route (method', uri, f)
 
-let routes methods uri f = List.map (fun method' -> route method' uri f) methods
+let routes methods uri f =
+  List.map (fun method' -> route ~method' uri f) methods
 
 let pp_route : Format.formatter -> 'b route -> unit =
  fun fmt (Route (method', uri, _)) ->
