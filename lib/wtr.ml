@@ -159,8 +159,6 @@ let node_type_equal a b =
       && match eq decoder1.id decoder2.id with Some Eq -> true | None -> false )
   | _ -> false
 
-(* [uri'_of_uri uri] converts [uri] to [node_type list]. This is done to get around OCaml
-   type inference issue when using [uri] type in the [node] function below. *)
 let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Nil -> []
   | Trailing_slash -> [NTrailing_slash]
@@ -183,7 +181,6 @@ let pp_node_type fmt node_type =
       Format.fprintf fmt "%s=:%s" name decoder.name
   | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
 
-(** ['a t] is a node in a trie based router. *)
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
 
 let rec node : 'a node -> 'a route -> 'a node =
