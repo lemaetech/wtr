@@ -37,11 +37,16 @@ and method' =
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc. *)
 and 'a decoder
 
+(** {1 Route} *)
+
+val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
+val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
+
 (** {1 Router} *)
 
-val create : 'a route list list -> 'a t
-(** [create routes] creates a router from a list of [route]s. Values of [routes]
-    are created by [%wtr] ppx.
+val t : 'a route list list -> 'a t
+(** [t routes] is a router from a list of [route]s. Values of [routes] are
+    created by [%wtr] ppx.
 
     A full example demonstrating creating a router, route and route handlers:
 
@@ -86,16 +91,15 @@ val create : 'a route list list -> 'a t
         "FAQ page for category : " ^ category_name
 
       let router =
-        Wtr.(
-          create
-            [ {%wtr| get,post,head,delete  ; /home/about/       |} about_page
-            ; {%wtr| head,delete           ; /home/:int/        |} prod_page
-            ; {%wtr| get,post              ; /home/:float/      |} float_page
-            ; {%wtr| get; /contact/*/:int                       |} contact_page
-            ; {%wtr| get; /product/:string?section=:int&q=:bool |} product1
-            ; {%wtr| get; /product/:string?section=:int&q1=yes  |} product2
-            ; {%wtr| get; /fruit/:Fruit                         |} fruit_page
-            ; {%wtr| GET; /faq/:int/**                          |} faq ])
+        Wtr.t
+          [ {%wtr| get,post,head,delete  ; /home/about/       |} about_page
+          ; {%wtr| head,delete           ; /home/:int/        |} prod_page
+          ; {%wtr| get,post              ; /home/:float/      |} float_page
+          ; {%wtr| get; /contact/*/:int                       |} contact_page
+          ; {%wtr| get; /product/:string?section=:int&q=:bool |} product1
+          ; {%wtr| get; /product/:string?section=:int&q1=yes  |} product2
+          ; {%wtr| get; /fruit/:Fruit                         |} fruit_page
+          ; {%wtr| GET; /faq/:int/**                          |} faq ]
     ]} *)
 
 val match' : method' -> string -> 'a t -> 'a option
@@ -165,8 +169,7 @@ val match' : method' -> string -> 'a t -> 'a option
 
     {[
       let r =
-        Wtr.create
-          [{%wtr|get; /public/** |} (fun url -> Format.sprintf "%s" url)]
+        Wtr.t [{%wtr|get; /public/** |} (fun url -> Format.sprintf "%s" url)]
       in
       let s = Wtr.match' `GET "/public/css/style.css" in
       s = Some "css/style.css"
@@ -213,7 +216,7 @@ val match' : method' -> string -> 'a t -> 'a option
         type t = Apple | Orange | Pineapple
 
         let t : t Wtr.decoder =
-          Wtr.create_decoder ~name:"fruit" ~decode:(function
+          Wtr.decoder ~name:"fruit" ~decode:(function
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
@@ -236,16 +239,14 @@ val match' : method' -> string -> 'a t -> 'a option
     - A uri spec [/home/:string] expects a route handler as
       [(fun (s:string) -> ...)] *)
 
-val create_decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
+val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** [create_decoder ~name ~decode] creates a user defined decoder uri component.
     [name] is used during the pretty printing of [uri]. *)
 
 (** {1 HTTP Method} *)
 
 val method_equal : method' -> method' -> bool
-
 val method' : string -> method'
-(** [method' m] creates a {!type:method'} from value [m]. *)
 
 (** {1:pp Pretty Printers} *)
 
@@ -261,7 +262,7 @@ val pp : Format.formatter -> 'a t -> unit
 
     [Wtr.pp Format.std_formatter router;;]
 
-    {[
+    {v
       GET
         /home
           /about
@@ -302,28 +303,22 @@ val pp : Format.formatter -> 'a t -> unit
             /
           /:int
             /
-    ]} *)
+    v} *)
 
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
+val pp_uri : Format.formatter -> ('a, 'b) uri -> unit
 
 (**/**)
 
-(** Only to be used by PPX *)
 module Private : sig
-  val route : ('a, 'b) uri list -> 'a -> 'b route list
   val nil : ('b, 'b) uri
-
-  (** uri components *)
-
-  val full_splat : (string -> 'b, 'b) uri
-  val trailing_slash : ('b, 'b) uri
+  val splat : (string -> 'b, 'b) uri
+  val t_slash : ('b, 'b) uri
   val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
-  val decoder : 'a decoder -> ('b, 'c) uri -> ('a -> 'b, 'c) uri
-  val method' : method' -> ('a, 'b) uri -> ('a, 'b) uri
-
-  (** decoders *)
-
+  val query_lit : string -> string -> ('a, 'b) uri -> ('a, 'b) uri
+  val decode : 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  val query_decode : string -> 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
   val int : int decoder
   val int32 : int32 decoder
   val int64 : int64 decoder

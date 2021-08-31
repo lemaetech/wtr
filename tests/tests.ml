@@ -4,7 +4,7 @@ module Fruit = struct
   type t = Apple | Orange | Pineapple
 
   let t : t Wtr.decoder =
-    Wtr.create_decoder ~name:"Fruit" ~decode:(function
+    Wtr.decoder ~name:"Fruit" ~decode:(function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -40,30 +40,43 @@ let product_page name section_id q =
 let product_page2 name section_id =
   Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id
 
+let product_page3 name section_id =
+  Printf.sprintf "Product detail 2 - %s. Section: %s." name section_id
+
 let public url = Format.sprintf "file path: %s" url
 
 let router =
-  Wtr.create
-    [ {%wtr| get,post  ;         /home/about/:int          |} about_page
-    ; {%wtr| head,delete;        /home/:int/               |} home_int_page
-    ; {%wtr| get;   /home/:float/                          |} home_float_page
-    ; {%wtr| get;   /contact/*/:int                        |} contact_page
-    ; {%wtr| post;  /home/products/**                      |} full_splat_page
-    ; {%wtr| get;   /home/*/**                             |} wildcard_page
-    ; {%wtr| get;   /contact/:string/:bool                 |} contact_page2
-    ; {%wtr| post;  /product/:string?section=:int&q=:bool  |} product_page
-    ; {%wtr| get;   /product/:string?section=:int&q1=yes   |} product_page2
-    ; {%wtr| get;   /fruit/:Fruit                          |} fruit_page
-    ; {%wtr| get;   /                                      |} not_found_page
-    ; {%wtr| get;   /public/**                             |} public
-    ; {%wtr| head;  /numbers/:int32/code/:int64/           |} numbers_page ]
+  Wtr.t
+    [ {%wtr| get,post  ;         /home/about/:int             |} about_page
+    ; {%wtr| head,delete;        /home/:int/                  |} home_int_page
+    ; {%wtr| get;   /home/:float/                             |} home_float_page
+    ; {%wtr| get;   /contact/*/:int                           |} contact_page
+    ; {%wtr| post;  /home/products/**                         |} full_splat_page
+    ; {%wtr| get;   /home/*/**                                |} wildcard_page
+    ; {%wtr| get;   /contact/:string/:bool                    |} contact_page2
+    ; {%wtr| post;  /product/:string?section=:int&q=:bool     |} product_page
+    ; {%wtr| get;   /product/:string?section=:int&q1=yes      |} product_page2
+    ; {%wtr| get;   /product/:string?section=:string&q1=yes   |} product_page3
+    ; {%wtr| get;   /fruit/:Fruit                             |} fruit_page
+    ; {%wtr| get;   /                                         |} not_found_page
+    ; {%wtr|        /public/**                                |} public
+    ; {%wtr| head;  /numbers/:int32/code/:int64/              |} numbers_page ]
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter
+let pp_uri u = Wtr.pp_uri Format.std_formatter u
 
 let pp_match method' uri =
   Wtr.match' method' uri router
   |> function
   | Some s -> Printf.printf {|"%s%!"|} s | None -> Printf.printf "None%!"
+
+let%expect_test _ =
+  pp_uri {%uri|/public/images/ |} ;
+  [%expect {| /public/images/ |}]
+
+let%expect_test _ =
+  pp_uri {%uri| /product/:string?section=:int&q=:bool |} ;
+  [%expect {| /product/:string?section=:int?q=:bool |}]
 
 let%expect_test _ =
   pp_match `GET "/public/css/style.css" ;
@@ -168,6 +181,11 @@ let%expect_test _ =
        "Product detail 2 - dyson350. Section: 2." |}]
 
 let%expect_test _ =
+  pp_match `GET "/product/dyson350/section/2/q1/yes" ;
+  [%expect {|
+       None |}]
+
+let%expect_test _ =
   pp_match `GET "/fruit/apple" ;
   [%expect {|
        "Apples are juicy!" |}]
@@ -228,6 +246,16 @@ let%expect_test _ =
   Wtr.pp Format.std_formatter router ;
   [%expect
     {|
+    POST
+      /home
+        /about
+          /:int
+        /products
+          /**
+      /product
+        /:string
+          ?section=:int
+            ?q=:bool
     GET
       /home
         /about
@@ -242,27 +270,19 @@ let%expect_test _ =
           /:bool
       /product
         /:string
-          /section
-            /:int
-              /q1
-                /yes
+          ?section=:int
+            ?q1=yes
+          ?section=:string
+            ?q1=yes
       /fruit
         /:Fruit
       /
       /public
         /**
-    POST
+    DELETE
       /home
-        /about
-          /:int
-        /products
-          /**
-      /product
-        /:string
-          /section
-            /:int
-              /q
-                /:bool
+        /:int
+          /
     HEAD
       /home
         /:int
@@ -271,8 +291,4 @@ let%expect_test _ =
         /:int32
           /code
             /:int64
-              /
-    DELETE
-      /home
-        /:int
-          / |}]
+              / |}]
