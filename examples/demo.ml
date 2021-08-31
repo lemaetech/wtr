@@ -34,7 +34,7 @@ let faq category_id _url =
   "FAQ page for category : " ^ category_name
 
 let router =
-  Wtr.wtr
+  Wtr.t
     [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
     ; {%wtr| head,delete           ; /home/:int/             |} prod_page
     ; {%wtr| get,post              ; /home/:float/           |} float_page
@@ -66,61 +66,59 @@ let () =
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) )
 
-(* Should output below:
-       ====Routes====
-   GET
-     /home
-       /about
-         /
-       /:float
-         /
-     /contact
-       /:string
-         /:int
-     /product
-       /:string
-         /section
-           /:int
-             /q
-               /:bool
-             /q1
-               /yes
-     /fruit
-       /:fruit
-     /faq
-       /:int
-         /**
-   POST
-     /home
-       /about
-         /
-       /:float
-         /
-   HEAD
-     /home
-       /about
-         /
-       /:int
-         /
-   DELETE
-     /home
-       /about
-         /
-       /:int
-         /
+(** Should output below:
+    {v
+====Routes====
+DELETE
+  /home
+    /about
+      /
+    /:int
+      /
+HEAD
+  /home
+    /about
+      /
+    /:int
+      /
+POST
+  /home
+    /about
+      /
+    /:float
+      /
+GET
+  /home
+    /about
+      /
+    /:float
+      /
+  /contact
+    /:string
+      /:int
+  /product
+    /:string
+      ?section=:int
+        ?q=:bool
+        ?q1=yes
+  /fruit
+    /:fruit
+  /faq
+    /:int
+      /**
 
-      ====Router Match Results====
-       1: Float page. number : 100001.1
-       2: Int page. number : 100001
-       3: about page
-       4: Product1 dyson350. Id: 233. q = true
-       5: Product1 dyson350. Id: 2. q = false
-       6: Product2 dyson350. Id: 2.
-       7: None
-       8: Apples are juicy!
-       9: Orange is a citrus fruit.
-       10: Pineapple has scaly skin
-       11: None
-       12: FAQ page for category : products
-       13: FAQ page for category : products
-       14: FAQ page for category : insurance *)
+====Router Match Results====
+  1: Float page. number : 100001.1
+  2: Int page. number : 100001
+  3: about page
+  4: Product1 dyson350. Id: 233. q = true
+  5: Product1 dyson350. Id: 2. q = false
+  6: Product2 dyson350. Id: 2.
+  7: None
+  8: Apples are juicy!
+  9: Orange is a citrus fruit.
+ 10: Pineapple has scaly skin
+ 11: None
+ 12: FAQ page for category : products
+ 13: FAQ page for category : products
+ 14: FAQ page for category : insurance} *)

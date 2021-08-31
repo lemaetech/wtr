@@ -43,7 +43,7 @@ let faq category_id _url =
 
 (* create a router *)
 let router =
-  Wtr.wtr
+  Wtr.t
     [ {%wtr| get,post; /home/about                     |} "about page"
     ; {%wtr| get; /home/:int/                          |} prod_page
     ; {%wtr| get;/home/:float/                         |} float_page
@@ -58,7 +58,8 @@ let () =
     let uri = req |> Cohttp_lwt_unix.Request.uri |> Uri.path_and_query in
     let method' =
       Cohttp_lwt_unix.Request.meth req
-      |> Cohttp.Code.string_of_method |> Wtr.method'
+      |> Cohttp.Code.string_of_method
+      |> Wtr.method'
     in
     Wtr.match' method' uri router
     |> function
