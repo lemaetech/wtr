@@ -5,6 +5,9 @@
 - BREAKING CHANGE: 'create_decoder' has been renamed to 'decoder'
 - BREAKING CHANGE: 'create' has been renamed to 't'
 - NEW: Add `route` and `routes` functions
+- NEW: `%uri` ppx to create values of type `Wtr.uri`
+- FIX: Fix matching query components in uri
+- FIX: Fix pretty printing of query components in uri
 
 ## v2.0.0 2021-08-02 
 
