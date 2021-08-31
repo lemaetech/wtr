@@ -18,7 +18,8 @@ and 'c route
 
 (** [('a, 'b) uri] represents a route URI - both the path and query, e.g.
     [/home/about/,
-    /home/contact, /home/contact?name=a&no=123] etc. *)
+    /home/contact, /home/contact?name=a&no=123] etc. They are
+    created via either the [%wtr] or [%uri] ppx. *)
 and ('a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
@@ -37,21 +38,12 @@ and method' =
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc. *)
 and 'a decoder
 
-(** {1 Route} *)
-
-val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
-val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
-
-(** {1 Router} *)
-
-val router : 'a route list list -> 'a router
-val match' : method' -> string -> 'a router -> 'a option
-
 (** {1:uri Specifying a URI}
 
-    Specifying a URI in a [%wtr] ppx follows the following syntax:
+    Specifying a URI in a [%wtr] or [/%uri] ppx follows the following syntax:
 
     [wtr uri spec = http methods separated by comma ';' http uri]
+    [uri spec = http uri]
 
     A URI in a [%wtr] ppx is syntactically and sematically a HTTP URI with the
     addition of decoders and some some useful additions listed below.
@@ -135,9 +127,19 @@ val match' : method' -> string -> 'a router -> 'a option
     - A uri spec [/home/:string] expects a route handler as
       [(fun (s:string) -> ...)] *)
 
+(** {1 Route} *)
+
+val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
+val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
+
+(** {1 Router} *)
+
+val router : 'a route list list -> 'a router
+val match' : method' -> string -> 'a router -> 'a option
+
 val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
-(** [create_decoder ~name ~decode] creates a user defined decoder uri component.
-    [name] is used during the pretty printing of [uri]. *)
+(** [decoder ~name ~decode] creates a user defined decoder uri component. [name]
+    is used during the pretty printing of [uri]. *)
 
 (** {1 HTTP Method} *)
 
