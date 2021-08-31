@@ -127,9 +127,6 @@ type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 let route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route =
  fun ?(method' = `GET) uri f -> Route (method', uri, f)
 
-let routes methods uri f =
-  List.map (fun method' -> route ~method' uri f) methods
-
 let pp_route : Format.formatter -> 'b route -> unit =
  fun fmt (Route (method', uri, _)) ->
   Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
@@ -367,6 +364,9 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | _, _ -> assert false
 
 module Private = struct
+  let routes methods uri f =
+    List.map (fun method' -> route ~method' uri f) methods
+
   let nil = Nil
   let splat = Splat
   let t_slash = Trailing_slash

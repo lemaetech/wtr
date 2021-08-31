@@ -18,8 +18,8 @@ and 'c route
 
 (** [('a, 'b) uri] represents a route URI - both the path and query, e.g.
     [/home/about/,
-    /home/contact, /home/contact?name=a&no=123] etc. They are
-    created via either the [%wtr] or [%uri] ppx. *)
+    /home/contact, /home/contact?name=a&no=123] etc. It is
+    created via [%wtr] ppx *)
 and ('a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
@@ -40,16 +40,19 @@ and 'a decoder
 
 (** {1:uri Specifying a URI}
 
-    Specifying a URI in a [%wtr] or [/%uri] ppx follows the following syntax:
+    Specifying a URI in a [%wtr] ppx follows the following syntax:
 
-    [wtr uri spec = http methods separated by comma ';' http uri]
-    [uri spec = http uri]
+    - [wtr syntax = http methods separated by comma ';' http uri]
+    - [uri syntax = http uri]
+    - [http uri = HTTP request path syntax]
+    - [http uri = HTTP request path syntax ? request query]
 
     A URI in a [%wtr] ppx is syntactically and sematically a HTTP URI with the
-    addition of decoders and some some useful additions listed below.
+    addition of decoders and some some useful additions listed below:
 
-    + {b Full splat [**]} - Full spat operator matches any/all path following a
-      full splat. For example in [/home/**] matches the following uri paths,
+    - The default HTTP method if none is specified is GET method.
+    - {b Full splat [**]} - Full spat operator matches any/all path following a
+      full splat. For example [/home/**] matches the following uri paths,
       [/home/about/, home/contact, /home/product] etc. Full splat must be the
       last component of an uri. It is an error to specify other uri path
       component after full splat operator. Additionally [wtr] decodes the
@@ -62,12 +65,12 @@ and 'a decoder
       let s = Wtr.match' `GET "/public/css/style.css" in
       s = Some "css/style.css"
     ]}
-    + {b Wildward [*]} - A wildcard operator matches any text appearing on the
+    - {b Wildward [*]} - A wildcard operator matches any text appearing on the
       path component position. For example, uri [/home/*/page1] matches the
       following [/home/23/page1, /home/true/page1, /home/234.4/page1] etc. The
       semantics of wildcard operator is the same as using [:string] decoder in a
       uri, i.e. it affects the route handler function signature.
-    + {b Trailing slash [/]} - A trailing slash ensures that Wtr will match a
+    - {b Trailing slash [/]} - A trailing slash ensures that Wtr will match a
       trailing [/] in a uri. For example, uri [/home/about/] matches
       [/home/about/] but not [/home/about]. *)
 
@@ -76,7 +79,7 @@ and 'a decoder
     {2 Built-in Decoders}
 
     [Wtr] provides the following built in decoders that can be used as when
-    specifying wtr URI in [{%wtr| |}] ppx:
+    specifying URI in [{%wtr| |}] ppx:
 
     - [:int] - decodes a [int]
     - [:int32] - decodes a [int32]
@@ -87,17 +90,23 @@ and 'a decoder
 
     The built-in decoders can be used as follows:
 
-    [{%wtr|get; /home/:int |}], [{%wtr| /home/:bool |}]
+    [{%wtr|get; /home/:int |}], [{%wtr| /home/:bool |}] *)
 
-    {2 Custom Decoders}
+(** {2 Custom Decoders} *)
 
-    Wtr also supports creating custom, user defined decoders. The convention for
-    user defined decoders is as follows:
+val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
+(** [decoder ~name ~decode] creates a user defined custom uri decoder component.
+    [name] is used during the pretty printing of [uri]. *)
 
-    It should be defined in a module. The module should define a type called [t]
-    and a value called [t] which returns [t Wtr.decoder].
+(** Wtr supports creating custom, user defined decoders. The convention for user
+    defined decoders is as follows:
 
-    Example of defining custom decoder:
+    A custom decoder should be defined in a module which has the following:
+
+    + type called `t`
+    + a value called [t] which is of type [t Wtr.decoder].
+
+    Custom decoder example,
 
     {[
       module Fruit = struct
@@ -112,13 +121,16 @@ and 'a decoder
       end
     ]}
 
-    The custom decoder then can be used in [%wtr] ppx as follows,
+    The custom decoder thus defined can then can be used in [%wtr] ppx as
+    follows:
 
     [{%wtr| get ; /fruit/:Fruit  |} fruit_page] *)
 
-(** {2 Route Handlers}
+(** {1 Route Handlers}
 
-    Usage of decoders in a URI directly affect the function signature of a route
+    Route handlers are functions that accepts the decoded data from URI. A HTTP
+    method, a URI and a route handler makes a {!type:route}. The use of decoders
+    \- both built-in and custom - affect the function signature of a route
     handler. For e.g.
 
     - A uri spec [/home/:int/:bool] expects a route handler as
@@ -127,19 +139,18 @@ and 'a decoder
     - A uri spec [/home/:string] expects a route handler as
       [(fun (s:string) -> ...)] *)
 
-(** {1 Route} *)
-
-val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
-val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
-
 (** {1 Router} *)
 
 val router : 'a route list list -> 'a router
-val match' : method' -> string -> 'a router -> 'a option
+(** [route routes] is a router made up of given [routes]. It is used with [%wtr]
+    ppx.
 
-val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
-(** [decoder ~name ~decode] creates a user defined decoder uri component. [name]
-    is used during the pretty printing of [uri]. *)
+    {[ Wtr.router [{%wtr| /public/**|}] ]} *)
+
+val match' : method' -> string -> 'a router -> 'a option
+(** [match' method' request_target router] is [Some a] if [method'] and
+    [request_target] together matches one of the routes defined in [router].
+    Otherwise it is None. *)
 
 (** {1 HTTP Method} *)
 
@@ -151,12 +162,12 @@ val method' : string -> method'
 val pp : Format.formatter -> 'a router -> unit
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
-val pp_uri : Format.formatter -> ('a, 'b) uri -> unit
 
 (**/**)
 
 (** Used by wtr/uri ppx *)
 module Private : sig
+  val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
   val nil : ('b, 'b) uri
   val splat : (string -> 'b, 'b) uri
   val t_slash : ('b, 'b) uri

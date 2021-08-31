@@ -221,26 +221,14 @@ let wtr ~loc ~path:_ wtr =
   | Ok (path_tokens, query_tokens) ->
       let methods' = make_methods ~loc methods in
       let uri = make_request_target ~loc query_tokens path_tokens in
-      [%expr Wtr.routes [%e methods'] [%e uri]]
-  | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
-
-let uri ~loc ~path:_ uri =
-  match request_target_tokens uri with
-  | Ok (path_tokens, query_tokens) ->
-      make_request_target ~loc query_tokens path_tokens
+      [%expr Wtr.Private.routes [%e methods'] [%e uri]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
 let wtr_ppx = "wtr"
-let uri_ppx = "uri"
 
 let wtr_ext =
   Extension.declare wtr_ppx Extension.Context.Expression
     Ast_pattern.(single_expr_payload (estring __))
     wtr
 
-let uri_ext =
-  Extension.declare uri_ppx Extension.Context.Expression
-    Ast_pattern.(single_expr_payload (estring __))
-    uri
-
-let () = Driver.register_transformation wtr_ppx ~extensions:[wtr_ext; uri_ext]
+let () = Driver.register_transformation wtr_ppx ~extensions:[wtr_ext]
