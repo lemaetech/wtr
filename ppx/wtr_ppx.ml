@@ -52,6 +52,9 @@ let validate_path_tokens tokens =
   in
   validate_start tokens >>= validate_end_slash >>= validate_full_splat
 
+let path_tokens uri =
+  Uri.path uri |> String.split_on_char '/' |> validate_path_tokens
+
 let query_tokens uri =
   let exception E of string in
   try
@@ -63,9 +66,6 @@ let query_tokens uri =
            else (k, List.hd v) )
     |> Result.ok
   with E msg -> Error msg
-
-let path_tokens uri =
-  Uri.path uri |> String.split_on_char '/' |> validate_path_tokens
 
 let request_target_tokens uri =
   let wtr = String.trim uri in
