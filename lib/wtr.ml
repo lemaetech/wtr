@@ -100,7 +100,13 @@ type ('a, 'b) uri =
 
 let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
  fun fmt uri ->
-  let pp_query_toks = ref false in
+  let query_start_tok_emitted = ref false in
+  let pp_query_tok fmt pp' uri =
+    if not !query_start_tok_emitted then (
+      query_start_tok_emitted := true ;
+      Format.fprintf fmt "?%a" pp' uri )
+    else Format.fprintf fmt "&%a" pp' uri
+  in
   match uri with
   | Nil -> Format.fprintf fmt "%!"
   | Splat -> Format.fprintf fmt "/**%!"
@@ -108,19 +114,13 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
   | Query_literal (name, value, uri) ->
       let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
-      if not !pp_query_toks then (
-        pp_query_toks := true ;
-        Format.fprintf fmt "?%a" pp' uri )
-      else Format.fprintf fmt "&%a" pp' uri
+      pp_query_tok fmt pp' uri
   | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
   | Query_decode (name, decoder, uri) ->
       let pp' fmt uri =
         Format.fprintf fmt "%s=:%s%a" name decoder.name pp_uri uri
       in
-      if not !pp_query_toks then (
-        pp_query_toks := true ;
-        Format.fprintf fmt "?%a" pp' uri )
-      else Format.fprintf fmt "&%a" pp' uri
+      pp_query_tok fmt pp' uri
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
