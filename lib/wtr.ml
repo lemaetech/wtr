@@ -107,16 +107,20 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
   | Trailing_slash -> Format.fprintf fmt "/%!"
   | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
   | Query_literal (name, value, uri) ->
+      let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
       if not !pp_query_toks then (
         pp_query_toks := true ;
-        Format.fprintf fmt "?%s=%s%a" name value pp_uri uri )
-      else Format.fprintf fmt "&%s=%s%a" name value pp_uri uri
+        Format.fprintf fmt "?%a" pp' uri )
+      else Format.fprintf fmt "&%a" pp' uri
   | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
   | Query_decode (name, decoder, uri) ->
+      let pp' fmt uri =
+        Format.fprintf fmt "%s=:%s%a" name decoder.name pp_uri uri
+      in
       if not !pp_query_toks then (
         pp_query_toks := true ;
-        Format.fprintf fmt "?%s=:%s%a" name decoder.name pp_uri uri )
-      else Format.fprintf fmt "&%s=:%s%a" name decoder.name pp_uri uri
+        Format.fprintf fmt "?%a" pp' uri )
+      else Format.fprintf fmt "&%a" pp' uri
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
