@@ -43,7 +43,7 @@ let faq category_id _url =
 
 (* create a router *)
 let router =
-  Wtr.t
+  Wtr.router
     [ {%wtr| get,post; /home/about                     |} "about page"
     ; {%wtr| get; /home/:int/                          |} prod_page
     ; {%wtr| get;/home/:float/                         |} float_page

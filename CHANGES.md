@@ -3,7 +3,8 @@
 - BREAKING CHANGE: A `splat` operator (`**`) now expects a last string paramter
   in the handler. The parameter holds the remaining url matched by the `splat` operator
 - BREAKING CHANGE: 'create_decoder' has been renamed to 'decoder'
-- BREAKING CHANGE: 'create' has been renamed to 't'
+- BREAKING CHANGE: 'create' has been renamed to 'router'
+- BREAKING CHANGE: 't' type has been renamed to `router`
 - NEW: Add `route` and `routes` functions
 - NEW: `%uri` ppx to create values of type `Wtr.uri`
 - FIX: Fix matching query components in uri

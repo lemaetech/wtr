@@ -46,7 +46,7 @@ let product_page3 name section_id =
 let public url = Format.sprintf "file path: %s" url
 
 let router =
-  Wtr.t
+  Wtr.router
     [ {%wtr| get,post  ;         /home/about/:int             |} about_page
     ; {%wtr| head,delete;        /home/:int/                  |} home_int_page
     ; {%wtr| get;   /home/:float/                             |} home_float_page

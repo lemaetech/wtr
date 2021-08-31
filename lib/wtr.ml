@@ -217,18 +217,19 @@ and empty_node : 'a node = {route= None; node_types= []}
 
 (* We use array for node_types so that we get better cache locality. The hope being
    that iterating nodes via array is faster than via the list. *)
-type 'a t = {route: 'a route option; node_types: (node_type * 'a t) array}
+type 'a router =
+  {route: 'a route option; node_types: (node_type * 'a router) array}
 
-let rec t routes =
-  List.concat routes |> List.fold_left node empty_node |> compile
-
-and compile : 'a node -> 'a t =
+let rec compile : 'a node -> 'a router =
  fun t ->
   { route= t.route
   ; node_types=
       List.rev t.node_types
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
+
+let router routes =
+  List.concat routes |> List.fold_left node empty_node |> compile
 
 let rec pp fmt t =
   let nodes = t.node_types |> Array.to_list in
@@ -255,7 +256,7 @@ type decoded_value = D : 'c decoder * 'c -> decoded_value
 let rec drop : 'a list -> int -> 'a list =
  fun l n -> match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
 
-let rec match' : method' -> string -> 'a t -> 'a option =
+let rec match' : method' -> string -> 'a router -> 'a option =
  fun method' uri t ->
   (* split uri path and query into tokens *)
   let uri' = uri |> String.trim |> Uri.of_string in

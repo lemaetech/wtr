@@ -10,7 +10,7 @@
 (** {1 Types} *)
 
 (** ['a t] represents a Trie based router. *)
-type 'a t
+type 'a router
 
 (** ['c route] is a [uri] and its handler. ['c] represents the value returned by
     the handler. *)
@@ -44,7 +44,7 @@ val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
 
 (** {1 Router} *)
 
-val t : 'a route list list -> 'a t
+val router : 'a route list list -> 'a router
 (** [t routes] is a router from a list of [route]s. Values of [routes] are
     created by [%wtr] ppx.
 
@@ -102,7 +102,7 @@ val t : 'a route list list -> 'a t
           ; {%wtr| GET; /faq/:int/**                          |} faq ]
     ]} *)
 
-val match' : method' -> string -> 'a t -> 'a option
+val match' : method' -> string -> 'a router -> 'a option
 (** [match method' uri t] matches a route to a given [uri] and [method'],
     executes its handler and returns the computed value. [None] is returned if
     both [uri] {b and} [method'] are not matched.
@@ -250,7 +250,7 @@ val method' : string -> method'
 
 (** {1:pp Pretty Printers} *)
 
-val pp : Format.formatter -> 'a t -> unit
+val pp : Format.formatter -> 'a router -> unit
 (** [pp fmt t] pretty prints router routes. This can be useful for debugging
     router/routing issues as it displays hierarchially possible routes a
     matching engine may take in matching a given uri and method.

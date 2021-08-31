@@ -34,7 +34,7 @@ let faq category_id _url =
   "FAQ page for category : " ^ category_name
 
 let router =
-  Wtr.t
+  Wtr.router
     [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
     ; {%wtr| head,delete           ; /home/:int/             |} prod_page
     ; {%wtr| get,post              ; /home/:float/           |} float_page
