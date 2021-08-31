@@ -72,7 +72,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   pp_uri {%uri| /product/:string?section=:int&q=:bool |} ;
-  [%expect {| /product/:string/section/:int/q/:bool |}]
+  [%expect {| /product/:string?section=:int?q=:bool |}]
 
 let%expect_test _ =
   pp_match `GET "/public/css/style.css" ;
@@ -177,6 +177,11 @@ let%expect_test _ =
        "Product detail 2 - dyson350. Section: 2." |}]
 
 let%expect_test _ =
+  pp_match `GET "/product/dyson350/section/2/q1/yes" ;
+  [%expect {|
+       None |}]
+
+let%expect_test _ =
   pp_match `GET "/fruit/apple" ;
   [%expect {|
        "Apples are juicy!" |}]
@@ -245,10 +250,8 @@ let%expect_test _ =
           /**
       /product
         /:string
-          /section
-            /:int
-              /q
-                /:bool
+          ?section=:int
+            ?q=:bool
     GET
       /home
         /about
@@ -263,10 +266,8 @@ let%expect_test _ =
           /:bool
       /product
         /:string
-          /section
-            /:int
-              /q1
-                /yes
+          ?section=:int
+            ?q1=yes
       /fruit
         /:Fruit
       /

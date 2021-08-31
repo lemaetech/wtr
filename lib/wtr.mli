@@ -316,7 +316,9 @@ module Private : sig
   val splat : (string -> 'b, 'b) uri
   val t_slash : ('b, 'b) uri
   val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
+  val query_lit : string -> string -> ('a, 'b) uri -> ('a, 'b) uri
   val decode : 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  val query_decode : string -> 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
   val int : int decoder
   val int32 : int32 decoder
   val int64 : int64 decoder
