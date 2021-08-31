@@ -40,23 +40,27 @@ let product_page name section_id q =
 let product_page2 name section_id =
   Printf.sprintf "Product detail 2 - %s. Section: %d." name section_id
 
+let product_page3 name section_id =
+  Printf.sprintf "Product detail 2 - %s. Section: %s." name section_id
+
 let public url = Format.sprintf "file path: %s" url
 
 let router =
   Wtr.t
-    [ {%wtr| get,post  ;         /home/about/:int          |} about_page
-    ; {%wtr| head,delete;        /home/:int/               |} home_int_page
-    ; {%wtr| get;   /home/:float/                          |} home_float_page
-    ; {%wtr| get;   /contact/*/:int                        |} contact_page
-    ; {%wtr| post;  /home/products/**                      |} full_splat_page
-    ; {%wtr| get;   /home/*/**                             |} wildcard_page
-    ; {%wtr| get;   /contact/:string/:bool                 |} contact_page2
-    ; {%wtr| post;  /product/:string?section=:int&q=:bool  |} product_page
-    ; {%wtr| get;   /product/:string?section=:int&q1=yes   |} product_page2
-    ; {%wtr| get;   /fruit/:Fruit                          |} fruit_page
-    ; {%wtr| get;   /                                      |} not_found_page
-    ; {%wtr|        /public/**                             |} public
-    ; {%wtr| head;  /numbers/:int32/code/:int64/           |} numbers_page ]
+    [ {%wtr| get,post  ;         /home/about/:int             |} about_page
+    ; {%wtr| head,delete;        /home/:int/                  |} home_int_page
+    ; {%wtr| get;   /home/:float/                             |} home_float_page
+    ; {%wtr| get;   /contact/*/:int                           |} contact_page
+    ; {%wtr| post;  /home/products/**                         |} full_splat_page
+    ; {%wtr| get;   /home/*/**                                |} wildcard_page
+    ; {%wtr| get;   /contact/:string/:bool                    |} contact_page2
+    ; {%wtr| post;  /product/:string?section=:int&q=:bool     |} product_page
+    ; {%wtr| get;   /product/:string?section=:int&q1=yes      |} product_page2
+    ; {%wtr| get;   /product/:string?section=:string&q1=yes   |} product_page3
+    ; {%wtr| get;   /fruit/:Fruit                             |} fruit_page
+    ; {%wtr| get;   /                                         |} not_found_page
+    ; {%wtr|        /public/**                                |} public
+    ; {%wtr| head;  /numbers/:int32/code/:int64/              |} numbers_page ]
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter
 let pp_uri u = Wtr.pp_uri Format.std_formatter u
@@ -267,6 +271,8 @@ let%expect_test _ =
       /product
         /:string
           ?section=:int
+            ?q1=yes
+          ?section=:string
             ?q1=yes
       /fruit
         /:Fruit
