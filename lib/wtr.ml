@@ -44,12 +44,12 @@ let decoder ~name ~decode =
   let id = new_id () in
   {name; decode; id}
 
-let int = decoder ~name:"int" ~decode:int_of_string_opt
-let int32 = decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64 = decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float = decoder ~name:"float" ~decode:float_of_string_opt
-let string = decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool = decoder ~name:"bool" ~decode:bool_of_string_opt
+let int_d = decoder ~name:"int" ~decode:int_of_string_opt
+let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float_d = decoder ~name:"float" ~decode:float_of_string_opt
+let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
 
 type method' =
   [ `GET
@@ -76,19 +76,6 @@ let method' meth =
   | "TRACE" -> `TRACE
   | header -> `Method header
 
-let pp_method fmt t =
-  ( match t with
-  | `GET -> "GET"
-  | `HEAD -> "HEAD"
-  | `POST -> "POST"
-  | `PUT -> "PUT"
-  | `DELETE -> "DELETE"
-  | `CONNECT -> "CONNECT"
-  | `OPTIONS -> "OPTIONS"
-  | `TRACE -> "TRACE"
-  | `Method s -> Format.sprintf "Method (%s)" s )
-  |> Format.fprintf fmt "%s"
-
 type ('a, 'b) uri =
   | Nil : ('b, 'b) uri
   | Splat : (string -> 'b, 'b) uri
@@ -98,38 +85,15 @@ type ('a, 'b) uri =
   | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
   | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
-let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
- fun fmt uri ->
-  let query_start_tok_emitted = ref false in
-  let pp_query_tok fmt pp' uri =
-    if not !query_start_tok_emitted then (
-      query_start_tok_emitted := true ;
-      Format.fprintf fmt "?%a" pp' uri )
-    else Format.fprintf fmt "&%a" pp' uri
-  in
-  match uri with
-  | Nil -> Format.fprintf fmt "%!"
-  | Splat -> Format.fprintf fmt "/**%!"
-  | Trailing_slash -> Format.fprintf fmt "/%!"
-  | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
-  | Query_literal (name, value, uri) ->
-      let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
-      pp_query_tok fmt pp' uri
-  | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
-  | Query_decode (name, decoder, uri) ->
-      let pp' fmt uri =
-        Format.fprintf fmt "%s=:%s%a" name decoder.name pp_uri uri
-      in
-      pp_query_tok fmt pp' uri
+let ( / ) m1 m2 r = m1 @@ m2 r
+let int uri = Decode (int_d, uri)
+let string uri = Decode (string_d, uri)
+let nil = Nil
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
 let route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route =
  fun ?(method' = `GET) uri f -> Route (method', uri, f)
-
-let pp_route : Format.formatter -> 'b route -> unit =
- fun fmt (Route (method', uri, _)) ->
-  Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
 
 (** Existential to encode uri component/node type. *)
 type node_type =
@@ -166,17 +130,6 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Decode (decoder, uri) -> NDecoder decoder :: node_type_of_uri uri
   | Query_decode (name, decoder, uri) ->
       NQuery_decoder (name, decoder) :: node_type_of_uri uri
-
-let pp_node_type fmt node_type =
-  match node_type with
-  | NSplat -> Format.fprintf fmt "/**"
-  | NTrailing_slash -> Format.fprintf fmt "/"
-  | NLiteral lit -> Format.fprintf fmt "/%s" lit
-  | NQuery_literal (name, value) -> Format.fprintf fmt "%s=%s" name value
-  | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
-  | NQuery_decoder (name, decoder) ->
-      Format.fprintf fmt "%s=:%s" name decoder.name
-  | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
 
 type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
 
@@ -224,26 +177,6 @@ let rec compile : 'a node -> 'a router =
 
 let router routes =
   List.concat routes |> List.fold_left node empty_node |> compile
-
-let rec pp fmt t =
-  let nodes = t.node_types |> Array.to_list in
-  let len = List.length nodes in
-  let query_tok_printed = ref false in
-  Format.pp_print_list
-    ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
-    (fun fmt (node_type, t') ->
-      Format.pp_open_vbox fmt 2 ;
-      ( match node_type with
-      | NQuery_literal _ | NQuery_decoder _ ->
-          if not !query_tok_printed then
-            Format.fprintf fmt "?%a" pp_node_type node_type
-          else Format.fprintf fmt "&%a" pp_node_type node_type
-      | node -> Format.fprintf fmt "%a" pp_node_type node ) ;
-      if Array.length t'.node_types > 0 then (
-        Format.pp_print_break fmt 0 0 ;
-        pp fmt t' ) ;
-      Format.pp_close_box fmt () )
-    fmt nodes
 
 type decoded_value = D : 'c decoder * 'c -> decoded_value
 
@@ -308,7 +241,8 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
-              matched_node := Some (t', D (string, splat_url) :: decoded_values) ;
+              matched_node :=
+                Some (t', D (string_d, splat_url) :: decoded_values) ;
               continue := false ;
               full_splat_matched := true
           | `Query (name, value), (NQuery_decoder (name', decoder), t') -> (
@@ -347,7 +281,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
   | Nil, [] -> f
   | Splat, [D (d, v)] -> (
-    match eq string.id d.id with Some Eq -> f v | None -> assert false )
+    match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
@@ -363,6 +297,80 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
     | None -> assert false )
   | _, _ -> assert false
 
+(* Pretty Printers *)
+
+let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
+ fun fmt uri ->
+  let query_start_tok_emitted = ref false in
+  let pp_query_tok fmt pp' uri =
+    if not !query_start_tok_emitted then (
+      query_start_tok_emitted := true ;
+      Format.fprintf fmt "?%a" pp' uri )
+    else Format.fprintf fmt "&%a" pp' uri
+  in
+  match uri with
+  | Nil -> Format.fprintf fmt "%!"
+  | Splat -> Format.fprintf fmt "/**%!"
+  | Trailing_slash -> Format.fprintf fmt "/%!"
+  | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
+  | Query_literal (name, value, uri) ->
+      let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
+      pp_query_tok fmt pp' uri
+  | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
+  | Query_decode (name, decoder, uri) ->
+      let pp' fmt uri =
+        Format.fprintf fmt "%s=:%s%a" name decoder.name pp_uri uri
+      in
+      pp_query_tok fmt pp' uri
+
+let pp_method fmt t =
+  ( match t with
+  | `GET -> "GET"
+  | `HEAD -> "HEAD"
+  | `POST -> "POST"
+  | `PUT -> "PUT"
+  | `DELETE -> "DELETE"
+  | `CONNECT -> "CONNECT"
+  | `OPTIONS -> "OPTIONS"
+  | `TRACE -> "TRACE"
+  | `Method s -> Format.sprintf "Method (%s)" s )
+  |> Format.fprintf fmt "%s"
+
+let pp_node_type fmt node_type =
+  match node_type with
+  | NSplat -> Format.fprintf fmt "/**"
+  | NTrailing_slash -> Format.fprintf fmt "/"
+  | NLiteral lit -> Format.fprintf fmt "/%s" lit
+  | NQuery_literal (name, value) -> Format.fprintf fmt "%s=%s" name value
+  | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
+  | NQuery_decoder (name, decoder) ->
+      Format.fprintf fmt "%s=:%s" name decoder.name
+  | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
+
+let pp_route : Format.formatter -> 'b route -> unit =
+ fun fmt (Route (method', uri, _)) ->
+  Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
+
+let rec pp fmt t =
+  let nodes = t.node_types |> Array.to_list in
+  let len = List.length nodes in
+  let query_tok_printed = ref false in
+  Format.pp_print_list
+    ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
+    (fun fmt (node_type, t') ->
+      Format.pp_open_vbox fmt 2 ;
+      ( match node_type with
+      | NQuery_literal _ | NQuery_decoder _ ->
+          if not !query_tok_printed then
+            Format.fprintf fmt "?%a" pp_node_type node_type
+          else Format.fprintf fmt "&%a" pp_node_type node_type
+      | node -> Format.fprintf fmt "%a" pp_node_type node ) ;
+      if Array.length t'.node_types > 0 then (
+        Format.pp_print_break fmt 0 0 ;
+        pp fmt t' ) ;
+      Format.pp_close_box fmt () )
+    fmt nodes
+
 module Private = struct
   let routes methods uri f =
     List.map (fun method' -> route ~method' uri f) methods
@@ -374,10 +382,10 @@ module Private = struct
   let query_lit name value uri = Query_literal (name, value, uri)
   let decode d uri = Decode (d, uri)
   let query_decode name d uri = Query_decode (name, d, uri)
-  let int = int
-  let int32 = int32
-  let int64 = int64
-  let float = float
-  let string = string
-  let bool = bool
+  let int = int_d
+  let int32 = int32_d
+  let int64 = int64_d
+  let float = float_d
+  let string = string_d
+  let bool = bool_d
 end

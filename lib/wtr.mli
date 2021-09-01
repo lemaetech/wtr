@@ -19,7 +19,7 @@ and 'c route
 (** [('a, 'b) uri] represents a route URI - both the path and query, e.g.
     [/home/about/,
     /home/contact, /home/contact?name=a&no=123] etc. It is
-    created via [%wtr] ppx *)
+    created as part of route via [%wtr] ppx *)
 and ('a, 'b) uri
 
 (** [method'] represents HTTP request methods. It can be used as part of a
@@ -38,9 +38,21 @@ and method' =
 (** Represents a uri component decoder, such as [:int, :float, :bool] etc. *)
 and 'a decoder
 
-(** {1:uri Specifying a URI}
+(** {1 HTTP Method} *)
 
-    Specifying a URI in a [%wtr] ppx follows the following syntax:
+val method_equal : method' -> method' -> bool
+val method' : string -> method'
+
+(** {1 URI Combinators} *)
+
+val ( / ) : (('a, 'b) uri -> 'c) -> ('d -> ('a, 'b) uri) -> 'd -> 'c
+val int : ('a, 'b) uri -> (int -> 'a, 'b) uri
+val string : ('a, 'b) uri -> (string -> 'a, 'b) uri
+val nil : ('b, 'b) uri
+
+(** {1 Route}
+
+    Specifying a Route in a [%wtr] ppx follows the following syntax:
 
     - [wtr syntax = http methods separated by comma ';' http uri]
     - [uri syntax = http uri]
@@ -72,9 +84,7 @@ and 'a decoder
       uri, i.e. it affects the route handler function signature.
     - {b Trailing slash [/]} - A trailing slash ensures that Wtr will match a
       trailing [/] in a uri. For example, uri [/home/about/] matches
-      [/home/about/] but not [/home/about]. *)
-
-(** {1:decoders Decoders}
+      [/home/about/] but not [/home/about].
 
     {2 Built-in Decoders}
 
@@ -126,7 +136,7 @@ val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 
     [{%wtr| get ; /fruit/:Fruit  |} fruit_page] *)
 
-(** {1 Route Handlers}
+(** {2 Route Handlers}
 
     Route handlers are functions that accepts the decoded data from URI. A HTTP
     method, a URI and a route handler makes a {!type:route}. The use of decoders
@@ -152,16 +162,11 @@ val match' : method' -> string -> 'a router -> 'a option
     [request_target] together matches one of the routes defined in [router].
     Otherwise it is None. *)
 
-(** {1 HTTP Method} *)
-
-val method_equal : method' -> method' -> bool
-val method' : string -> method'
-
 (** {1:pp Pretty Printers} *)
 
-val pp : Format.formatter -> 'a router -> unit
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
+val pp : Format.formatter -> 'a router -> unit
 
 (**/**)
 
