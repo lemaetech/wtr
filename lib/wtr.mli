@@ -47,8 +47,15 @@ val method' : string -> method'
 
 val ( / ) : (('a, 'b) uri -> 'c) -> ('d -> ('a, 'b) uri) -> 'd -> 'c
 val int : ('a, 'b) uri -> (int -> 'a, 'b) uri
+val int32 : ('a, 'b) uri -> (int32 -> 'a, 'b) uri
+val int64 : ('a, 'b) uri -> (int64 -> 'a, 'b) uri
+val float : ('a, 'b) uri -> (float -> 'a, 'b) uri
+val bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri
 val string : ('a, 'b) uri -> (string -> 'a, 'b) uri
 val end' : ('b, 'b) uri
+val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
+val splat : (string -> 'b, 'b) uri
+val slash : ('b, 'b) uri
 val ( /. ) : ('a -> ('b, 'c) uri) -> 'a -> ('b, 'c) uri
 
 (** {1 Route}

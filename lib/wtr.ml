@@ -7,6 +7,7 @@
  *
  *-------------------------------------------------------------------------*)
 
+(* Decoder identifier type. *)
 type 'a witness = ..
 type (_, _) eq = Eq : ('a, 'a) eq
 
@@ -44,6 +45,7 @@ let decoder ~name ~decode =
   let id = new_id () in
   {name; decode; id}
 
+(* Built-in decoders *)
 let int_d = decoder ~name:"int" ~decode:int_of_string_opt
 let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
 let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
@@ -85,10 +87,18 @@ type ('a, 'b) uri =
   | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
   | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
+(* URI combinators *)
 let ( / ) f1 f2 r = f1 (f2 r)
-let int uri = Decode (int_d, uri)
-let string uri = Decode (string_d, uri)
+let int u = Decode (int_d, u)
+let int32 u = Decode (int32_d, u)
+let int64 u = Decode (int64_d, u)
+let float u = Decode (float_d, u)
+let bool u = Decode (bool_d, u)
+let string u = Decode (string_d, u)
 let end' = Nil
+let lit s uri = Literal (s, uri)
+let splat = Splat
+let slash = Trailing_slash
 let ( /. ) f x = f x
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
