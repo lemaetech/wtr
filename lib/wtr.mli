@@ -48,7 +48,8 @@ val method' : string -> method'
 val ( / ) : (('a, 'b) uri -> 'c) -> ('d -> ('a, 'b) uri) -> 'd -> 'c
 val int : ('a, 'b) uri -> (int -> 'a, 'b) uri
 val string : ('a, 'b) uri -> (string -> 'a, 'b) uri
-val nil : ('b, 'b) uri
+val end' : ('b, 'b) uri
+val ( /. ) : ('a -> ('b, 'c) uri) -> 'a -> ('b, 'c) uri
 
 (** {1 Route}
 

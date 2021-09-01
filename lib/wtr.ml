@@ -85,10 +85,11 @@ type ('a, 'b) uri =
   | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
   | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
-let ( / ) m1 m2 r = m1 @@ m2 r
+let ( / ) f1 f2 r = f1 (f2 r)
 let int uri = Decode (int_d, uri)
 let string uri = Decode (string_d, uri)
-let nil = Nil
+let end' = Nil
+let ( /. ) f x = f x
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
@@ -198,26 +199,26 @@ let rec match' : method' -> string -> 'a router -> 'a option =
     |> List.map (fun (k, values) -> List.map (fun v' -> `Query (k, v')) values)
     |> List.concat
   in
-  let uri_toks = path_tokens @ query_tokens in
+  let uri_tokens = path_tokens @ query_tokens in
   (* Matching algorithm overview:
 
      1. First match the HTTP method as all routes always start with a HTTP method
      2. Then follow the trie nodes as suggested by the trie algorithm.
   *)
-  let rec try_match t decoded_values uri_toks matched_token_count =
-    match uri_toks with
+  let rec try_match t decoded_values uri_tokens matched_token_count =
+    match uri_tokens with
     | [] ->
         Option.map
           (fun (Route (_, uri, f)) ->
             exec_route_handler f (uri, List.rev decoded_values) )
           t.route
-    | uri_part :: uris ->
+    | uri_token :: uri_tokens ->
         let continue = ref true in
         let index = ref 0 in
         let matched_node = ref None in
         let full_splat_matched = ref false in
         while !continue && !index < Array.length t.node_types do
-          match (uri_part, t.node_types.(!index)) with
+          match (uri_token, t.node_types.(!index)) with
           | `Path v, (NDecoder decoder, t') -> (
             match decoder.decode v with
             | Some v ->
@@ -262,16 +263,17 @@ let rec match' : method' -> string -> 'a router -> 'a option =
             if !full_splat_matched then
               (try_match [@tailcall]) t' decoded_values [] matched_tok_count
             else
-              (try_match [@tailcall]) t' decoded_values uris matched_tok_count )
+              (try_match [@tailcall]) t' decoded_values uri_tokens
+                matched_tok_count )
   in
-  if List.length uri_toks > 0 then
+  if List.length uri_tokens > 0 then
     let n = Array.length t.node_types in
     let rec loop i =
       if i = n then None
       else
         match t.node_types.(i) with
         | NMethod method'', t' when method_equal method' method'' ->
-            try_match t' [] uri_toks 0
+            try_match t' [] uri_tokens 0
         | _ -> (loop [@tailcall]) (i + 1)
     in
     loop 0
