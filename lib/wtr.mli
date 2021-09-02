@@ -71,7 +71,7 @@ val ( /. ) : ('a -> ('b, 'c) path) -> 'a -> ('b, 'c) uri
 
 (** {2 Query} *)
 
-val ( & ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
+val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 val qint : string -> ('a, 'b) query -> (int -> 'a, 'b) query
 val qint32 : string -> ('a, 'b) query -> (int32 -> 'a, 'b) query
 val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
