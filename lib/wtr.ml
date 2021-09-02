@@ -115,7 +115,7 @@ let ( /. ) = ( /?. )
 
 (* Query combinators *)
 
-let ( & ) = ( /? )
+let ( /& ) = ( /? )
 let qint field u = Query_decode (field, int_d, u)
 let qint32 field u = Query_decode (field, int32_d, u)
 let qint64 field u = Query_decode (field, int64_d, u)
