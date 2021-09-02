@@ -28,7 +28,20 @@
    (>= 4.12.0))
   (uri
    (>= 4.2.0))
-  (ppxlib
-   (>= 0.22.0))
   (ppx_expect :with-test)
   (mdx :with-test)))
+
+(package
+ (name wtr-ppx)
+ (synopsis "ppx to create routers")
+ (description
+  "wtr-ppx provides a ppx driven alternative to Wtr router\n              construction.")
+ (depends
+  (ocaml
+   (>= 4.12.0))
+  (uri
+   (>= 4.2.0))
+  (wtr
+   (= version))
+  (ppxlib
+   (>= 0.22.0))))
