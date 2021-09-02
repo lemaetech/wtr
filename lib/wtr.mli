@@ -63,7 +63,7 @@ val float : ('a, 'b) path -> (float -> 'a, 'b) path
 val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
 val string : ('a, 'b) path -> (string -> 'a, 'b) path
 val decode : 'c decoder -> ('a, 'b) path -> ('c -> 'a, 'b) path
-val l : string -> ('a, 'b) path -> ('a, 'b) path
+val lit : string -> ('a, 'b) path -> ('a, 'b) path
 val pend : ('b, 'b) path
 val splat : (string -> 'b, 'b) path
 val slash : ('b, 'b) path
@@ -79,7 +79,7 @@ val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
 val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
 val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
 val qdecode : string * 'c decoder -> ('a, 'b) query -> ('c -> 'a, 'b) query
-val ql : string * string -> ('a, 'b) query -> ('a, 'b) query
+val qlit : string * string -> ('a, 'b) query -> ('a, 'b) query
 
 (** {1 Route}
 

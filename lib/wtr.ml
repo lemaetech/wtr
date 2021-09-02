@@ -107,7 +107,7 @@ let float u = Decode (float_d, u)
 let bool u = Decode (bool_d, u)
 let string u = Decode (string_d, u)
 let decode d u = Decode (d, u)
-let l s uri = Literal (s, uri)
+let lit s uri = Literal (s, uri)
 let pend = Nil
 let splat = Splat
 let slash = Trailing_slash
@@ -123,7 +123,7 @@ let qfloat field u = Query_decode (field, float_d, u)
 let qbool field u = Query_decode (field, bool_d, u)
 let qstring field u = Query_decode (field, string_d, u)
 let qdecode (field, d) u = Query_decode (field, d, u)
-let ql (field, lit) uri = Query_literal (field, lit, uri)
+let qlit (field, lit) uri = Query_literal (field, lit, uri)
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
