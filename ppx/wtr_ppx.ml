@@ -221,7 +221,7 @@ let wtr ~loc ~path:_ wtr =
   | Ok (path_tokens, query_tokens) ->
       let methods' = make_methods ~loc methods in
       let uri = make_request_target ~loc query_tokens path_tokens in
-      [%expr Wtr.Private.routes [%e methods'] [%e uri]]
+      [%expr Wtr.routes [%e methods'] [%e uri]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
 let wtr_ppx = "wtr"

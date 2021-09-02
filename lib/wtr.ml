@@ -7,7 +7,7 @@
  *
  *-------------------------------------------------------------------------*)
 
-(* Decoder identifier type. *)
+(* Decoder id type. *)
 type 'a witness = ..
 type (_, _) eq = Eq : ('a, 'a) eq
 
@@ -36,24 +36,38 @@ let new_id (type a) () =
 let eq : type a b. a id -> b id -> (a, b) eq option =
  fun (module TyA) (module TyB) -> TyB.eq TyA.witness
 
-type 'a decoder =
-  { name: string (* name e.g. int, float, bool, string etc *)
-  ; decode: string -> 'a option
-  ; id: 'a id }
+(* Types *)
 
-let decoder ~name ~decode =
-  let id = new_id () in
-  {name; decode; id}
+(* We use array for node_types so that we get better cache locality. The hope being
+   that iterating nodes via array is faster than via the list. *)
+type 'a router =
+  {route: 'a route option; node_types: (node_type * 'a router) array}
 
-(* Built-in decoders *)
-let int_d = decoder ~name:"int" ~decode:int_of_string_opt
-let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float_d = decoder ~name:"float" ~decode:float_of_string_opt
-let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
+(* Unoptimized/compiled router type. *)
+and 'a node = {route': 'a route option; node_types': (node_type * 'a node) list}
 
-type method' =
+(** Existential to encode uri component/node type. *)
+and node_type =
+  | NTrailing_slash : node_type
+  | NSplat : node_type
+  | NLiteral : string -> node_type
+  | NQuery_literal : string * string -> node_type
+  | NMethod : method' -> node_type
+  | NDecoder : 'c decoder -> node_type
+  | NQuery_decoder : string * 'c decoder -> node_type
+
+and ('a, 'b) uri =
+  | Nil : ('b, 'b) uri
+  | Splat : (string -> 'b, 'b) uri
+  | Trailing_slash : ('b, 'b) uri
+  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
+  | Query_literal : string * string * ('a, 'b) uri -> ('a, 'b) uri
+  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+
+and 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
+
+and method' =
   [ `GET
   | `HEAD
   | `POST
@@ -63,6 +77,19 @@ type method' =
   | `OPTIONS
   | `TRACE
   | `Method of string ]
+
+and ('a, 'b) path = ('a, 'b) uri
+
+and ('a, 'b) query = ('a, 'b) uri
+
+and 'a decoder =
+  { name: string (* name e.g. int, float, bool, string etc *)
+  ; decode: string -> 'a option
+  ; id: 'a id }
+
+and decoded_value = D : 'c decoder * 'c -> decoded_value
+
+(* HTTP Method *)
 
 let method_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
 
@@ -78,26 +105,26 @@ let method' meth =
   | "TRACE" -> `TRACE
   | header -> `Method header
 
-type ('a, 'b) uri =
-  | Nil : ('b, 'b) uri
-  | Splat : (string -> 'b, 'b) uri
-  | Trailing_slash : ('b, 'b) uri
-  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Query_literal : string * string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+(* Decoders *)
 
-and ('a, 'b) path = ('a, 'b) uri
+let decoder ~name ~decode =
+  let id = new_id () in
+  {name; decode; id}
 
-and ('a, 'b) query = ('a, 'b) uri
+let int_d = decoder ~name:"int" ~decode:int_of_string_opt
+let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float_d = decoder ~name:"float" ~decode:float_of_string_opt
+let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
 
-(* URI *)
+(* URI Combinators *)
 
 let end' = Nil
 let ( /? ) f1 f2 r = f1 (f2 r)
 let ( /?. ) qf e = qf e
 
-(* Path combinators *)
+(* Path *)
 
 let ( / ) = ( /? )
 let int u = Decode (int_d, u)
@@ -113,7 +140,7 @@ let splat = Splat
 let slash = Trailing_slash
 let ( /. ) = ( /?. )
 
-(* Query combinators *)
+(* Query *)
 
 let ( /& ) = ( /? )
 let qint field u = Query_decode (field, int_d, u)
@@ -125,20 +152,13 @@ let qstring field u = Query_decode (field, string_d, u)
 let qdecode (field, d) u = Query_decode (field, d, u)
 let qlit (field, lit) uri = Query_literal (field, lit, uri)
 
-type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
+(* Route and Router *)
 
 let route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route =
  fun ?(method' = `GET) uri f -> Route (method', uri, f)
 
-(** Existential to encode uri component/node type. *)
-type node_type =
-  | NTrailing_slash : node_type
-  | NSplat : node_type
-  | NLiteral : string -> node_type
-  | NQuery_literal : string * string -> node_type
-  | NMethod : method' -> node_type
-  | NDecoder : 'c decoder -> node_type
-  | NQuery_decoder : string * 'c decoder -> node_type
+let routes methods uri f =
+  List.map (fun method' -> route ~method' uri f) methods
 
 let node_type_equal a b =
   match (a, b) with
@@ -166,21 +186,19 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Query_decode (name, decoder, uri) ->
       NQuery_decoder (name, decoder) :: node_type_of_uri uri
 
-type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
-
 let rec node : 'a node -> 'a route -> 'a node =
  fun node' (Route (method', uri, _) as route) ->
   let rec loop node node_types =
     match node_types with
-    | [] -> {node with route= Some route}
+    | [] -> {node with route'= Some route}
     | node_type :: node_types ->
         let node'' =
           List.find_opt
             (fun (node_type', _) -> node_type_equal node_type node_type')
-            node.node_types
+            node.node_types'
         in
         { node with
-          node_types=
+          node_types'=
             ( match node'' with
             | Some _ ->
                 List.map
@@ -188,32 +206,25 @@ let rec node : 'a node -> 'a route -> 'a node =
                     if node_type_equal node_type node_type' then
                       (node_type', loop t' node_types)
                     else (node_type', t') )
-                  node.node_types
-            | None -> (node_type, loop empty_node node_types) :: node.node_types
-            ) }
+                  node.node_types'
+            | None ->
+                (node_type, loop empty_node node_types) :: node.node_types' ) }
   in
   let node_types = NMethod method' :: node_type_of_uri uri in
   loop node' node_types
 
-and empty_node : 'a node = {route= None; node_types= []}
-
-(* We use array for node_types so that we get better cache locality. The hope being
-   that iterating nodes via array is faster than via the list. *)
-type 'a router =
-  {route: 'a route option; node_types: (node_type * 'a router) array}
+and empty_node : 'a node = {route'= None; node_types'= []}
 
 let rec compile : 'a node -> 'a router =
  fun t ->
-  { route= t.route
+  { route= t.route'
   ; node_types=
-      List.rev t.node_types
+      List.rev t.node_types'
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
 
 let router routes =
   List.concat routes |> List.fold_left node empty_node |> compile
-
-type decoded_value = D : 'c decoder * 'c -> decoded_value
 
 let rec drop : 'a list -> int -> 'a list =
  fun l n -> match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
@@ -408,9 +419,6 @@ let rec pp fmt t =
     fmt nodes
 
 module Private = struct
-  let routes methods uri f =
-    List.map (fun method' -> route ~method' uri f) methods
-
   let nil = Nil
   let splat = Splat
   let t_slash = Trailing_slash

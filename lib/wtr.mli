@@ -47,6 +47,50 @@ and 'a decoder
 val method_equal : method' -> method' -> bool
 val method' : string -> method'
 
+(** {1 Decoders}
+
+    [Wtr] provides the following built in decoders that can be used when
+    specifying a URI either via [%wtr] ppx or via URI combinators:
+
+    - [int] - decodes a [int]
+    - [int32] - decodes a [int32]
+    - [int64] - decodes a [int64]
+    - [float] - decodes a [float] or [int]
+    - [bool] - decodes a [bool]
+    - [string] - decodes a [string]
+
+    Additionally, one can also create custom user defined decoders. The
+    convention for user defined decoders is as follows:
+
+    A custom decoder should be defined in a module which has the following:
+
+    + type called `t`
+    + a value called [t] which is of type [t Wtr.decoder].
+
+    Custom decoder example,
+
+    {[
+      module Fruit = struct
+        type t = Apple | Orange | Pineapple
+
+        let t : t Wtr.decoder =
+          Wtr.decoder ~name:"fruit" ~decode:(function
+            | "apple" -> Some Apple
+            | "orange" -> Some Orange
+            | "pineapple" -> Some Pineapple
+            | _ -> None )
+      end
+    ]}
+
+    The custom decoder thus defined can then can be used in [%wtr] ppx as
+    follows:
+
+    [{%wtr| get ; /fruit/:Fruit  |} fruit_page] *)
+
+val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
+(** [decoder ~name ~decode] creates a user defined custom uri decoder component.
+    [name] is used during the pretty printing of [uri]. *)
+
 (** {1 URI Combinators}*)
 
 val end' : ('b, 'b) uri
@@ -81,7 +125,7 @@ val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
 val qdecode : string * 'c decoder -> ('a, 'b) query -> ('c -> 'a, 'b) query
 val qlit : string * string -> ('a, 'b) query -> ('a, 'b) query
 
-(** {1 Route}
+(** {1 Wtr ppx}
 
     Specifying a Route in a [%wtr] ppx follows the following syntax:
 
@@ -115,57 +159,7 @@ val qlit : string * string -> ('a, 'b) query -> ('a, 'b) query
       uri, i.e. it affects the route handler function signature.
     - {b Trailing slash [/]} - A trailing slash ensures that Wtr will match a
       trailing [/] in a uri. For example, uri [/home/about/] matches
-      [/home/about/] but not [/home/about].
-
-    {2 Built-in Decoders}
-
-    [Wtr] provides the following built in decoders that can be used as when
-    specifying URI in [{%wtr| |}] ppx:
-
-    - [:int] - decodes a [int]
-    - [:int32] - decodes a [int32]
-    - [:int64] - decodes a [int64]
-    - [:float] - decodes a [float] or [int]
-    - [:bool] - decodes a [bool]
-    - [:string] - decodes a [string]
-
-    The built-in decoders can be used as follows:
-
-    [{%wtr|get; /home/:int |}], [{%wtr| /home/:bool |}] *)
-
-(** {2 Custom Decoders} *)
-
-val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
-(** [decoder ~name ~decode] creates a user defined custom uri decoder component.
-    [name] is used during the pretty printing of [uri]. *)
-
-(** Wtr supports creating custom, user defined decoders. The convention for user
-    defined decoders is as follows:
-
-    A custom decoder should be defined in a module which has the following:
-
-    + type called `t`
-    + a value called [t] which is of type [t Wtr.decoder].
-
-    Custom decoder example,
-
-    {[
-      module Fruit = struct
-        type t = Apple | Orange | Pineapple
-
-        let t : t Wtr.decoder =
-          Wtr.decoder ~name:"fruit" ~decode:(function
-            | "apple" -> Some Apple
-            | "orange" -> Some Orange
-            | "pineapple" -> Some Pineapple
-            | _ -> None )
-      end
-    ]}
-
-    The custom decoder thus defined can then can be used in [%wtr] ppx as
-    follows:
-
-    [{%wtr| get ; /fruit/:Fruit  |} fruit_page] *)
+      [/home/about/] but not [/home/about]. *)
 
 (** {2 Route Handlers}
 
@@ -180,7 +174,10 @@ val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
     - A uri spec [/home/:string] expects a route handler as
       [(fun (s:string) -> ...)] *)
 
-(** {1 Router} *)
+(** {1 Route and Router} *)
+
+val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
+val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
 
 val router : 'a route list list -> 'a router
 (** [route routes] is a router made up of given [routes]. It is used with [%wtr]
@@ -197,13 +194,13 @@ val match' : method' -> string -> 'a router -> 'a option
 
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
+val pp_uri : Format.formatter -> ('a, 'b) uri -> unit
 val pp : Format.formatter -> 'a router -> unit
 
 (**/**)
 
 (** Used by wtr/uri ppx *)
 module Private : sig
-  val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
   val nil : ('b, 'b) uri
   val splat : (string -> 'b, 'b) uri
   val t_slash : ('b, 'b) uri
