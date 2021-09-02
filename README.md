@@ -23,7 +23,7 @@ Wtr is typed router for OCaml web applications.
 ## Wtr Demo
 
 ```ocaml
-# #require "wtr, wtr.ppx";;
+# #require "wtr, wtr-ppx";;
 ```
 
 ```ocaml

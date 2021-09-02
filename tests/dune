@@ -1,7 +1,7 @@
 (library
  (name tests)
- (libraries wtr)
+ (libraries wtr wtr-ppx)
  (inline_tests)
  (modules tests)
  (preprocess
-  (pps wtr.ppx ppx_expect)))
+  (pps wtr_ppx ppx_expect)))
