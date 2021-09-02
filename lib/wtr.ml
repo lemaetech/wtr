@@ -87,19 +87,41 @@ type ('a, 'b) uri =
   | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
   | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
-(* URI combinators *)
-let ( / ) f1 f2 r = f1 (f2 r)
+and ('a, 'b) path = ('a, 'b) uri
+
+and ('a, 'b) query = ('a, 'b) uri
+
+(* URI *)
+
+let end' = Nil
+let ( /? ) f1 f2 r = f1 (f2 r)
+let ( /?. ) qf e = qf e
+
+(* Path combinators *)
+
+let ( / ) = ( /? )
 let int u = Decode (int_d, u)
 let int32 u = Decode (int32_d, u)
 let int64 u = Decode (int64_d, u)
 let float u = Decode (float_d, u)
 let bool u = Decode (bool_d, u)
 let string u = Decode (string_d, u)
-let end' = Nil
-let lit s uri = Literal (s, uri)
+let pend = Nil
+let l s uri = Literal (s, uri)
 let splat = Splat
 let slash = Trailing_slash
-let ( /. ) f x = f x
+let ( /. ) = ( /?. )
+
+(* Query combinators *)
+
+let ( /& ) = ( /? )
+let qint field u = Query_decode (field, int_d, u)
+let qint32 field u = Query_decode (field, int32_d, u)
+let qint64 field u = Query_decode (field, int64_d, u)
+let qfloat field u = Query_decode (field, float_d, u)
+let qbool field u = Query_decode (field, bool_d, u)
+let qstring field u = Query_decode (field, string_d, u)
+let ql (field, lit) uri = Query_literal (field, lit, uri)
 
 type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 

@@ -22,6 +22,10 @@ and 'c route
     created as part of route via [%wtr] ppx *)
 and ('a, 'b) uri
 
+and ('a, 'b) path
+
+and ('a, 'b) query
+
 (** [method'] represents HTTP request methods. It can be used as part of a
     {!type:uri} in [%wtr] ppx. *)
 and method' =
@@ -43,20 +47,37 @@ and 'a decoder
 val method_equal : method' -> method' -> bool
 val method' : string -> method'
 
-(** {1 URI Combinators} *)
+(** {1 URI Combinators}*)
 
-val ( / ) : (('a, 'b) uri -> 'c) -> ('d -> ('a, 'b) uri) -> 'd -> 'c
-val int : ('a, 'b) uri -> (int -> 'a, 'b) uri
-val int32 : ('a, 'b) uri -> (int32 -> 'a, 'b) uri
-val int64 : ('a, 'b) uri -> (int64 -> 'a, 'b) uri
-val float : ('a, 'b) uri -> (float -> 'a, 'b) uri
-val bool : ('a, 'b) uri -> (bool -> 'a, 'b) uri
-val string : ('a, 'b) uri -> (string -> 'a, 'b) uri
 val end' : ('b, 'b) uri
-val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
-val splat : (string -> 'b, 'b) uri
-val slash : ('b, 'b) uri
-val ( /. ) : ('a -> ('b, 'c) uri) -> 'a -> ('b, 'c) uri
+val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
+val ( /?. ) : (('a, 'b) query -> ('c, 'd) path) -> ('a, 'b) uri -> ('c, 'd) uri
+
+(** {2 Path} *)
+
+val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
+val int : ('a, 'b) path -> (int -> 'a, 'b) path
+val int32 : ('a, 'b) path -> (int32 -> 'a, 'b) path
+val int64 : ('a, 'b) path -> (int64 -> 'a, 'b) path
+val float : ('a, 'b) path -> (float -> 'a, 'b) path
+val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
+val string : ('a, 'b) path -> (string -> 'a, 'b) path
+val l : string -> ('a, 'b) path -> ('a, 'b) path
+val pend : ('b, 'b) path
+val splat : (string -> 'b, 'b) path
+val slash : ('b, 'b) path
+val ( /. ) : ('a -> ('b, 'c) path) -> 'a -> ('b, 'c) uri
+
+(** {2 Query} *)
+
+val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
+val qint : string -> ('a, 'b) query -> (int -> 'a, 'b) query
+val qint32 : string -> ('a, 'b) query -> (int32 -> 'a, 'b) query
+val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
+val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
+val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
+val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
+val ql : string * string -> ('a, 'b) query -> ('a, 'b) query
 
 (** {1 Route}
 
