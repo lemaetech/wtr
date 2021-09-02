@@ -7,6 +7,7 @@
  *
  *-------------------------------------------------------------------------*)
 
+(* Decoder id type. *)
 type 'a witness = ..
 type (_, _) eq = Eq : ('a, 'a) eq
 
@@ -35,23 +36,38 @@ let new_id (type a) () =
 let eq : type a b. a id -> b id -> (a, b) eq option =
  fun (module TyA) (module TyB) -> TyB.eq TyA.witness
 
-type 'a decoder =
-  { name: string (* name e.g. int, float, bool, string etc *)
-  ; decode: string -> 'a option
-  ; id: 'a id }
+(* Types *)
 
-let decoder ~name ~decode =
-  let id = new_id () in
-  {name; decode; id}
+(* We use array for node_types so that we get better cache locality. The hope being
+   that iterating nodes via array is faster than via the list. *)
+type 'a router =
+  {route: 'a route option; node_types: (node_type * 'a router) array}
 
-let int = decoder ~name:"int" ~decode:int_of_string_opt
-let int32 = decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64 = decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float = decoder ~name:"float" ~decode:float_of_string_opt
-let string = decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool = decoder ~name:"bool" ~decode:bool_of_string_opt
+(* Unoptimized/un-compiled router type. *)
+and 'a node = {route': 'a route option; node_types': (node_type * 'a node) list}
 
-type method' =
+(** Existential to encode uri component/node type. *)
+and node_type =
+  | NTrailing_slash : node_type
+  | NSplat : node_type
+  | NLiteral : string -> node_type
+  | NQuery_literal : string * string -> node_type
+  | NMethod : method' -> node_type
+  | NDecoder : 'c decoder -> node_type
+  | NQuery_decoder : string * 'c decoder -> node_type
+
+and ('a, 'b) uri =
+  | Nil : ('b, 'b) uri
+  | Splat : (string -> 'b, 'b) uri
+  | Trailing_slash : ('b, 'b) uri
+  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
+  | Query_literal : string * string * ('a, 'b) uri -> ('a, 'b) uri
+  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+
+and 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
+
+and method' =
   [ `GET
   | `HEAD
   | `POST
@@ -61,6 +77,19 @@ type method' =
   | `OPTIONS
   | `TRACE
   | `Method of string ]
+
+and ('a, 'b) path = ('a, 'b) uri
+
+and ('a, 'b) query = ('a, 'b) uri
+
+and 'a decoder =
+  { name: string (* name e.g. int, float, bool, string etc *)
+  ; decode: string -> 'a option
+  ; id: 'a id }
+
+and decoded_value = D : 'c decoder * 'c -> decoded_value
+
+(* HTTP Method *)
 
 let method_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
 
@@ -76,70 +105,60 @@ let method' meth =
   | "TRACE" -> `TRACE
   | header -> `Method header
 
-let pp_method fmt t =
-  ( match t with
-  | `GET -> "GET"
-  | `HEAD -> "HEAD"
-  | `POST -> "POST"
-  | `PUT -> "PUT"
-  | `DELETE -> "DELETE"
-  | `CONNECT -> "CONNECT"
-  | `OPTIONS -> "OPTIONS"
-  | `TRACE -> "TRACE"
-  | `Method s -> Format.sprintf "Method (%s)" s )
-  |> Format.fprintf fmt "%s"
+(* Decoders *)
 
-type ('a, 'b) uri =
-  | Nil : ('b, 'b) uri
-  | Splat : (string -> 'b, 'b) uri
-  | Trailing_slash : ('b, 'b) uri
-  | Literal : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Query_literal : string * string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+let decoder ~name ~decode =
+  let id = new_id () in
+  {name; decode; id}
 
-let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
- fun fmt uri ->
-  let query_start_tok_emitted = ref false in
-  let pp_query_tok fmt pp' uri =
-    if not !query_start_tok_emitted then (
-      query_start_tok_emitted := true ;
-      Format.fprintf fmt "?%a" pp' uri )
-    else Format.fprintf fmt "&%a" pp' uri
-  in
-  match uri with
-  | Nil -> Format.fprintf fmt "%!"
-  | Splat -> Format.fprintf fmt "/**%!"
-  | Trailing_slash -> Format.fprintf fmt "/%!"
-  | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
-  | Query_literal (name, value, uri) ->
-      let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
-      pp_query_tok fmt pp' uri
-  | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
-  | Query_decode (name, decoder, uri) ->
-      let pp' fmt uri =
-        Format.fprintf fmt "%s=:%s%a" name decoder.name pp_uri uri
-      in
-      pp_query_tok fmt pp' uri
+let int_d = decoder ~name:"int" ~decode:int_of_string_opt
+let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
+let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
+let float_d = decoder ~name:"float" ~decode:float_of_string_opt
+let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
+let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
 
-type 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
+(* URI Combinators *)
+
+let end' = Nil
+let ( /? ) f1 f2 r = f1 (f2 r)
+let ( /?. ) qf e = qf e
+
+(* Path *)
+
+let ( / ) = ( /? )
+let int u = Decode (int_d, u)
+let int32 u = Decode (int32_d, u)
+let int64 u = Decode (int64_d, u)
+let float u = Decode (float_d, u)
+let bool u = Decode (bool_d, u)
+let string u = Decode (string_d, u)
+let decode d u = Decode (d, u)
+let lit s uri = Literal (s, uri)
+let pend = Nil
+let splat = Splat
+let slash = Trailing_slash
+let ( /. ) = ( /?. )
+
+(* Query *)
+
+let ( /& ) = ( /? )
+let qint field u = Query_decode (field, int_d, u)
+let qint32 field u = Query_decode (field, int32_d, u)
+let qint64 field u = Query_decode (field, int64_d, u)
+let qfloat field u = Query_decode (field, float_d, u)
+let qbool field u = Query_decode (field, bool_d, u)
+let qstring field u = Query_decode (field, string_d, u)
+let qdecode (field, d) u = Query_decode (field, d, u)
+let qlit (field, lit) uri = Query_literal (field, lit, uri)
+
+(* Route and Router *)
 
 let route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route =
  fun ?(method' = `GET) uri f -> Route (method', uri, f)
 
-let pp_route : Format.formatter -> 'b route -> unit =
- fun fmt (Route (method', uri, _)) ->
-  Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
-
-(** Existential to encode uri component/node type. *)
-type node_type =
-  | NTrailing_slash : node_type
-  | NSplat : node_type
-  | NLiteral : string -> node_type
-  | NQuery_literal : string * string -> node_type
-  | NMethod : method' -> node_type
-  | NDecoder : 'c decoder -> node_type
-  | NQuery_decoder : string * 'c decoder -> node_type
+let routes methods uri f =
+  List.map (fun method' -> route ~method' uri f) methods
 
 let node_type_equal a b =
   match (a, b) with
@@ -167,32 +186,19 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Query_decode (name, decoder, uri) ->
       NQuery_decoder (name, decoder) :: node_type_of_uri uri
 
-let pp_node_type fmt node_type =
-  match node_type with
-  | NSplat -> Format.fprintf fmt "/**"
-  | NTrailing_slash -> Format.fprintf fmt "/"
-  | NLiteral lit -> Format.fprintf fmt "/%s" lit
-  | NQuery_literal (name, value) -> Format.fprintf fmt "%s=%s" name value
-  | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
-  | NQuery_decoder (name, decoder) ->
-      Format.fprintf fmt "%s=:%s" name decoder.name
-  | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
-
-type 'a node = {route: 'a route option; node_types: (node_type * 'a node) list}
-
 let rec node : 'a node -> 'a route -> 'a node =
  fun node' (Route (method', uri, _) as route) ->
   let rec loop node node_types =
     match node_types with
-    | [] -> {node with route= Some route}
+    | [] -> {node with route'= Some route}
     | node_type :: node_types ->
         let node'' =
           List.find_opt
             (fun (node_type', _) -> node_type_equal node_type node_type')
-            node.node_types
+            node.node_types'
         in
         { node with
-          node_types=
+          node_types'=
             ( match node'' with
             | Some _ ->
                 List.map
@@ -200,52 +206,25 @@ let rec node : 'a node -> 'a route -> 'a node =
                     if node_type_equal node_type node_type' then
                       (node_type', loop t' node_types)
                     else (node_type', t') )
-                  node.node_types
-            | None -> (node_type, loop empty_node node_types) :: node.node_types
-            ) }
+                  node.node_types'
+            | None ->
+                (node_type, loop empty_node node_types) :: node.node_types' ) }
   in
   let node_types = NMethod method' :: node_type_of_uri uri in
   loop node' node_types
 
-and empty_node : 'a node = {route= None; node_types= []}
-
-(* We use array for node_types so that we get better cache locality. The hope being
-   that iterating nodes via array is faster than via the list. *)
-type 'a router =
-  {route: 'a route option; node_types: (node_type * 'a router) array}
+and empty_node : 'a node = {route'= None; node_types'= []}
 
 let rec compile : 'a node -> 'a router =
  fun t ->
-  { route= t.route
+  { route= t.route'
   ; node_types=
-      List.rev t.node_types
+      List.rev t.node_types'
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
 
 let router routes =
   List.concat routes |> List.fold_left node empty_node |> compile
-
-let rec pp fmt t =
-  let nodes = t.node_types |> Array.to_list in
-  let len = List.length nodes in
-  let query_tok_printed = ref false in
-  Format.pp_print_list
-    ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
-    (fun fmt (node_type, t') ->
-      Format.pp_open_vbox fmt 2 ;
-      ( match node_type with
-      | NQuery_literal _ | NQuery_decoder _ ->
-          if not !query_tok_printed then
-            Format.fprintf fmt "?%a" pp_node_type node_type
-          else Format.fprintf fmt "&%a" pp_node_type node_type
-      | node -> Format.fprintf fmt "%a" pp_node_type node ) ;
-      if Array.length t'.node_types > 0 then (
-        Format.pp_print_break fmt 0 0 ;
-        pp fmt t' ) ;
-      Format.pp_close_box fmt () )
-    fmt nodes
-
-type decoded_value = D : 'c decoder * 'c -> decoded_value
 
 let rec drop : 'a list -> int -> 'a list =
  fun l n -> match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
@@ -265,26 +244,26 @@ let rec match' : method' -> string -> 'a router -> 'a option =
     |> List.map (fun (k, values) -> List.map (fun v' -> `Query (k, v')) values)
     |> List.concat
   in
-  let uri_toks = path_tokens @ query_tokens in
+  let uri_tokens = path_tokens @ query_tokens in
   (* Matching algorithm overview:
 
      1. First match the HTTP method as all routes always start with a HTTP method
      2. Then follow the trie nodes as suggested by the trie algorithm.
   *)
-  let rec try_match t decoded_values uri_toks matched_token_count =
-    match uri_toks with
+  let rec try_match t decoded_values uri_tokens matched_token_count =
+    match uri_tokens with
     | [] ->
         Option.map
           (fun (Route (_, uri, f)) ->
             exec_route_handler f (uri, List.rev decoded_values) )
           t.route
-    | uri_part :: uris ->
+    | uri_token :: uri_tokens ->
         let continue = ref true in
         let index = ref 0 in
         let matched_node = ref None in
         let full_splat_matched = ref false in
         while !continue && !index < Array.length t.node_types do
-          match (uri_part, t.node_types.(!index)) with
+          match (uri_token, t.node_types.(!index)) with
           | `Path v, (NDecoder decoder, t') -> (
             match decoder.decode v with
             | Some v ->
@@ -308,7 +287,8 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
-              matched_node := Some (t', D (string, splat_url) :: decoded_values) ;
+              matched_node :=
+                Some (t', D (string_d, splat_url) :: decoded_values) ;
               continue := false ;
               full_splat_matched := true
           | `Query (name, value), (NQuery_decoder (name', decoder), t') -> (
@@ -328,16 +308,17 @@ let rec match' : method' -> string -> 'a router -> 'a option =
             if !full_splat_matched then
               (try_match [@tailcall]) t' decoded_values [] matched_tok_count
             else
-              (try_match [@tailcall]) t' decoded_values uris matched_tok_count )
+              (try_match [@tailcall]) t' decoded_values uri_tokens
+                matched_tok_count )
   in
-  if List.length uri_toks > 0 then
+  if List.length uri_tokens > 0 then
     let n = Array.length t.node_types in
     let rec loop i =
       if i = n then None
       else
         match t.node_types.(i) with
         | NMethod method'', t' when method_equal method' method'' ->
-            try_match t' [] uri_toks 0
+            try_match t' [] uri_tokens 0
         | _ -> (loop [@tailcall]) (i + 1)
     in
     loop 0
@@ -347,7 +328,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
  fun f -> function
   | Nil, [] -> f
   | Splat, [D (d, v)] -> (
-    match eq string.id d.id with Some Eq -> f v | None -> assert false )
+    match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Literal (_, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
@@ -363,10 +344,81 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
     | None -> assert false )
   | _, _ -> assert false
 
-module Private = struct
-  let routes methods uri f =
-    List.map (fun method' -> route ~method' uri f) methods
+(* Pretty Printers *)
 
+let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
+ fun fmt uri ->
+  let query_start_tok_emitted = ref false in
+  let pp_query_tok fmt pp' uri =
+    if not !query_start_tok_emitted then (
+      query_start_tok_emitted := true ;
+      Format.fprintf fmt "?%a" pp' uri )
+    else Format.fprintf fmt "&%a" pp' uri
+  in
+  match uri with
+  | Nil -> Format.fprintf fmt "%!"
+  | Splat -> Format.fprintf fmt "/**%!"
+  | Trailing_slash -> Format.fprintf fmt "/%!"
+  | Literal (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
+  | Query_literal (name, value, uri) ->
+      let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
+      pp_query_tok fmt pp' uri
+  | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
+  | Query_decode (name, decoder, uri) ->
+      let pp' fmt uri =
+        Format.fprintf fmt "%s=:%s%a" name decoder.name pp_uri uri
+      in
+      pp_query_tok fmt pp' uri
+
+let pp_method fmt t =
+  ( match t with
+  | `GET -> "GET"
+  | `HEAD -> "HEAD"
+  | `POST -> "POST"
+  | `PUT -> "PUT"
+  | `DELETE -> "DELETE"
+  | `CONNECT -> "CONNECT"
+  | `OPTIONS -> "OPTIONS"
+  | `TRACE -> "TRACE"
+  | `Method s -> Format.sprintf "Method (%s)" s )
+  |> Format.fprintf fmt "%s"
+
+let pp_node_type fmt node_type =
+  match node_type with
+  | NSplat -> Format.fprintf fmt "/**"
+  | NTrailing_slash -> Format.fprintf fmt "/"
+  | NLiteral lit -> Format.fprintf fmt "/%s" lit
+  | NQuery_literal (name, value) -> Format.fprintf fmt "%s=%s" name value
+  | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
+  | NQuery_decoder (name, decoder) ->
+      Format.fprintf fmt "%s=:%s" name decoder.name
+  | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
+
+let pp_route : Format.formatter -> 'b route -> unit =
+ fun fmt (Route (method', uri, _)) ->
+  Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
+
+let rec pp fmt t =
+  let nodes = t.node_types |> Array.to_list in
+  let len = List.length nodes in
+  let query_tok_printed = ref false in
+  Format.pp_print_list
+    ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
+    (fun fmt (node_type, t') ->
+      Format.pp_open_vbox fmt 2 ;
+      ( match node_type with
+      | NQuery_literal _ | NQuery_decoder _ ->
+          if not !query_tok_printed then
+            Format.fprintf fmt "?%a" pp_node_type node_type
+          else Format.fprintf fmt "&%a" pp_node_type node_type
+      | node -> Format.fprintf fmt "%a" pp_node_type node ) ;
+      if Array.length t'.node_types > 0 then (
+        Format.pp_print_break fmt 0 0 ;
+        pp fmt t' ) ;
+      Format.pp_close_box fmt () )
+    fmt nodes
+
+module Private = struct
   let nil = Nil
   let splat = Splat
   let t_slash = Trailing_slash
@@ -374,10 +426,10 @@ module Private = struct
   let query_lit name value uri = Query_literal (name, value, uri)
   let decode d uri = Decode (d, uri)
   let query_decode name d uri = Query_decode (name, d, uri)
-  let int = int
-  let int32 = int32
-  let int64 = int64
-  let float = float
-  let string = string
-  let bool = bool
+  let int = int_d
+  let int32 = int32_d
+  let int64 = int64_d
+  let float = float_d
+  let string = string_d
+  let bool = bool_d
 end
