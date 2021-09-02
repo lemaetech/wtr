@@ -43,7 +43,7 @@ let eq : type a b. a id -> b id -> (a, b) eq option =
 type 'a router =
   {route: 'a route option; node_types: (node_type * 'a router) array}
 
-(* Unoptimized/compiled router type. *)
+(* Unoptimized/un-compiled router type. *)
 and 'a node = {route': 'a route option; node_types': (node_type * 'a node) list}
 
 (** Existential to encode uri component/node type. *)
