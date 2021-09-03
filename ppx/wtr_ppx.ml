@@ -67,10 +67,10 @@ let query_tokens uri =
     |> Result.ok
   with E msg -> Error msg
 
-let request_target_tokens uri =
-  let wtr = String.trim uri in
-  if String.length wtr > 0 then
-    let uri = Uri.of_string wtr in
+let request_target_tokens target =
+  let target = String.trim target in
+  if String.length target > 0 then
+    let uri = Uri.of_string target in
     let* path_components = path_tokens uri in
     let* query_components = query_tokens uri in
     Ok (path_components, query_components)
