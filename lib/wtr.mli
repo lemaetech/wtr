@@ -111,7 +111,7 @@ val method' : string -> method'
       Wtr.method' "method" = `Method "method"
     ]} *)
 
-(** {1 Decoder} *)
+(** {1:decoder_func Decoder} *)
 
 val decoder : string -> (string -> 'a option) -> 'a decoder
 (** [decoder name decode] is {!type:decoder} with name [name] and [decode] as
@@ -133,25 +133,61 @@ val decoder : string -> (string -> 'a option) -> 'a decoder
       end
     ]} *)
 
-(** {1:path Path} *)
+(** {1:path Path}
 
-val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
+    Path combinators are used to create {!type:uri} and {!type:path} values.
+
+    Given the [uri] below:
+
+    {[ let uri = Wtr.(exact "hello" / int / string /. pend) ]}
+
+    We can match the following HTTP request targets:
+
+    - [/home/2/about]
+    - [/home/3/contact] *)
+
+(** {4 Decoders} *)
+
 val int : ('a, 'b) path -> (int -> 'a, 'b) path
+(** [int] is a path decoder that can decode [int] values. *)
+
 val int32 : ('a, 'b) path -> (int32 -> 'a, 'b) path
+(** [int32] is a path decoder that can decode [int32] values. *)
+
 val int64 : ('a, 'b) path -> (int64 -> 'a, 'b) path
+(** [int64] is a path decoder that can decode [int64] values. *)
+
 val float : ('a, 'b) path -> (float -> 'a, 'b) path
+(** [float] is a path decoder that can decode [float] values. *)
+
 val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
+(** [bool] is a path decoder that can decode [bool] values. *)
+
 val string : ('a, 'b) path -> (string -> 'a, 'b) path
+(** [string] is a path decoder that can decode [string] values. *)
+
 val decode : 'c decoder -> ('a, 'b) path -> ('c -> 'a, 'b) path
+(** [decode d p] is a path component for custom decoder [d]. *)
+
 val exact : string -> ('a, 'b) path -> ('a, 'b) path
-val pend : ('b, 'b) path
-val splat : (string -> 'b, 'b) path
-val slash : ('b, 'b) path
+(** [exact e p] is a path component that matches a uri token [e] exactly. *)
+
+(** {4 Ending path construction}
+
+    These combinators affect the last uri component. *)
+
+val pend : ('a, 'a) path
+(** [pend] ends a path construction. *)
+
+val splat : (string -> 'a, 'a) path
+(** [splat] is a path component that matches the remaining uri components. *)
+
+val slash : ('a, 'a) path
+val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
 val ( /. ) : ('a -> ('b, 'c) path) -> 'a -> ('b, 'c) uri
 
 (** {1:query Query} *)
 
-val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 val qint : string -> ('a, 'b) query -> (int -> 'a, 'b) query
 val qint32 : string -> ('a, 'b) query -> (int32 -> 'a, 'b) query
 val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
@@ -160,6 +196,7 @@ val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
 val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
 val qdecode : string * 'c decoder -> ('a, 'b) query -> ('c -> 'a, 'b) query
 val qexact : string * string -> ('a, 'b) query -> ('a, 'b) query
+val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 
 (** {1:uri URI} *)
 
