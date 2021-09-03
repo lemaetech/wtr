@@ -146,7 +146,7 @@ val decoder : string -> (string -> 'a option) -> 'a decoder
     - [/home/2/about]
     - [/home/3/contact] *)
 
-(** {4 Decoders} *)
+(** {3 Decoders} *)
 
 val int : ('a, 'b) path -> (int -> 'a, 'b) path
 (** [int] is a path decoder that can decode [int] values. *)
@@ -172,7 +172,7 @@ val decode : 'c decoder -> ('a, 'b) path -> ('c -> 'a, 'b) path
 val exact : string -> ('a, 'b) path -> ('a, 'b) path
 (** [exact e p] is a path component that matches a uri token [e] exactly. *)
 
-(** {4 Ending path construction}
+(** {3 Ending path construction}
 
     These combinators affect the last uri component. *)
 
@@ -184,6 +184,8 @@ val splat : (string -> 'a, 'a) path
 
 val slash : ('a, 'a) path
 (** [slash] end path construction by matching a trailing [/] value. *)
+
+(** {3 Join Paths} *)
 
 val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
 (** [ p1 / p2] is a closure that encapsulates closures [p1] and [p2] which both
