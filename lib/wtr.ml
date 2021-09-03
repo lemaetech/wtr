@@ -48,7 +48,7 @@ and 'a node = {route': 'a route option; node_types': (node_type * 'a node) list}
 and ('a, 'b) uri =
   | Nil : ('b, 'b) uri
   | Splat : (string -> 'b, 'b) uri
-  | Trailing_slash : ('b, 'b) uri
+  | Slash : ('b, 'b) uri
   | Exact : string * ('a, 'b) uri -> ('a, 'b) uri
   | Query_exact : string * string * ('a, 'b) uri -> ('a, 'b) uri
   | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
@@ -56,7 +56,7 @@ and ('a, 'b) uri =
 
 (** Existential to encode uri component/node type. *)
 and node_type =
-  | NTrailing_slash : node_type
+  | NSlash : node_type
   | NSplat : node_type
   | NExact : string -> node_type
   | NQuery_exact : string * string -> node_type
@@ -134,7 +134,7 @@ let decode d u = Decode (d, u)
 let exact s uri = Exact (s, uri)
 let pend = Nil
 let splat = Splat
-let slash = Trailing_slash
+let slash = Slash
 let ( /. ) f e = f e
 
 (* Query *)
@@ -151,7 +151,7 @@ let qexact (field, exact) uri = Query_exact (field, exact, uri)
 
 (* URI Combinators *)
 
-let root = Trailing_slash
+let root = Slash
 let ( /? ) f1 f2 r = f1 (f2 r)
 let ( /?. ) qf () = qf Nil
 
@@ -165,7 +165,7 @@ let routes methods uri f =
 
 let node_type_equal a b =
   match (a, b) with
-  | NTrailing_slash, NTrailing_slash -> true
+  | NSlash, NSlash -> true
   | NSplat, NSplat -> true
   | NExact exact1, NExact exact2 -> String.equal exact2 exact1
   | NQuery_exact (name1, value1), NQuery_exact (name2, value2) ->
@@ -180,7 +180,7 @@ let node_type_equal a b =
 
 let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Nil -> []
-  | Trailing_slash -> [NTrailing_slash]
+  | Slash -> [NSlash]
   | Splat -> [NSplat]
   | Exact (exact1, uri) -> NExact exact1 :: node_type_of_uri uri
   | Query_exact (name, value, uri) ->
@@ -276,7 +276,7 @@ let rec match' : method' -> string -> 'a router -> 'a option =
           | `Path v, (NExact exact, t') when String.equal exact v ->
               matched_node := Some (t', decoded_values) ;
               continue := false
-          | `Path v, (NTrailing_slash, t') when String.equal "" v ->
+          | `Path v, (NSlash, t') when String.equal "" v ->
               matched_node := Some (t', decoded_values) ;
               continue := false
           | `Path _, (NSplat, t') ->
@@ -332,7 +332,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
   | Nil, [] -> f
   | Splat, [D (d, v)] -> (
     match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
-  | Trailing_slash, [] -> f
+  | Slash, [] -> f
   | Exact (_, uri), decoded_values -> exec_route_handler f (uri, decoded_values)
   | Query_exact (_, _, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
@@ -360,7 +360,7 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
   match uri with
   | Nil -> Format.fprintf fmt "%!"
   | Splat -> Format.fprintf fmt "/**%!"
-  | Trailing_slash -> Format.fprintf fmt "/%!"
+  | Slash -> Format.fprintf fmt "/%!"
   | Exact (exact, uri) -> Format.fprintf fmt "/%s%a" exact pp_uri uri
   | Query_exact (name, value, uri) ->
       let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
@@ -388,7 +388,7 @@ let pp_method fmt t =
 let pp_node_type fmt node_type =
   match node_type with
   | NSplat -> Format.fprintf fmt "/**"
-  | NTrailing_slash -> Format.fprintf fmt "/"
+  | NSlash -> Format.fprintf fmt "/"
   | NExact exact -> Format.fprintf fmt "/%s" exact
   | NQuery_exact (name, value) -> Format.fprintf fmt "%s=%s" name value
   | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
@@ -423,7 +423,7 @@ let rec pp fmt t =
 module Private = struct
   let nil = Nil
   let splat = Splat
-  let t_slash = Trailing_slash
+  let slash = Slash
   let exact s uri = Exact (s, uri)
   let query_exact name value uri = Query_exact (name, value, uri)
   let decode d uri = Decode (d, uri)

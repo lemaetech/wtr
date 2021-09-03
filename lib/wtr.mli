@@ -259,7 +259,7 @@ val pp : Format.formatter -> 'a router -> unit
 module Private : sig
   val nil : ('b, 'b) uri
   val splat : (string -> 'b, 'b) uri
-  val t_slash : ('b, 'b) uri
+  val slash : ('b, 'b) uri
   val exact : string -> ('a, 'b) uri -> ('a, 'b) uri
   val query_exact : string -> string -> ('a, 'b) uri -> ('a, 'b) uri
   val decode : 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
