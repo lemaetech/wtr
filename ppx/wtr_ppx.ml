@@ -138,7 +138,7 @@ let rec make_query ~loc query_tokens =
             x )
   | (name, uri) :: uris ->
       [%expr
-        Wtr.Private.query_lit
+        Wtr.Private.query_exact
           [%e Ast_builder.estring ~loc name]
           [%e Ast_builder.estring ~loc uri]
           [%e make_query ~loc uris]]
@@ -195,7 +195,7 @@ let rec make_request_target ~loc query_tokens = function
             x )
   | path_tok :: path_tokens ->
       [%expr
-        Wtr.Private.lit
+        Wtr.Private.exact
           [%e Ast_builder.estring ~loc path_tok]
           [%e make_request_target ~loc query_tokens path_tokens]]
 

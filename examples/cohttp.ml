@@ -12,7 +12,7 @@ module Fruit = struct
   type t = Apple | Orange | Pineapple
 
   let t : t Wtr.decoder =
-    Wtr.decoder ~name:"fruit" ~decode:(function
+    Wtr.decoder "fruit" (function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple

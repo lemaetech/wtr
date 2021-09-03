@@ -173,7 +173,7 @@ val ( /?. ) : (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) uri
 
     {[
       let uri1 =
-        lit "hello" / bool /? qint "hello" /& qstring "hh" /& qbool "b" /?. ()
+        exact "hello" / bool /? qint "hello" /& qstring "hh" /& qbool "b" /?. ()
     ]} *)
 
 (** {1 Route and Router} *)
@@ -211,8 +211,8 @@ module Private : sig
   val nil : ('b, 'b) uri
   val splat : (string -> 'b, 'b) uri
   val t_slash : ('b, 'b) uri
-  val lit : string -> ('a, 'b) uri -> ('a, 'b) uri
-  val query_lit : string -> string -> ('a, 'b) uri -> ('a, 'b) uri
+  val exact : string -> ('a, 'b) uri -> ('a, 'b) uri
+  val query_exact : string -> string -> ('a, 'b) uri -> ('a, 'b) uri
   val decode : 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
   val query_decode : string -> 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
   val int : int decoder

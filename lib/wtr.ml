@@ -50,7 +50,7 @@ and ('a, 'b) uri =
   | Splat : (string -> 'b, 'b) uri
   | Trailing_slash : ('b, 'b) uri
   | Exact : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Query_literal : string * string * ('a, 'b) uri -> ('a, 'b) uri
+  | Query_exact : string * string * ('a, 'b) uri -> ('a, 'b) uri
   | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
   | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
@@ -59,7 +59,7 @@ and node_type =
   | NTrailing_slash : node_type
   | NSplat : node_type
   | NExact : string -> node_type
-  | NQuery_literal : string * string -> node_type
+  | NQuery_exact : string * string -> node_type
   | NMethod : method' -> node_type
   | NDecoder : 'c decoder -> node_type
   | NQuery_decoder : string * 'c decoder -> node_type
@@ -152,7 +152,7 @@ let qfloat field u = Query_decode (field, float_d, u)
 let qbool field u = Query_decode (field, bool_d, u)
 let qstring field u = Query_decode (field, string_d, u)
 let qdecode (field, d) u = Query_decode (field, d, u)
-let qexact (field, lit) uri = Query_literal (field, lit, uri)
+let qexact (field, exact) uri = Query_exact (field, exact, uri)
 
 (* Route and Router *)
 
@@ -166,8 +166,8 @@ let node_type_equal a b =
   match (a, b) with
   | NTrailing_slash, NTrailing_slash -> true
   | NSplat, NSplat -> true
-  | NExact lit1, NExact lit2 -> String.equal lit2 lit1
-  | NQuery_literal (name1, value1), NQuery_literal (name2, value2) ->
+  | NExact exact1, NExact exact2 -> String.equal exact2 exact1
+  | NQuery_exact (name1, value1), NQuery_exact (name2, value2) ->
       String.equal name1 name2 && String.equal value1 value2
   | NMethod meth1, NMethod meth2 -> method_equal meth1 meth2
   | NDecoder decoder, NDecoder decoder' -> (
@@ -181,9 +181,9 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Nil -> []
   | Trailing_slash -> [NTrailing_slash]
   | Splat -> [NSplat]
-  | Exact (lit, uri) -> NExact lit :: node_type_of_uri uri
-  | Query_literal (name, value, uri) ->
-      NQuery_literal (name, value) :: node_type_of_uri uri
+  | Exact (exact1, uri) -> NExact exact1 :: node_type_of_uri uri
+  | Query_exact (name, value, uri) ->
+      NQuery_exact (name, value) :: node_type_of_uri uri
   | Decode (decoder, uri) -> NDecoder decoder :: node_type_of_uri uri
   | Query_decode (name, decoder, uri) ->
       NQuery_decoder (name, decoder) :: node_type_of_uri uri
@@ -272,7 +272,7 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 matched_node := Some (t', D (decoder, v) :: decoded_values) ;
                 continue := false
             | None -> incr index )
-          | `Path v, (NExact lit, t') when String.equal lit v ->
+          | `Path v, (NExact exact, t') when String.equal exact v ->
               matched_node := Some (t', decoded_values) ;
               continue := false
           | `Path v, (NTrailing_slash, t') when String.equal "" v ->
@@ -299,7 +299,7 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 matched_node := Some (t', D (decoder, v) :: decoded_values) ;
                 continue := false
             | _ -> incr index )
-          | `Query (name1, value1), (NQuery_literal (name2, value2), t')
+          | `Query (name1, value1), (NQuery_exact (name2, value2), t')
             when String.equal name1 name2 && String.equal value1 value2 ->
               matched_node := Some (t', decoded_values) ;
               continue := false
@@ -333,7 +333,7 @@ and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
     match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Trailing_slash, [] -> f
   | Exact (_, uri), decoded_values -> exec_route_handler f (uri, decoded_values)
-  | Query_literal (_, _, uri), decoded_values ->
+  | Query_exact (_, _, uri), decoded_values ->
       exec_route_handler f (uri, decoded_values)
   | Decode ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
     match eq id id' with
@@ -360,8 +360,8 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
   | Nil -> Format.fprintf fmt "%!"
   | Splat -> Format.fprintf fmt "/**%!"
   | Trailing_slash -> Format.fprintf fmt "/%!"
-  | Exact (lit, uri) -> Format.fprintf fmt "/%s%a" lit pp_uri uri
-  | Query_literal (name, value, uri) ->
+  | Exact (exact, uri) -> Format.fprintf fmt "/%s%a" exact pp_uri uri
+  | Query_exact (name, value, uri) ->
       let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
       pp_query_tok fmt pp' uri
   | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
@@ -388,8 +388,8 @@ let pp_node_type fmt node_type =
   match node_type with
   | NSplat -> Format.fprintf fmt "/**"
   | NTrailing_slash -> Format.fprintf fmt "/"
-  | NExact lit -> Format.fprintf fmt "/%s" lit
-  | NQuery_literal (name, value) -> Format.fprintf fmt "%s=%s" name value
+  | NExact exact -> Format.fprintf fmt "/%s" exact
+  | NQuery_exact (name, value) -> Format.fprintf fmt "%s=%s" name value
   | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
   | NQuery_decoder (name, decoder) ->
       Format.fprintf fmt "%s=:%s" name decoder.name
@@ -408,7 +408,7 @@ let rec pp fmt t =
     (fun fmt (node_type, t') ->
       Format.pp_open_vbox fmt 2 ;
       ( match node_type with
-      | NQuery_literal _ | NQuery_decoder _ ->
+      | NQuery_exact _ | NQuery_decoder _ ->
           if not !query_tok_printed then
             Format.fprintf fmt "?%a" pp_node_type node_type
           else Format.fprintf fmt "&%a" pp_node_type node_type
@@ -423,8 +423,8 @@ module Private = struct
   let nil = Nil
   let splat = Splat
   let t_slash = Trailing_slash
-  let lit s uri = Exact (s, uri)
-  let query_lit name value uri = Query_literal (name, value, uri)
+  let exact s uri = Exact (s, uri)
+  let query_exact name value uri = Query_exact (name, value, uri)
   let decode d uri = Decode (d, uri)
   let query_decode name d uri = Query_decode (name, d, uri)
   let int = int_d
