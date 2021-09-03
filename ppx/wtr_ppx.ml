@@ -150,7 +150,8 @@ let rec make_query ~loc query_tokens =
           [%e Ast_builder.estring ~loc query_token]
           [%e make_query ~loc query_tokens]]
 
-let rec make_request_target ~loc query_tokens = function
+let rec make_request_target ~loc query_tokens path_tokens =
+  match path_tokens with
   | [] -> make_query ~loc query_tokens
   | [""] -> [%expr Wtr.Private.t_slash]
   | ["**"] -> [%expr Wtr.Private.splat]
