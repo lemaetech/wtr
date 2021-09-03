@@ -106,16 +106,16 @@ let method' meth =
 
 (* Decoders *)
 
-let decoder ~name ~decode =
+let decoder name decode =
   let id = new_id () in
   {name; decode; id}
 
-let int_d = decoder ~name:"int" ~decode:int_of_string_opt
-let int32_d = decoder ~name:"int32" ~decode:Int32.of_string_opt
-let int64_d = decoder ~name:"int64" ~decode:Int64.of_string_opt
-let float_d = decoder ~name:"float" ~decode:float_of_string_opt
-let string_d = decoder ~name:"string" ~decode:(fun a -> Some a)
-let bool_d = decoder ~name:"bool" ~decode:bool_of_string_opt
+let int_d = decoder "int" int_of_string_opt
+let int32_d = decoder "int32" Int32.of_string_opt
+let int64_d = decoder "int64" Int64.of_string_opt
+let float_d = decoder "float" float_of_string_opt
+let string_d = decoder "string" (fun a -> Some a)
+let bool_d = decoder "bool" bool_of_string_opt
 
 (* URI Combinators *)
 

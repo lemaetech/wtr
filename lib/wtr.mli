@@ -67,7 +67,7 @@ and method' =
   | `Method of string ]
 
 (** {!type:decoder} is a uri component which can convert uri string value to an
-    OCaml type - represented by ['a]. They can be used in both {!type:path} and
+    OCaml type - represented by ['a]. It can be used in both {!type:path} and
     {!type:query} values. *)
 and 'a decoder
 
@@ -93,9 +93,25 @@ val method' : string -> method'
 
 (** {1 Decoder} *)
 
-val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
-(** [decoder ~name ~decode] is a uri decoder component with name [name] and
-    [decode] as the string conversion/decoder function. *)
+val decoder : string -> (string -> 'a option) -> 'a decoder
+(** [decoder name decode] is a uri decoder component with name [name] and
+    [decode] as the string conversion/decoder function.
+
+    [decode v] is [Some a] if [decode] can successfully convert [v] to [a].
+    Otherwise it is [None].
+
+    {[
+      module Fruit = struct
+        type t = Apple | Orange | Pineapple
+
+        let t : t Wtr.decoder =
+          Wtr.decoder "fruit" (function
+            | "apple" -> Some Apple
+            | "orange" -> Some Orange
+            | "pineapple" -> Some Pineapple
+            | _ -> None )
+      end
+    ]} *)
 
 (** {1:uri URI Combinators} *)
 
