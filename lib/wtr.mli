@@ -47,8 +47,8 @@ and ('a, 'b) path
     delimited by a [&] character token and the [name], [value] token is
     delimited by a [=] character token.
 
-    Representative example: Given a uri [/home/about?a=2&b=3], the query
-    components are [(a,2)] and [(b,3)].
+    Given a uri [/home/about?a=2&b=3], the query components are [(a,2)] and
+    [(b,3)].
 
     Consult {{!section:query} query combinators} for creating values of this
     type. *)
@@ -68,7 +68,7 @@ and method' =
 
 (** {!type:decoder} is a uri component which can convert uri string value to an
     OCaml type - represented by ['a]. It can be used in both {!type:path} and
-    {!type:query} values. *)
+    {!type:query} values construction. *)
 and 'a decoder
 
 (** {1 HTTP Method} *)
@@ -94,8 +94,8 @@ val method' : string -> method'
 (** {1 Decoder} *)
 
 val decoder : string -> (string -> 'a option) -> 'a decoder
-(** [decoder name decode] is a uri decoder component with name [name] and
-    [decode] as the string conversion/decoder function.
+(** [decoder name decode] is {!type:decoder} with name [name] and [decode] as
+    the string conversion/decoder function.
 
     [decode v] is [Some a] if [decode] can successfully convert [v] to [a].
     Otherwise it is [None].
