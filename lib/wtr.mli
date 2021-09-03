@@ -123,8 +123,6 @@ val ( /?. ) : (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) uri
 (** [ pqc /?. ()] is a {!type:uri} where [pqc] is a closure encapulating both
     {!type:path} and {!type:query} - see {!val:(/?)}.
 
-    [(/?.)] is a {!type:uri} constructor.
-
     {[
       let uri1 =
         lit "hello" / bool /? qint "hello" /& qstring "hh" /& qbool "b" /?. ()
