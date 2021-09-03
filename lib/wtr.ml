@@ -226,8 +226,10 @@ let rec compile : 'a node -> 'a router =
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
 
-let router routes =
-  List.concat routes |> List.fold_left node empty_node |> compile
+let router routes = compile @@ List.fold_left node empty_node routes
+
+let router' routes =
+  compile @@ (List.concat routes |> List.fold_left node empty_node)
 
 let rec drop : 'a list -> int -> 'a list =
  fun l n -> match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t

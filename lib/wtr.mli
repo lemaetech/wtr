@@ -238,8 +238,11 @@ val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
 
     {[ List.map (fun m -> route ~method:m uri handler) [meth1; meth2; meth3] ]} *)
 
-val router : 'a route list list -> 'a router
+val router : 'a route list -> 'a router
 (** [router routes] is a {!type:router} made up of given [routes]. *)
+
+val router' : 'a route list list -> 'a router
+(** [router' routes_list = router (List.concat routes_list)] *)
 
 val match' : method' -> string -> 'a router -> 'a option
 (** [match' method' request_target router] is [Some a] if [method'] and
