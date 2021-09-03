@@ -80,8 +80,8 @@ val method_equal : method' -> method' -> bool
 (** [method_equal m1 m2] is [true] if [m1] and [m2] is the same value. Otherwise
     it is [false].
 
-    {i Note} if [m1] and [m2] is of value [`Method m] then the string comparison
-    is case insensitive.
+    {i Note} if both [m1] and [m2] are [`Method m] then the string comparison is
+    case insensitive.
 
     {[
       Wtr.method_equal `GET `GET = true;;
