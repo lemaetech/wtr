@@ -140,11 +140,7 @@ let rec make_query ~loc query_tokens =
             Wtr.Private.query_decode [%e name_expr]
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_query ~loc query_tokens]]
-      | x ->
-          Location.raise_errorf ~loc
-            "wtr: Invalid custom argument name '%s'. Custom argument component \
-             name must be a valid module name."
-            x )
+      | x -> Location.raise_errorf ~loc "wtr: Invalid query component '%s'" x )
   | (name, query_token) :: query_tokens ->
       [%expr
         Wtr.Private.query_exact
@@ -200,11 +196,7 @@ let rec make_request_target ~loc query_tokens path_tokens =
             Wtr.Private.decode
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_request_target ~loc query_tokens path_tokens]]
-      | x ->
-          Location.raise_errorf ~loc
-            "wtr: Invalid custom argument name '%s'. Custom argument component \
-             name must be a valid module name."
-            x )
+      | x -> Location.raise_errorf ~loc "wtr: Invalid path component '%s'." x )
   | path_token :: path_tokens ->
       [%expr
         Wtr.Private.exact
