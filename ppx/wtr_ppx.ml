@@ -132,8 +132,10 @@ let rec make_query ~loc query_tokens =
           [%expr
             Wtr.Private.(
               query_decode [%e name_expr] bool [%e make_query ~loc query_tokens])]
-      | custom_arg when capitalized custom_arg ->
-          let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
+      | custom_decoder when capitalized custom_decoder ->
+          let longident_loc =
+            {txt= Longident.parse (custom_decoder ^ ".t"); loc}
+          in
           [%expr
             Wtr.Private.query_decode [%e name_expr]
               [%e Ast_builder.pexp_ident ~loc longident_loc]
@@ -190,8 +192,10 @@ let rec make_request_target ~loc query_tokens path_tokens =
           [%expr
             Wtr.Private.(
               decode bool [%e make_request_target ~loc query_tokens path_tokens])]
-      | custom_arg when capitalized custom_arg ->
-          let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
+      | custom_decoder when capitalized custom_decoder ->
+          let longident_loc =
+            {txt= Longident.parse (custom_decoder ^ ".t"); loc}
+          in
           [%expr
             Wtr.Private.decode
               [%e Ast_builder.pexp_ident ~loc longident_loc]
