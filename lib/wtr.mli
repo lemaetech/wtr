@@ -94,8 +94,8 @@ val method' : string -> method'
 (** {1 Decoder} *)
 
 val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
-(** [decoder ~name ~decode] creates a user defined custom uri decoder component.
-    [name] is used during the pretty printing of [uri]. *)
+(** [decoder ~name ~decode] is a uri decoder component with name [name] and
+    [decode] as the string conversion/decoder function. *)
 
 (** {1:uri URI Combinators} *)
 
