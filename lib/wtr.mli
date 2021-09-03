@@ -177,13 +177,13 @@ val exact : string -> ('a, 'b) path -> ('a, 'b) path
     These combinators affect the last uri component. *)
 
 val pend : ('a, 'a) path
-(** [pend] ends a path construction. *)
+(** [pend] ends path construction. *)
 
 val splat : (string -> 'a, 'a) path
-(** [splat] is a path component that matches the remaining uri components. *)
+(** [splat] ends path construction by matching the remaining uri components. *)
 
 val slash : ('a, 'a) path
-(** [slash] is path component that represents a single [/] value. *)
+(** [slash] end path construction by matching a trailing [/] value. *)
 
 val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
 (** [ p1 / p2] is a closure that encapsulates closures [p1] and [p2] which both
@@ -205,6 +205,10 @@ val qexact : string * string -> ('a, 'b) query -> ('a, 'b) query
 val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 
 (** {1:uri URI} *)
+
+val root : ('a, 'a) uri
+(** [root] is [/] request uri, i.e. it matches the exactly the root HTTP
+    request. *)
 
 val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 (** [ pc /? qc] is a closure which encapsulates path closure [pc] and query

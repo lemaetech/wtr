@@ -121,11 +121,6 @@ let float_d = decoder "float" float_of_string_opt
 let string_d = decoder "string" (fun a -> Some a)
 let bool_d = decoder "bool" bool_of_string_opt
 
-(* URI Combinators *)
-
-let ( /? ) f1 f2 r = f1 (f2 r)
-let ( /?. ) qf () = qf Nil
-
 (* Path *)
 
 let ( / ) f1 f2 r = f1 @@ f2 r
@@ -144,7 +139,7 @@ let ( /. ) f e = f e
 
 (* Query *)
 
-let ( /& ) = ( /? )
+let ( /& ) f1 f2 r = f1 @@ f2 r
 let qint field u = Query_decode (field, int_d, u)
 let qint32 field u = Query_decode (field, int32_d, u)
 let qint64 field u = Query_decode (field, int64_d, u)
@@ -153,6 +148,12 @@ let qbool field u = Query_decode (field, bool_d, u)
 let qstring field u = Query_decode (field, string_d, u)
 let qdecode (field, d) u = Query_decode (field, d, u)
 let qexact (field, exact) uri = Query_exact (field, exact, uri)
+
+(* URI Combinators *)
+
+let root = Trailing_slash
+let ( /? ) f1 f2 r = f1 (f2 r)
+let ( /?. ) qf () = qf Nil
 
 (* Route and Router *)
 
