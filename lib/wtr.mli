@@ -12,29 +12,46 @@
     routes are used to match a given HTTP request target using a radix trie
     algorithm.
 
-    ['a] represents the value returned after matching a given HTTP request
-    target and executing the corresponding route handler. *)
+    ['a] represents the value returned after executing the corresponding route
+    handler of a matched route. *)
 type 'a router
 
-(** {!type:route} is a HTTP request route. A route consists of a HTTP
-    {!type:method'}, a {!type:uri} and a route handler. ['a] represents the
-    value returned by the handler. It corresponds to ['a] in {!type:router}. *)
+(** {!type:route} is a HTTP request route. A route encapsulates a HTTP
+    {!type:method'}, a {!type:uri} and a {i route handler}. A {i route handler}
+    is a value or a function which is of type ['a]. *)
 and 'a route
 
-(** {!type:uri} represents a concatenation of {!type:path} and {!type:query} in
-    a route, e.g. [/home/about/], [/home/contact],
-    [/home/contact?name=a&no=123]. *)
+(** {!type:uri} represents a HTTP uri value. It encapsulates both {!type:path}
+    and {!type:query} in a route. Path and query are delimited by a [?]
+    character token.
+
+    Representative examples:
+
+    - [/home/about/]
+    - [/home/contact],
+    - [/home/contact?name=a&no=123].
+
+    Consult {{!section:uri} uri combinators} for creating values of this type. *)
 and ('a, 'b) uri
 
-(** {!type:path} is a HTTP uri path component, e.g.[/], [/home/about],
-    [/home/contact/]. Consult {{!section:path} path combinators} for creating
-    values of this type. *)
+(** {!type:path} is a part of {!type:uri} where the components are delimited by
+    a [/] character token.
+
+    Representative examples: [/], [/home/about], [/home/contact/].
+
+    Consult {{!section:path} path combinators} for creating values of this type. *)
 and ('a, 'b) path
 
-(** {!type:query} is a HTTP uri query component. For a given HTTP uri
-    [/home/about?a=2&b=3], all tokens after [?] is a {!type:query}, i.e.
-    [a=2&b=3]. Consult {{!section:query} query combinators} for creating values
-    of this type. *)
+(** {!type:query} is a part of {!type:uri}. Each query component is generally a
+    pair of [name] and [value] - [(name,value)]. Query component in a uri is
+    delimited by a [&] character token and the [name], [value] token is
+    delimited by a [=] character token.
+
+    Representative example: Given a uri [/home/about?a=2&b=3], the query
+    components are [(a,2)] and [(b,3)].
+
+    Consult {{!section:query} query combinators} for creating values of this
+    type. *)
 and ('a, 'b) query
 
 (** {!type:method'} is a HTTP request method. *)
@@ -49,8 +66,9 @@ and method' =
   | `TRACE
   | `Method of string ]
 
-(** {!type:decoder} is a uri component which is responsible for decoding uri
-    components (both path and query) from a string value to ['a]. *)
+(** {!type:decoder} is a uri component which can convert uri string value to an
+    OCaml type - represented by ['a]. They can be used in both {!type:path} and
+    {!type:query} values. *)
 and 'a decoder
 
 (** {1 HTTP Method} *)
@@ -73,13 +91,13 @@ val method' : string -> method'
     - ["TRACE"] to [`TRACE]
     - Any other value [m] to [`Method m] *)
 
-(** {1 Custom Decoder} *)
+(** {1 Decoder} *)
 
 val decoder : name:string -> decode:(string -> 'a option) -> 'a decoder
 (** [decoder ~name ~decode] creates a user defined custom uri decoder component.
     [name] is used during the pretty printing of [uri]. *)
 
-(** {1 URI Combinators} *)
+(** {1:uri URI Combinators} *)
 
 val end' : ('b, 'b) uri
 val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
