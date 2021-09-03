@@ -119,9 +119,8 @@ let bool_d = decoder "bool" bool_of_string_opt
 
 (* URI Combinators *)
 
-let end' = Nil
 let ( /? ) f1 f2 r = f1 (f2 r)
-let ( /?. ) qf e = qf e
+let ( /?. ) qf () = qf Nil
 
 (* Path *)
 

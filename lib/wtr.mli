@@ -115,9 +115,20 @@ val decoder : string -> (string -> 'a option) -> 'a decoder
 
 (** {1:uri URI Combinators} *)
 
-val end' : ('b, 'b) uri
 val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
-val ( /?. ) : (('a, 'b) query -> ('c, 'd) path) -> ('a, 'b) uri -> ('c, 'd) uri
+(** [ pc /? qc] is a closure which encapsulates path closure [pc] and query
+    closure [qc]. *)
+
+val ( /?. ) : (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) uri
+(** [ pqc /?. ()] is a {!type:uri} where [pqc] is a closure encapulating both
+    {!type:path} and {!type:query} - see {!val:(/?)}.
+
+    [(/?.)] is a {!type:uri} value constructor.
+
+    {[
+      let uri1 =
+        lit "hello" / bool /? qint "hello" /& qstring "hh" /& qbool "b" /?. ()
+    ]} *)
 
 (** {2:path Path} *)
 
