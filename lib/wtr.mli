@@ -101,7 +101,15 @@ val qlit : string * string -> ('a, 'b) query -> ('a, 'b) query
 (** {1 Route and Router} *)
 
 val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
+(** [route ~method' uri handler] is a {!type:route}. The default value for
+    [?method] is [`GET]. *)
+
 val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
+(** [routes methods uri handler] is a list of routes in which all have the same
+    [uri] and route [handler] value but each have one [method'] from [methods].
+    This is equivalent to calling {!val:route} like so:
+
+    {[ List.map (fun m -> route ~method:m uri handler) [meth1; meth2; meth3] ]} *)
 
 val router : 'a route list list -> 'a router
 (** [router routes] is a {!type:router} made up of given [routes]. *)
