@@ -104,10 +104,7 @@ val route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route
 val routes : method' list -> ('a, 'b) uri -> 'a -> 'b route list
 
 val router : 'a route list list -> 'a router
-(** [route routes] is a router made up of given [routes]. It is used with [%wtr]
-    ppx.
-
-    {[ Wtr.router [%wtr "/public/**"] ]} *)
+(** [router routes] is a {!type:router} made up of given [routes]. *)
 
 val match' : method' -> string -> 'a router -> 'a option
 (** [match' method' request_target router] is [Some a] if [method'] and
