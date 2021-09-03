@@ -183,8 +183,14 @@ val splat : (string -> 'a, 'a) path
 (** [splat] is a path component that matches the remaining uri components. *)
 
 val slash : ('a, 'a) path
+(** [slash] is path component that represents a single [/] value. *)
+
 val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
+(** [ p1 / p2] is a closure that encapsulates closures [p1] and [p2] which both
+    encapsulates path values. *)
+
 val ( /. ) : ('a -> ('b, 'c) path) -> 'a -> ('b, 'c) uri
+(** [/.] is a {!type:uri} value that consists of only path components. *)
 
 (** {1:query Query} *)
 
