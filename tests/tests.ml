@@ -25,7 +25,7 @@ let wildcard_page s url =
   Printf.sprintf "Wildcard page. %s. Remaining url: %s" s url
 
 let numbers_page id code = Printf.sprintf "int32: %ld, int64: %Ld." id code
-let not_found_page = "404 Not found"
+let root_page = "Root page"
 
 let contact_page name number =
   Printf.sprintf "Contact page. Hi, %s. Number %i" name number
@@ -58,7 +58,7 @@ let router =
     ; {%wtr| get;   /product/:string?section=:int&q1=yes      |} product_page2
     ; {%wtr| get;   /product/:string?section=:string&q1=yes   |} product_page3
     ; {%wtr| get;   /fruit/:Fruit                             |} fruit_page
-    ; {%wtr| get;   /                                         |} not_found_page
+    ; {%wtr| get;   /                                         |} root_page
     ; {%wtr|        /public/**                                |} public
     ; {%wtr| head;  /numbers/:int32/code/:int64/              |} numbers_page ]
 
@@ -199,7 +199,7 @@ let%expect_test _ =
 let%expect_test _ =
   pp_match `GET "/" ;
   [%expect {|
-     "404 Not found" |}]
+     "Root page" |}]
 
 let%expect_test _ =
   pp_match `GET "" ;
