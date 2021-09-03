@@ -90,7 +90,11 @@ and decoded_value = D : 'c decoder * 'c -> decoded_value
 
 (* HTTP Method *)
 
-let method_equal (meth1 : method') (meth2 : method') = compare meth1 meth2 = 0
+let method_equal (meth1 : method') (meth2 : method') =
+  match (meth1, meth2) with
+  | `Method m1, `Method m2 ->
+      String.(equal (uppercase_ascii m1) (uppercase_ascii m2))
+  | meth1, meth2 -> compare meth1 meth2 = 0
 
 let method' meth =
   match String.uppercase_ascii meth with
@@ -102,7 +106,7 @@ let method' meth =
   | "CONNECT" -> `CONNECT
   | "OPTIONS" -> `OPTIONS
   | "TRACE" -> `TRACE
-  | header -> `Method header
+  | _ -> `Method meth
 
 (* Decoders *)
 

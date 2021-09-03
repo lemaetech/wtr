@@ -18,7 +18,10 @@ type 'a router
 
 (** {!type:route} is a HTTP request route. A route encapsulates a HTTP
     {!type:method'}, a {!type:uri} and a {i route handler}. A {i route handler}
-    is a value or a function which is of type ['a]. *)
+    is either of the following:
+
+    - a value of type ['a]
+    - a function which returns values of type ['a]. *)
 and 'a route
 
 (** {!type:uri} represents a HTTP uri value. It encapsulates both {!type:path}
@@ -43,7 +46,7 @@ and ('a, 'b) uri
 and ('a, 'b) path
 
 (** {!type:query} is a part of {!type:uri}. Each query component is generally a
-    pair of [name] and [value] - [(name,value)]. Query component in a uri is
+    pair of [name] and [value] - [(name,value)]. A query component in a uri is
     delimited by a [&] character token and the [name], [value] token is
     delimited by a [=] character token.
 
@@ -66,16 +69,25 @@ and method' =
   | `TRACE
   | `Method of string ]
 
-(** {!type:decoder} is a uri component which can convert uri string value to an
-    OCaml type - represented by ['a]. It can be used in both {!type:path} and
-    {!type:query} values construction. *)
+(** {!type:decoder} is a uri component which can convert a HTTP request uri
+    string value into an OCaml typed value (represented by ['a]). It can be used
+    in both {!type:path} and {!type:query} values construction. *)
 and 'a decoder
 
 (** {1 HTTP Method} *)
 
 val method_equal : method' -> method' -> bool
 (** [method_equal m1 m2] is [true] if [m1] and [m2] is the same value. Otherwise
-    it is [false]. *)
+    it is [false].
+
+    {i Note} if [m1] and [m2] is of value [`Method m] then the string comparison
+    is case insensitive.
+
+    {[
+      Wtr.method_equal `GET `GET = true;;
+      Wtr.method_equal `POST `GET = false;;
+      Wtr.method_equal (`Method "meth") (`Method "METH") = true
+    ]} *)
 
 val method' : string -> method'
 (** [method' m] is {!type:method'} where string value [m] is converted to
@@ -89,7 +101,15 @@ val method' : string -> method'
     - ["CONNECT"] to [`CONNECT]
     - ["OPTIONS"] to [`OPTIONS]
     - ["TRACE"] to [`TRACE]
-    - Any other value [m] to [`Method m] *)
+    - Any other value [m] to [`Method m]
+
+    {i Note} String comparison is case insensitive.
+
+    {[
+      Wtr.method' "GET" = `GET;;
+      Wtr.method' "get" = `GET;;
+      Wtr.method' "method" = `Method "method"
+    ]} *)
 
 (** {1 Decoder} *)
 
@@ -113,22 +133,7 @@ val decoder : string -> (string -> 'a option) -> 'a decoder
       end
     ]} *)
 
-(** {1:uri URI Combinators} *)
-
-val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
-(** [ pc /? qc] is a closure which encapsulates path closure [pc] and query
-    closure [qc]. *)
-
-val ( /?. ) : (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) uri
-(** [ pqc /?. ()] is a {!type:uri} where [pqc] is a closure encapulating both
-    {!type:path} and {!type:query} - see {!val:(/?)}.
-
-    {[
-      let uri1 =
-        lit "hello" / bool /? qint "hello" /& qstring "hh" /& qbool "b" /?. ()
-    ]} *)
-
-(** {2:path Path} *)
+(** {1:path Path} *)
 
 val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
 val int : ('a, 'b) path -> (int -> 'a, 'b) path
@@ -144,7 +149,7 @@ val splat : (string -> 'b, 'b) path
 val slash : ('b, 'b) path
 val ( /. ) : ('a -> ('b, 'c) path) -> 'a -> ('b, 'c) uri
 
-(** {2:query Query} *)
+(** {1:query Query} *)
 
 val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 val qint : string -> ('a, 'b) query -> (int -> 'a, 'b) query
@@ -155,6 +160,21 @@ val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
 val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
 val qdecode : string * 'c decoder -> ('a, 'b) query -> ('c -> 'a, 'b) query
 val qlit : string * string -> ('a, 'b) query -> ('a, 'b) query
+
+(** {1:uri URI} *)
+
+val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
+(** [ pc /? qc] is a closure which encapsulates path closure [pc] and query
+    closure [qc]. *)
+
+val ( /?. ) : (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) uri
+(** [ pqc /?. ()] is a {!type:uri} where [pqc] is a closure encapulating both
+    {!type:path} and {!type:query} - see {!val:(/?)}.
+
+    {[
+      let uri1 =
+        lit "hello" / bool /? qint "hello" /& qstring "hh" /& qbool "b" /?. ()
+    ]} *)
 
 (** {1 Route and Router} *)
 
