@@ -185,7 +185,7 @@ val splat : (string -> 'a, 'a) path
 val slash : ('a, 'a) path
 (** [slash] end path construction by matching a trailing [/] value. *)
 
-(** {3 Join Paths} *)
+(** {3 Create URI from Paths} *)
 
 val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
 (** [ p1 / p2] is a closure that encapsulates closures [p1] and [p2] which both
