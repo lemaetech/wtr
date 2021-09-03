@@ -50,13 +50,28 @@ and method' =
   | `Method of string ]
 
 (** {!type:decoder} is a uri component which is responsible for decoding uri
-    components - both path and query - from a string value to ['a]. *)
+    components (both path and query) from a string value to ['a]. *)
 and 'a decoder
 
 (** {1 HTTP Method} *)
 
 val method_equal : method' -> method' -> bool
+(** [method_equal m1 m2] is [true] if [m1] and [m2] is the same value. Otherwise
+    it is [false]. *)
+
 val method' : string -> method'
+(** [method' m] is {!type:method'} where string value [m] is converted to
+    {!type:method'} as follows:
+
+    - ["GET"] to [`GET]
+    - ["HEAD"] to [`HEAD]
+    - ["POST"] to [`POST]
+    - ["PUT"] to [`PUT]
+    - ["DELETE"] to [`DELETE]
+    - ["CONNECT"] to [`CONNECT]
+    - ["OPTIONS"] to [`OPTIONS]
+    - ["TRACE"] to [`TRACE]
+    - Any other value [m] to [`Method m] *)
 
 (** {1 Custom Decoder} *)
 
