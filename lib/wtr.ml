@@ -125,6 +125,7 @@ external to_request_target : ('a, 'b) path -> ('a, 'b) request_target
 let root = Slash
 
 (* Path Arg Components *)
+
 let int u = Arg (int_d, u)
 let int32 u = Arg (int32_d, u)
 let int64 u = Arg (int64_d, u)
@@ -132,6 +133,9 @@ let float u = Arg (float_d, u)
 let bool u = Arg (bool_d, u)
 let string u = Arg (string_d, u)
 let parg d u = Arg (d, u)
+
+(* Query Arg Components *)
+
 let qint field u = Query_arg (field, int_d, u)
 let qint32 field u = Query_arg (field, int32_d, u)
 let qint64 field u = Query_arg (field, int64_d, u)
