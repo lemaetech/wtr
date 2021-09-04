@@ -182,9 +182,9 @@ val parg : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
 (** [parg d p] matches a path component if arg [d] can successfuly convert path
     component to a value of type ['c]. *)
 
-(** {3 End Path components}
+(** {3 Path End Components}
 
-    These combinators match the last(end) path components. They are used with
+    These combinators match the last(end) path component. They are used with
     {!val:(/.)} function. *)
 
 val pend : ('a, 'a) path
