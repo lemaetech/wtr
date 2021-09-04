@@ -140,9 +140,6 @@ val arg : string -> (string -> 'a option) -> 'a arg
     - [/home/3/str2]
     - [/home/-10/str3] *)
 
-val exact : string -> ('a, 'b) path -> ('a, 'b) path
-(** [exact e p] matches a path component to [e] exactly. *)
-
 val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
 (** [ p1 / p2] is a closure that {i combines} [p1] and [p2]. [p1] and [p2] are
     themselves closures which encapsulate {!type:path} value. *)
@@ -151,6 +148,9 @@ val ( /. ) :
   (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) request_target
 (** [/.] is a {!type:request_target} value that consists of only path
     components. *)
+
+val exact : string -> ('a, 'b) path -> ('a, 'b) path
+(** [exact e p] matches a path component to [e] exactly. *)
 
 val to_request_target : ('a, 'b) path -> ('a, 'b) request_target
 (** [to_request_target p] is {!type:request_target} consisting of only path [p]. *)
