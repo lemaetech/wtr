@@ -124,7 +124,7 @@ external to_request_target : ('a, 'b) path -> ('a, 'b) request_target
 
 let root = Slash
 
-(* Path Arg Components *)
+(* Path Arg Combinators *)
 
 let int u = Arg (int_d, u)
 let int32 u = Arg (int32_d, u)
@@ -144,7 +144,7 @@ let qbool field u = Query_arg (field, bool_d, u)
 let qstring field u = Query_arg (field, string_d, u)
 let qarg (field, d) u = Query_arg (field, d, u)
 
-(* Matching Last Combinators *)
+(* Matching Last Components *)
 
 let pend = Nil
 let splat = Splat
