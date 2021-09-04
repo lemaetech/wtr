@@ -123,7 +123,6 @@ let bool_d = decoder "bool" bool_of_string_opt
 
 (* Path *)
 
-let ( / ) f1 f2 r = f1 @@ f2 r
 let int u = Decode (int_d, u)
 let int32 u = Decode (int32_d, u)
 let int64 u = Decode (int64_d, u)
@@ -135,7 +134,10 @@ let exact s uri = Exact (s, uri)
 let pend = Nil
 let splat = Splat
 let slash = Slash
+let ( / ) f1 f2 r = f1 @@ f2 r
 let ( /. ) f e = f e
+
+external to_uri : ('a, 'b) path -> ('a, 'b) uri = "%identity"
 
 (* Query *)
 

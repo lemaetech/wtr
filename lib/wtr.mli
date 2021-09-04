@@ -24,33 +24,41 @@ type 'a router
     - a function which returns values of type ['a]. *)
 and 'a route
 
-(** {!type:uri} represents a HTTP uri value. It encapsulates both {!type:path}
-    and {!type:query} in a route. Path and query are delimited by a [?]
-    character token.
+(** {!type:uri} represents a HTTP uri value. It encapsulates either just a
+    {!type:path} value or a combination of {!type:path} and {!type:query}
+    values.
 
-    Representative examples:
+    Example uri values:
 
-    - [/home/about/]
-    - [/home/contact],
-    - [/home/contact?name=a&no=123].
+    - [/home/about/] - path only uri
+    - [/home/contact] - path only uri
+    - [/home/contact?name=a&no=123] - path ([/home/contact]) and query
+      ([name=a&no=123]) uri. Path and query are delimited by [?] character token
+      if both are specified.
 
     Consult {{!section:uri} uri combinators} for creating values of this type. *)
 and ('a, 'b) uri
 
-(** {!type:path} is a part of {!type:uri} where the components are delimited by
-    a [/] character token.
+(** {!type:path} is a part of {!type:uri}. It consists of one or more
+    {b path component}s. {b path component}s are tokens which are delimited by a
+    [/] character token.
 
-    Representative examples: [/], [/home/about], [/home/contact/].
+    Example of {i path} and {i path component}s:
+
+    - [/] has path a component [/]
+    - [/home/about] has path components [home, about]
+    - [/home/contact/] has path components [home, contact]
 
     Consult {{!section:path} path combinators} for creating values of this type. *)
 and ('a, 'b) path
 
-(** {!type:query} is a part of {!type:uri}. Each query component is generally a
-    pair of [name] and [value] - [(name,value)]. A query component in a uri is
-    delimited by a [&] character token and the [name], [value] token is
-    delimited by a [=] character token.
+(** {!type:query} is a part of {!type:uri}. It consists of one of more
+    {b query component}s which are delimited by a [&] character token. A
+    {b query component} further consists of a pair of values called [name] and
+    [value]. [name] and [value] tokens are delimited by a [=] character token. A
+    {b query component} is represented syntactically as [(name,value)].
 
-    Given a uri [/home/about?a=2&b=3], the query components are [(a,2)] and
+    Given a uri [/home/about?a=2&b=3], the {b query component}s are [(a,2)] and
     [(b,3)].
 
     Consult {{!section:query} query combinators} for creating values of this
@@ -69,9 +77,9 @@ and method' =
   | `TRACE
   | `Method of string ]
 
-(** {!type:decoder} is a uri component which can convert a HTTP request uri
-    string value into an OCaml typed value (represented by ['a]). It can be used
-    in both {!type:path} and {!type:query} values construction. *)
+(** {!type:decoder} is a component which can convert a {b path component} or a
+    {b query component} [value] token into an OCaml typed value represented by
+    ['a]. *)
 and 'a decoder
 
 (** {1 HTTP Method} *)
@@ -133,57 +141,68 @@ val decoder : string -> (string -> 'a option) -> 'a decoder
       end
     ]} *)
 
-(** {1:path Path}
+(** {1:path Specifying Path Components}
 
-    Path combinators are used to create {!type:uri} and {!type:path} values.
+    Path combinators are used to specify {b path component}s and {!type:path}
+    values and hence {!type:uri} values.
 
-    Given the [uri] below:
+    Let's assume that we want to specify a HTTP route which matches a request
+    path as such:
+
+    + match a string literal "hello" exactly
+    + followed by a valid OCaml [int] value
+    + and then followed by an OCaml [string] value
+
+    We can use path combinators to implement such a requirement:
 
     {[ let uri = Wtr.(exact "hello" / int / string /. pend) ]}
 
-    We can match the following HTTP request targets:
+    The [uri] value above matches the following HTTP request targets:
 
-    - [/home/2/about]
-    - [/home/3/contact] *)
-
-(** {3 Decoders} *)
-
-val int : ('a, 'b) path -> (int -> 'a, 'b) path
-(** [int] is a path decoder that can decode [int] values. *)
-
-val int32 : ('a, 'b) path -> (int32 -> 'a, 'b) path
-(** [int32] is a path decoder that can decode [int32] values. *)
-
-val int64 : ('a, 'b) path -> (int64 -> 'a, 'b) path
-(** [int64] is a path decoder that can decode [int64] values. *)
-
-val float : ('a, 'b) path -> (float -> 'a, 'b) path
-(** [float] is a path decoder that can decode [float] values. *)
-
-val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
-(** [bool] is a path decoder that can decode [bool] values. *)
-
-val string : ('a, 'b) path -> (string -> 'a, 'b) path
-(** [string] is a path decoder that can decode [string] values. *)
-
-val decode : 'c decoder -> ('a, 'b) path -> ('c -> 'a, 'b) path
-(** [decode d p] is a path component for custom decoder [d]. *)
+    - [/home/2/str1]
+    - [/home/3/str2]
+    - [/home/-10/str3] *)
 
 val exact : string -> ('a, 'b) path -> ('a, 'b) path
-(** [exact e p] is a path component that matches a uri token [e] exactly. *)
+(** [exact e p] matches path component [p1] to [e] exactly. *)
 
-(** {3 Ending path construction}
+(** {3:path-decoder Decoders} *)
 
-    These combinators affect the last uri component. *)
+val int : ('a, 'b) path -> (int -> 'a, 'b) path
+(** [int] matches and captures a valid OCaml [int] value. *)
+
+val int32 : ('a, 'b) path -> (int32 -> 'a, 'b) path
+(** [int32] matches and captures a valid OCaml [int32] values. *)
+
+val int64 : ('a, 'b) path -> (int64 -> 'a, 'b) path
+(** [int64] matches and captures a valid OCaml [int64] values. *)
+
+val float : ('a, 'b) path -> (float -> 'a, 'b) path
+(** [float] matches and captures a valid OCaml [float] values. *)
+
+val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
+(** [bool] matches and captures a valid OCaml [bool] values. *)
+
+val string : ('a, 'b) path -> (string -> 'a, 'b) path
+(** [string] matches and captures a valid OCaml [string] values. *)
+
+val decode : 'c decoder -> ('a, 'b) path -> ('c -> 'a, 'b) path
+(** [decode d p] matches a path component if decoder [d] can successfully decode
+    to [Some c]. *)
+
+(** {3 End Path components}
+
+    These combinators match the last(end) path components. They are used with
+    {!val:(/.)} function. *)
 
 val pend : ('a, 'a) path
-(** [pend] ends path construction. *)
+(** [pend] matches the end of {!type:path} value. *)
 
 val splat : (string -> 'a, 'a) path
-(** [splat] ends path construction by matching the remaining uri components. *)
+(** [splat] matches and captures all of the remaining path and query components. *)
 
 val slash : ('a, 'a) path
-(** [slash] end path construction by matching a trailing [/] value. *)
+(** [slash] matches path component [/] and the end of the {!type:path} value. *)
 
 (** {3 Create URI from Paths} *)
 
@@ -193,6 +212,9 @@ val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
 
 val ( /. ) : (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) uri
 (** [/.] is a {!type:uri} value that consists of only path components. *)
+
+val to_uri : ('a, 'b) path -> ('a, 'b) uri
+(** [to_uri p] is {!type:uri} consisting of only path [p]. *)
 
 (** {1:query Query} *)
 
