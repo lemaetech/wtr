@@ -134,7 +134,7 @@ let bool u = Arg (bool_d, u)
 let string u = Arg (string_d, u)
 let parg d u = Arg (d, u)
 
-(* Query Arg Components *)
+(* Query Arg Combinators *)
 
 let qint field u = Query_arg (field, int_d, u)
 let qint32 field u = Query_arg (field, int32_d, u)
@@ -144,7 +144,7 @@ let qbool field u = Query_arg (field, bool_d, u)
 let qstring field u = Query_arg (field, string_d, u)
 let qarg (field, d) u = Query_arg (field, d, u)
 
-(* Matching Last Components *)
+(* Matching Last Combinators *)
 
 let pend = Nil
 let splat = Splat
