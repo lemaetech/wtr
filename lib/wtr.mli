@@ -89,6 +89,43 @@ and method' =
     function as an argument. *)
 and 'a arg
 
+(** {1 HTTP Method} *)
+
+val method_equal : method' -> method' -> bool
+(** [method_equal m1 m2] is [true] if [m1] and [m2] is the same value. Otherwise
+    it is [false].
+
+    {i Note} if both [m1] and [m2] are [`Method m] then the string comparison is
+    case insensitive.
+
+    {[
+      Wtr.method_equal `GET `GET = true;;
+      Wtr.method_equal `POST `GET = false;;
+      Wtr.method_equal (`Method "meth") (`Method "METH") = true
+    ]} *)
+
+val method' : string -> method'
+(** [method' m] is {!type:method'} where string value [m] is converted to
+    {!type:method'} as follows:
+
+    - ["GET"] to [`GET]
+    - ["HEAD"] to [`HEAD]
+    - ["POST"] to [`POST]
+    - ["PUT"] to [`PUT]
+    - ["DELETE"] to [`DELETE]
+    - ["CONNECT"] to [`CONNECT]
+    - ["OPTIONS"] to [`OPTIONS]
+    - ["TRACE"] to [`TRACE]
+    - Any other value [m] to [`Method m]
+
+    {i Note} String comparison is case insensitive.
+
+    {[
+      Wtr.method' "GET" = `GET;;
+      Wtr.method' "get" = `GET;;
+      Wtr.method' "method" = `Method "method"
+    ]} *)
+
 (** {1:arg_func Arg} *)
 
 val arg : string -> (string -> 'a option) -> 'a arg
@@ -256,43 +293,6 @@ val match' : method' -> string -> 'a router -> 'a option
 (** [match' method' request_target router] is [Some a] if [method'] and
     [request_target] together matches one of the routes defined in [router].
     Otherwise it is None. *)
-
-(** {1 HTTP Method} *)
-
-val method_equal : method' -> method' -> bool
-(** [method_equal m1 m2] is [true] if [m1] and [m2] is the same value. Otherwise
-    it is [false].
-
-    {i Note} if both [m1] and [m2] are [`Method m] then the string comparison is
-    case insensitive.
-
-    {[
-      Wtr.method_equal `GET `GET = true;;
-      Wtr.method_equal `POST `GET = false;;
-      Wtr.method_equal (`Method "meth") (`Method "METH") = true
-    ]} *)
-
-val method' : string -> method'
-(** [method' m] is {!type:method'} where string value [m] is converted to
-    {!type:method'} as follows:
-
-    - ["GET"] to [`GET]
-    - ["HEAD"] to [`HEAD]
-    - ["POST"] to [`POST]
-    - ["PUT"] to [`PUT]
-    - ["DELETE"] to [`DELETE]
-    - ["CONNECT"] to [`CONNECT]
-    - ["OPTIONS"] to [`OPTIONS]
-    - ["TRACE"] to [`TRACE]
-    - Any other value [m] to [`Method m]
-
-    {i Note} String comparison is case insensitive.
-
-    {[
-      Wtr.method' "GET" = `GET;;
-      Wtr.method' "get" = `GET;;
-      Wtr.method' "method" = `Method "method"
-    ]} *)
 
 (** {1:pp Pretty Printers} *)
 
