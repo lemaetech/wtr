@@ -21,12 +21,12 @@ type 'a router
     {i route handler} is either of the following:
 
     - a value of type ['a]
-    - or a function which returns values of type ['a]. *)
+    - or a function which returns value of type ['a]. *)
 and 'a route
 
-(** {!type:request_target} corresponds to a HTTP request target value. It
-    consists of either just a {!type:path} value or a combination of
-    {!type:path} and {!type:query} values.
+(** {!type:request_target} is a HTTP request target value. It consists of either
+    just a {!type:path} value or a combination of {!type:path} and {!type:query}
+    values.
 
     Example {i request_target} values:
 
@@ -37,7 +37,10 @@ and 'a route
       both are specified.
 
     Consult {{!section:target} request target} combinators for creating values
-    of this type. *)
+    of this type.
+
+    See {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} HTTP RFC
+    7230 - request target}. *)
 and ('a, 'b) request_target
 
 (** {!type:path} is a part of {!type:request_target}. It consists of one or more
@@ -66,7 +69,9 @@ and ('a, 'b) path
     type. *)
 and ('a, 'b) query
 
-(** {!type:method'} is a HTTP request method. *)
+(** {!type:method'} is a HTTP request method. See
+    {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} HTTP RFC 7231 -
+    HTTP Methods} *)
 and method' =
   [ `GET
   | `HEAD
@@ -115,7 +120,7 @@ val arg : string -> (string -> 'a option) -> 'a arg
 (** {1:path Path Components}
 
     Path combinators implement a DSL(domain specific language) to specify
-    {b path component}s and {!type:path} values and hence {!type:request_target}
+    {b path component}s, {!type:path} values and hence {!type:request_target}
     values.
 
     Let's assume that we want to specify a HTTP route which matches a request
@@ -123,13 +128,13 @@ val arg : string -> (string -> 'a option) -> 'a arg
 
     + match a string literal "hello" exactly
     + followed by a valid OCaml [int] value
-    + and then followed by an OCaml [string] value
+    + and then finally followed by an OCaml [string] value
 
     We can use path combinators to implement such a requirement:
 
-    {[ let request_target = Wtr.(exact "hello" / int / string /. pend) ]}
+    {[ let target1 = Wtr.(exact "hello" / int / string /. pend) ]}
 
-    The [request_target] value above matches the following HTTP request targets:
+    The [target1] value above matches the following HTTP request targets:
 
     - [/home/2/str1]
     - [/home/3/str2]
@@ -174,7 +179,8 @@ val string : ('a, 'b) path -> (string -> 'a, 'b) path
 (** [string] matches and captures a valid OCaml [string] values. *)
 
 val parg : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
-(** [parg d p] matches a path component if arg [d] is [Some c]. *)
+(** [parg d p] matches a path component if arg [d] can successfuly convert path
+    component to a value of type ['c]. *)
 
 (** {3 End Path components}
 
@@ -185,10 +191,12 @@ val pend : ('a, 'a) path
 (** [pend] matches the end of {!type:path} value. *)
 
 val splat : (string -> 'a, 'a) path
-(** [splat] matches and captures all of the remaining path and query components. *)
+(** [splat] matches and captures all of the remaining path and query components.
+    The captured value is then fed to a {i route handler}. *)
 
 val slash : ('a, 'a) path
-(** [slash] matches path component [/] and the end of the {!type:path} value. *)
+(** [slash] matches path component [/] first and then matches the end of the
+    {!type:path} value. *)
 
 (** {1:query Query} *)
 
