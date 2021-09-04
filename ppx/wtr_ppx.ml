@@ -94,7 +94,7 @@ let rec make_query ~loc query_tokens =
   | (name, "*") :: query_tokens ->
       [%expr
         Wtr.Private.(
-          query_decode
+          query_arg
             [%e Ast_builder.estring ~loc name]
             string
             [%e make_query ~loc query_tokens])]
@@ -107,37 +107,31 @@ let rec make_query ~loc query_tokens =
       | "int" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] int [%e make_query ~loc query_tokens])]
+              query_arg [%e name_expr] int [%e make_query ~loc query_tokens])]
       | "int32" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] int32
-                [%e make_query ~loc query_tokens])]
+              query_arg [%e name_expr] int32 [%e make_query ~loc query_tokens])]
       | "int64" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] int64
-                [%e make_query ~loc query_tokens])]
+              query_arg [%e name_expr] int64 [%e make_query ~loc query_tokens])]
       | "float" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] float
-                [%e make_query ~loc query_tokens])]
+              query_arg [%e name_expr] float [%e make_query ~loc query_tokens])]
       | "string" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] string
-                [%e make_query ~loc query_tokens])]
+              query_arg [%e name_expr] string [%e make_query ~loc query_tokens])]
       | "bool" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] bool [%e make_query ~loc query_tokens])]
-      | custom_decoder when capitalized custom_decoder ->
-          let longident_loc =
-            {txt= Longident.parse (custom_decoder ^ ".t"); loc}
-          in
+              query_arg [%e name_expr] bool [%e make_query ~loc query_tokens])]
+      | custom_arg when capitalized custom_arg ->
+          let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
-            Wtr.Private.query_decode [%e name_expr]
+            Wtr.Private.query_arg [%e name_expr]
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_query ~loc query_tokens]]
       | x -> Location.raise_errorf ~loc "wtr: Invalid query component '%s'" x )
@@ -156,44 +150,38 @@ let rec make_request_target ~loc query_tokens path_tokens =
   | "*" :: path_tokens ->
       [%expr
         Wtr.Private.(
-          decode string [%e make_request_target ~loc query_tokens path_tokens])]
+          arg string [%e make_request_target ~loc query_tokens path_tokens])]
   | path_token :: path_tokens when Char.equal path_token.[0] ':' -> (
       let path_token = String.sub path_token 1 (String.length path_token - 1) in
       match path_token with
       | "int" ->
           [%expr
             Wtr.Private.(
-              decode int [%e make_request_target ~loc query_tokens path_tokens])]
+              arg int [%e make_request_target ~loc query_tokens path_tokens])]
       | "int32" ->
           [%expr
             Wtr.Private.(
-              decode int32
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg int32 [%e make_request_target ~loc query_tokens path_tokens])]
       | "int64" ->
           [%expr
             Wtr.Private.(
-              decode int64
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg int64 [%e make_request_target ~loc query_tokens path_tokens])]
       | "float" ->
           [%expr
             Wtr.Private.(
-              decode float
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg float [%e make_request_target ~loc query_tokens path_tokens])]
       | "string" ->
           [%expr
             Wtr.Private.(
-              decode string
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg string [%e make_request_target ~loc query_tokens path_tokens])]
       | "bool" ->
           [%expr
             Wtr.Private.(
-              decode bool [%e make_request_target ~loc query_tokens path_tokens])]
-      | custom_decoder when capitalized custom_decoder ->
-          let longident_loc =
-            {txt= Longident.parse (custom_decoder ^ ".t"); loc}
-          in
+              arg bool [%e make_request_target ~loc query_tokens path_tokens])]
+      | custom_arg when capitalized custom_arg ->
+          let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
-            Wtr.Private.decode
+            Wtr.Private.arg
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_request_target ~loc query_tokens path_tokens]]
       | x -> Location.raise_errorf ~loc "wtr: Invalid path component '%s'." x )

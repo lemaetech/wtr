@@ -6,7 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *-------------------------------------------------------------------------*)
 
-(* Decoder id type. *)
+(* Arg id type. *)
 type 'a witness = ..
 type (_, _) eq = Eq : ('a, 'a) eq
 
@@ -51,8 +51,8 @@ and ('a, 'b) uri =
   | Slash : ('b, 'b) uri
   | Exact : string * ('a, 'b) uri -> ('a, 'b) uri
   | Query_exact : string * string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decode : 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  | Query_decode : string * 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Arg : 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Query_arg : string * 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
 (** Existential to encode uri component/node type. *)
 and node_type =
@@ -61,8 +61,8 @@ and node_type =
   | NExact : string -> node_type
   | NQuery_exact : string * string -> node_type
   | NMethod : method' -> node_type
-  | NDecoder : 'c arg -> node_type
-  | NQuery_decode : string * 'c arg -> node_type
+  | NArg : 'c arg -> node_type
+  | NQuery_arg : string * 'c arg -> node_type
 
 and 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
@@ -83,10 +83,10 @@ and ('a, 'b) query = ('a, 'b) uri
 
 and 'a arg =
   { name: string (* name e.g. int, float, bool, string etc *)
-  ; decode: string -> 'a option
+  ; convert: string -> 'a option
   ; id: 'a id }
 
-and decoded_value = D : 'c arg * 'c -> decoded_value
+and arg_value = D : 'c arg * 'c -> arg_value
 
 (* HTTP Method *)
 
@@ -108,11 +108,11 @@ let method' meth =
   | "TRACE" -> `TRACE
   | _ -> `Method meth
 
-(* Decoders *)
+(* Arg *)
 
-let arg name decode =
+let arg name convert =
   let id = new_id () in
-  {name; decode; id}
+  {name; convert; id}
 
 let int_d = arg "int" int_of_string_opt
 let int32_d = arg "int32" Int32.of_string_opt
@@ -123,13 +123,13 @@ let bool_d = arg "bool" bool_of_string_opt
 
 (* Path *)
 
-let int u = Decode (int_d, u)
-let int32 u = Decode (int32_d, u)
-let int64 u = Decode (int64_d, u)
-let float u = Decode (float_d, u)
-let bool u = Decode (bool_d, u)
-let string u = Decode (string_d, u)
-let decode d u = Decode (d, u)
+let int u = Arg (int_d, u)
+let int32 u = Arg (int32_d, u)
+let int64 u = Arg (int64_d, u)
+let float u = Arg (float_d, u)
+let bool u = Arg (bool_d, u)
+let string u = Arg (string_d, u)
+let parg d u = Arg (d, u)
 let exact s uri = Exact (s, uri)
 let pend = Nil
 let splat = Splat
@@ -142,13 +142,13 @@ external to_uri : ('a, 'b) path -> ('a, 'b) uri = "%identity"
 (* Query *)
 
 let ( /& ) f1 f2 r = f1 @@ f2 r
-let qint field u = Query_decode (field, int_d, u)
-let qint32 field u = Query_decode (field, int32_d, u)
-let qint64 field u = Query_decode (field, int64_d, u)
-let qfloat field u = Query_decode (field, float_d, u)
-let qbool field u = Query_decode (field, bool_d, u)
-let qstring field u = Query_decode (field, string_d, u)
-let qdecode (field, d) u = Query_decode (field, d, u)
+let qint field u = Query_arg (field, int_d, u)
+let qint32 field u = Query_arg (field, int32_d, u)
+let qint64 field u = Query_arg (field, int64_d, u)
+let qfloat field u = Query_arg (field, float_d, u)
+let qbool field u = Query_arg (field, bool_d, u)
+let qstring field u = Query_arg (field, string_d, u)
+let qarg (field, d) u = Query_arg (field, d, u)
 let qexact (field, exact) uri = Query_exact (field, exact, uri)
 
 (* URI Combinators *)
@@ -173,11 +173,11 @@ let node_type_equal a b =
   | NQuery_exact (name1, value1), NQuery_exact (name2, value2) ->
       String.equal name1 name2 && String.equal value1 value2
   | NMethod meth1, NMethod meth2 -> method_equal meth1 meth2
-  | NDecoder decoder, NDecoder decoder' -> (
-    match eq decoder'.id decoder.id with Some Eq -> true | None -> false )
-  | NQuery_decode (name1, decoder1), NQuery_decode (name2, decoder2) -> (
+  | NArg arg, NArg arg' -> (
+    match eq arg'.id arg.id with Some Eq -> true | None -> false )
+  | NQuery_arg (name1, arg1), NQuery_arg (name2, arg2) -> (
       String.equal name1 name2
-      && match eq decoder1.id decoder2.id with Some Eq -> true | None -> false )
+      && match eq arg1.id arg2.id with Some Eq -> true | None -> false )
   | _ -> false
 
 let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
@@ -187,9 +187,8 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
   | Exact (exact1, uri) -> NExact exact1 :: node_type_of_uri uri
   | Query_exact (name, value, uri) ->
       NQuery_exact (name, value) :: node_type_of_uri uri
-  | Decode (decoder, uri) -> NDecoder decoder :: node_type_of_uri uri
-  | Query_decode (name, decoder, uri) ->
-      NQuery_decode (name, decoder) :: node_type_of_uri uri
+  | Arg (arg, uri) -> NArg arg :: node_type_of_uri uri
+  | Query_arg (name, arg, uri) -> NQuery_arg (name, arg) :: node_type_of_uri uri
 
 let rec node : 'a node -> 'a route -> 'a node =
  fun node' (Route (method', uri, _) as route) ->
@@ -257,12 +256,12 @@ let rec match' : method' -> string -> 'a router -> 'a option =
      1. First match the HTTP method as all routes always start with a HTTP method
      2. Then follow the trie nodes as suggested by the trie algorithm.
   *)
-  let rec try_match t decoded_values uri_tokens matched_token_count =
+  let rec try_match t arg_values uri_tokens matched_token_count =
     match uri_tokens with
     | [] ->
         Option.map
           (fun (Route (_, uri, f)) ->
-            exec_route_handler f (uri, List.rev decoded_values) )
+            exec_route_handler f (uri, List.rev arg_values) )
           t.route
     | uri_token :: uri_tokens ->
         let continue = ref true in
@@ -271,17 +270,17 @@ let rec match' : method' -> string -> 'a router -> 'a option =
         let full_splat_matched = ref false in
         while !continue && !index < Array.length t.node_types do
           match (uri_token, t.node_types.(!index)) with
-          | `Path v, (NDecoder decoder, t') -> (
-            match decoder.decode v with
+          | `Path v, (NArg arg, t') -> (
+            match arg.convert v with
             | Some v ->
-                matched_node := Some (t', D (decoder, v) :: decoded_values) ;
+                matched_node := Some (t', D (arg, v) :: arg_values) ;
                 continue := false
             | None -> incr index )
           | `Path v, (NExact exact, t') when String.equal exact v ->
-              matched_node := Some (t', decoded_values) ;
+              matched_node := Some (t', arg_values) ;
               continue := false
           | `Path v, (NSlash, t') when String.equal "" v ->
-              matched_node := Some (t', decoded_values) ;
+              matched_node := Some (t', arg_values) ;
               continue := false
           | `Path _, (NSplat, t') ->
               let path =
@@ -294,29 +293,27 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
-              matched_node :=
-                Some (t', D (string_d, splat_url) :: decoded_values) ;
+              matched_node := Some (t', D (string_d, splat_url) :: arg_values) ;
               continue := false ;
               full_splat_matched := true
-          | `Query (name, value), (NQuery_decode (name', decoder), t') -> (
-            match decoder.decode value with
+          | `Query (name, value), (NQuery_arg (name', arg), t') -> (
+            match arg.convert value with
             | Some v when String.equal name name' ->
-                matched_node := Some (t', D (decoder, v) :: decoded_values) ;
+                matched_node := Some (t', D (arg, v) :: arg_values) ;
                 continue := false
             | _ -> incr index )
           | `Query (name1, value1), (NQuery_exact (name2, value2), t')
             when String.equal name1 name2 && String.equal value1 value2 ->
-              matched_node := Some (t', decoded_values) ;
+              matched_node := Some (t', arg_values) ;
               continue := false
           | _ -> incr index
         done ;
-        Option.bind !matched_node (fun (t', decoded_values) ->
+        Option.bind !matched_node (fun (t', arg_values) ->
             let matched_tok_count = matched_token_count + 1 in
             if !full_splat_matched then
-              (try_match [@tailcall]) t' decoded_values [] matched_tok_count
+              (try_match [@tailcall]) t' arg_values [] matched_tok_count
             else
-              (try_match [@tailcall]) t' decoded_values uri_tokens
-                matched_tok_count )
+              (try_match [@tailcall]) t' arg_values uri_tokens matched_tok_count )
   in
   if List.length uri_tokens > 0 then
     let n = Array.length t.node_types in
@@ -331,22 +328,21 @@ let rec match' : method' -> string -> 'a router -> 'a option =
     loop 0
   else None
 
-and exec_route_handler : type a b. a -> (a, b) uri * decoded_value list -> b =
+and exec_route_handler : type a b. a -> (a, b) uri * arg_value list -> b =
  fun f -> function
   | Nil, [] -> f
   | Splat, [D (d, v)] -> (
     match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Slash, [] -> f
-  | Exact (_, uri), decoded_values -> exec_route_handler f (uri, decoded_values)
-  | Query_exact (_, _, uri), decoded_values ->
-      exec_route_handler f (uri, decoded_values)
-  | Decode ({id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
+  | Exact (_, uri), arg_values -> exec_route_handler f (uri, arg_values)
+  | Query_exact (_, _, uri), arg_values -> exec_route_handler f (uri, arg_values)
+  | Arg ({id; _}, uri), D ({id= id'; _}, v) :: arg_values -> (
     match eq id id' with
-    | Some Eq -> exec_route_handler (f v) (uri, decoded_values)
+    | Some Eq -> exec_route_handler (f v) (uri, arg_values)
     | None -> assert false )
-  | Query_decode (_, {id; _}, uri), D ({id= id'; _}, v) :: decoded_values -> (
+  | Query_arg (_, {id; _}, uri), D ({id= id'; _}, v) :: arg_values -> (
     match eq id id' with
-    | Some Eq -> exec_route_handler (f v) (uri, decoded_values)
+    | Some Eq -> exec_route_handler (f v) (uri, arg_values)
     | None -> assert false )
   | _, _ -> assert false
 
@@ -369,10 +365,10 @@ let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
   | Query_exact (name, value, uri) ->
       let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
       pp_query_tok fmt pp' uri
-  | Decode (decoder, uri) -> Format.fprintf fmt "/:%s%a" decoder.name pp_uri uri
-  | Query_decode (name, decoder, uri) ->
+  | Arg (arg, uri) -> Format.fprintf fmt "/:%s%a" arg.name pp_uri uri
+  | Query_arg (name, arg, uri) ->
       let pp' fmt uri =
-        Format.fprintf fmt "%s=:%s%a" name decoder.name pp_uri uri
+        Format.fprintf fmt "%s=:%s%a" name arg.name pp_uri uri
       in
       pp_query_tok fmt pp' uri
 
@@ -395,9 +391,8 @@ let pp_node_type fmt node_type =
   | NSlash -> Format.fprintf fmt "/"
   | NExact exact -> Format.fprintf fmt "/%s" exact
   | NQuery_exact (name, value) -> Format.fprintf fmt "%s=%s" name value
-  | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
-  | NQuery_decode (name, decoder) ->
-      Format.fprintf fmt "%s=:%s" name decoder.name
+  | NArg arg -> Format.fprintf fmt "/:%s" arg.name
+  | NQuery_arg (name, arg) -> Format.fprintf fmt "%s=:%s" name arg.name
   | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
 
 let pp_route : Format.formatter -> 'b route -> unit =
@@ -413,7 +408,7 @@ let rec pp fmt t =
     (fun fmt (node_type, t') ->
       Format.pp_open_vbox fmt 2 ;
       ( match node_type with
-      | NQuery_exact _ | NQuery_decode _ ->
+      | NQuery_exact _ | NQuery_arg _ ->
           if not !query_tok_printed then
             Format.fprintf fmt "?%a" pp_node_type node_type
           else Format.fprintf fmt "&%a" pp_node_type node_type
@@ -430,8 +425,8 @@ module Private = struct
   let slash = Slash
   let exact s uri = Exact (s, uri)
   let query_exact name value uri = Query_exact (name, value, uri)
-  let decode d uri = Decode (d, uri)
-  let query_decode name d uri = Query_decode (name, d, uri)
+  let arg d uri = Arg (d, uri)
+  let query_arg name d uri = Query_arg (name, d, uri)
   let int = int_d
   let int32 = int32_d
   let int64 = int64_d

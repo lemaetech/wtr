@@ -14,11 +14,7 @@ Wtr is typed router for OCaml web applications.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
 - Supports matching HTTP methods, eg `GET, POST, PUT, HEAD, DELETE` etc.
 - Supports converting captured URI components to OCaml and custom user defined data types.
-- `wtr.ppx` is used to specify uri values. If you know how to type URI path in a browser location, then you already know how to use `wtr`.
-- Minimal learning overhead. `Wtr` is centered around 3 API calls, a ppx -`%wtr` - and your existing HTTP url/uri knowledge:
-  - `Wtr.create` - creates a router - *'a Wtr.t* - from a list of `route` values.
-  - `Wtr.match'` - matches a given uri path in a router.
-  - `Wtr.decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
+- `wtr_ppx` implements a DSL to allow you to easily specify HTTP uri. 
 
 ## Wtr Demo
 

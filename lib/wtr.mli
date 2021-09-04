@@ -79,7 +79,7 @@ and method' =
 
 (** {!type:arg} is a component which can convert a {b path component} or a
     {b query component} [value] token into an OCaml typed value represented by
-    ['a]. The successfully converted value is then fed to a {i route} handler
+    ['a]. The successfully converted value is then fed to a {i route handler}
     function as an argument. *)
 and 'a arg
 
@@ -173,7 +173,7 @@ val arg : string -> (string -> 'a option) -> 'a arg
 val exact : string -> ('a, 'b) path -> ('a, 'b) path
 (** [exact e p] matches path component [p1] to [e] exactly. *)
 
-(** {3:path-decoder Decoders} *)
+(** {3:path-args Args} *)
 
 val int : ('a, 'b) path -> (int -> 'a, 'b) path
 (** [int] matches and captures a valid OCaml [int] value. *)
@@ -193,9 +193,8 @@ val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
 val string : ('a, 'b) path -> (string -> 'a, 'b) path
 (** [string] matches and captures a valid OCaml [string] values. *)
 
-val decode : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
-(** [decode d p] matches a path component if decoder [d] can successfully decode
-    to [Some c]. *)
+val parg : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
+(** [parg d p] matches a path component if arg [d] is [Some c]. *)
 
 (** {3 End Path components}
 
@@ -231,7 +230,7 @@ val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
 val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
 val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
 val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
-val qdecode : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
+val qarg : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
 val qexact : string * string -> ('a, 'b) query -> ('a, 'b) query
 val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 
@@ -294,8 +293,8 @@ module Private : sig
   val slash : ('b, 'b) uri
   val exact : string -> ('a, 'b) uri -> ('a, 'b) uri
   val query_exact : string -> string -> ('a, 'b) uri -> ('a, 'b) uri
-  val decode : 'c arg -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  val query_decode : string -> 'c arg -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  val arg : 'c arg -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  val query_arg : string -> 'c arg -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
   val int : int arg
   val int32 : int32 arg
   val int64 : int64 arg
