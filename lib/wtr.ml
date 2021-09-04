@@ -62,7 +62,7 @@ and node_type =
   | NQuery_exact : string * string -> node_type
   | NMethod : method' -> node_type
   | NDecoder : 'c decoder -> node_type
-  | NQuery_decoder : string * 'c decoder -> node_type
+  | NQuery_decode : string * 'c decoder -> node_type
 
 and 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
@@ -173,7 +173,7 @@ let node_type_equal a b =
   | NMethod meth1, NMethod meth2 -> method_equal meth1 meth2
   | NDecoder decoder, NDecoder decoder' -> (
     match eq decoder'.id decoder.id with Some Eq -> true | None -> false )
-  | NQuery_decoder (name1, decoder1), NQuery_decoder (name2, decoder2) -> (
+  | NQuery_decode (name1, decoder1), NQuery_decode (name2, decoder2) -> (
       String.equal name1 name2
       && match eq decoder1.id decoder2.id with Some Eq -> true | None -> false )
   | _ -> false
@@ -187,7 +187,7 @@ let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
       NQuery_exact (name, value) :: node_type_of_uri uri
   | Decode (decoder, uri) -> NDecoder decoder :: node_type_of_uri uri
   | Query_decode (name, decoder, uri) ->
-      NQuery_decoder (name, decoder) :: node_type_of_uri uri
+      NQuery_decode (name, decoder) :: node_type_of_uri uri
 
 let rec node : 'a node -> 'a route -> 'a node =
  fun node' (Route (method', uri, _) as route) ->
@@ -296,7 +296,7 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 Some (t', D (string_d, splat_url) :: decoded_values) ;
               continue := false ;
               full_splat_matched := true
-          | `Query (name, value), (NQuery_decoder (name', decoder), t') -> (
+          | `Query (name, value), (NQuery_decode (name', decoder), t') -> (
             match decoder.decode value with
             | Some v when String.equal name name' ->
                 matched_node := Some (t', D (decoder, v) :: decoded_values) ;
@@ -394,7 +394,7 @@ let pp_node_type fmt node_type =
   | NExact exact -> Format.fprintf fmt "/%s" exact
   | NQuery_exact (name, value) -> Format.fprintf fmt "%s=%s" name value
   | NDecoder decoder -> Format.fprintf fmt "/:%s" decoder.name
-  | NQuery_decoder (name, decoder) ->
+  | NQuery_decode (name, decoder) ->
       Format.fprintf fmt "%s=:%s" name decoder.name
   | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
 
@@ -411,7 +411,7 @@ let rec pp fmt t =
     (fun fmt (node_type, t') ->
       Format.pp_open_vbox fmt 2 ;
       ( match node_type with
-      | NQuery_exact _ | NQuery_decoder _ ->
+      | NQuery_exact _ | NQuery_decode _ ->
           if not !query_tok_printed then
             Format.fprintf fmt "?%a" pp_node_type node_type
           else Format.fprintf fmt "&%a" pp_node_type node_type
