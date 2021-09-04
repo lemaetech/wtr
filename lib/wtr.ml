@@ -90,7 +90,7 @@ and 'a arg =
   ; convert: string -> 'a option
   ; id: 'a id }
 
-and arg_value = D : 'c arg * 'c -> arg_value
+and arg_value = Arg_value : 'c arg * 'c -> arg_value
 
 (* Arg *)
 
@@ -292,7 +292,7 @@ let rec match' : method' -> string -> 'a router -> 'a option =
           | `Path v, (NArg arg, t') -> (
             match arg.convert v with
             | Some v ->
-                matched_node := Some (t', D (arg, v) :: arg_values) ;
+                matched_node := Some (t', Arg_value (arg, v) :: arg_values) ;
                 continue := false
             | None -> incr index )
           | `Path v, (NExact exact, t') when String.equal exact v ->
@@ -312,13 +312,14 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
-              matched_node := Some (t', D (string_d, splat_url) :: arg_values) ;
+              matched_node :=
+                Some (t', Arg_value (string_d, splat_url) :: arg_values) ;
               continue := false ;
               full_splat_matched := true
           | `Query (name, value), (NQuery_arg (name', arg), t') -> (
             match arg.convert value with
             | Some v when String.equal name name' ->
-                matched_node := Some (t', D (arg, v) :: arg_values) ;
+                matched_node := Some (t', Arg_value (arg, v) :: arg_values) ;
                 continue := false
             | _ -> incr index )
           | `Query (name1, value1), (NQuery_exact (name2, value2), t')
@@ -352,19 +353,20 @@ and exec_route_handler :
     type a b. a -> (a, b) request_target * arg_value list -> b =
  fun f -> function
   | Nil, [] -> f
-  | Splat, [D (d, v)] -> (
+  | Splat, [Arg_value (d, v)] -> (
     match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Slash, [] -> f
   | Exact (_, request_target), arg_values ->
       exec_route_handler f (request_target, arg_values)
   | Query_exact (_, _, request_target), arg_values ->
       exec_route_handler f (request_target, arg_values)
-  | Arg ({id; _}, request_target), D ({id= id'; _}, v) :: arg_values -> (
+  | Arg ({id; _}, request_target), Arg_value ({id= id'; _}, v) :: arg_values
+    -> (
     match eq id id' with
     | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
     | None -> assert false )
-  | Query_arg (_, {id; _}, request_target), D ({id= id'; _}, v) :: arg_values
-    -> (
+  | ( Query_arg (_, {id; _}, request_target)
+    , Arg_value ({id= id'; _}, v) :: arg_values ) -> (
     match eq id id' with
     | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
     | None -> assert false )
