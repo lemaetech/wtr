@@ -3,8 +3,8 @@ let () = Printexc.record_backtrace false
 module Fruit = struct
   type t = Apple | Orange | Pineapple
 
-  let t : t Wtr.decoder =
-    Wtr.decoder "Fruit" (function
+  let t : t Wtr.arg =
+    Wtr.arg "Fruit" (function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple

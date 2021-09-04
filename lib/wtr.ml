@@ -51,8 +51,8 @@ and ('a, 'b) uri =
   | Slash : ('b, 'b) uri
   | Exact : string * ('a, 'b) uri -> ('a, 'b) uri
   | Query_exact : string * string * ('a, 'b) uri -> ('a, 'b) uri
-  | Decode : 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  | Query_decode : string * 'c decoder * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Decode : 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  | Query_decode : string * 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
 
 (** Existential to encode uri component/node type. *)
 and node_type =
@@ -61,8 +61,8 @@ and node_type =
   | NExact : string -> node_type
   | NQuery_exact : string * string -> node_type
   | NMethod : method' -> node_type
-  | NDecoder : 'c decoder -> node_type
-  | NQuery_decode : string * 'c decoder -> node_type
+  | NDecoder : 'c arg -> node_type
+  | NQuery_decode : string * 'c arg -> node_type
 
 and 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
 
@@ -81,12 +81,12 @@ and ('a, 'b) path = ('a, 'b) uri
 
 and ('a, 'b) query = ('a, 'b) uri
 
-and 'a decoder =
+and 'a arg =
   { name: string (* name e.g. int, float, bool, string etc *)
   ; decode: string -> 'a option
   ; id: 'a id }
 
-and decoded_value = D : 'c decoder * 'c -> decoded_value
+and decoded_value = D : 'c arg * 'c -> decoded_value
 
 (* HTTP Method *)
 
@@ -110,16 +110,16 @@ let method' meth =
 
 (* Decoders *)
 
-let decoder name decode =
+let arg name decode =
   let id = new_id () in
   {name; decode; id}
 
-let int_d = decoder "int" int_of_string_opt
-let int32_d = decoder "int32" Int32.of_string_opt
-let int64_d = decoder "int64" Int64.of_string_opt
-let float_d = decoder "float" float_of_string_opt
-let string_d = decoder "string" (fun a -> Some a)
-let bool_d = decoder "bool" bool_of_string_opt
+let int_d = arg "int" int_of_string_opt
+let int32_d = arg "int32" Int32.of_string_opt
+let int64_d = arg "int64" Int64.of_string_opt
+let float_d = arg "float" float_of_string_opt
+let string_d = arg "string" (fun a -> Some a)
+let bool_d = arg "bool" bool_of_string_opt
 
 (* Path *)
 

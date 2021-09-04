@@ -77,10 +77,11 @@ and method' =
   | `TRACE
   | `Method of string ]
 
-(** {!type:decoder} is a component which can convert a {b path component} or a
+(** {!type:arg} is a component which can convert a {b path component} or a
     {b query component} [value] token into an OCaml typed value represented by
-    ['a]. *)
-and 'a decoder
+    ['a]. The successfully converted value is then fed to a {i route} handler
+    function as an argument. *)
+and 'a arg
 
 (** {1 HTTP Method} *)
 
@@ -119,21 +120,27 @@ val method' : string -> method'
       Wtr.method' "method" = `Method "method"
     ]} *)
 
-(** {1:decoder_func Decoder} *)
+(** {1:arg_func Arg} *)
 
-val decoder : string -> (string -> 'a option) -> 'a decoder
-(** [decoder name decode] is {!type:decoder} with name [name] and [decode] as
-    the string conversion/decoder function.
+val arg : string -> (string -> 'a option) -> 'a arg
+(** [arg name convert] is {!type:arg} with a name [name] and [convert] as the
+    function which will convert/decode a string value to an OCaml value of type
+    ['a].
 
-    [decode v] is [Some a] if [decode] can successfully convert [v] to [a].
+    [name] is used during the pretty-printing of uri by {!val:pp_uri}. It is
+    printed by being prefixed by [:], e.g. [:int], [:int32], [:string] etc.
+
+    [convert v] is [Some a] if [convert] can successfully convert [v] to [a].
     Otherwise it is [None].
+
+    The following defines an arg of type [Fruit.t arg].
 
     {[
       module Fruit = struct
         type t = Apple | Orange | Pineapple
 
-        let t : t Wtr.decoder =
-          Wtr.decoder "fruit" (function
+        let t : t Wtr.arg =
+          Wtr.arg "fruit" (function
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
@@ -186,7 +193,7 @@ val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
 val string : ('a, 'b) path -> (string -> 'a, 'b) path
 (** [string] matches and captures a valid OCaml [string] values. *)
 
-val decode : 'c decoder -> ('a, 'b) path -> ('c -> 'a, 'b) path
+val decode : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
 (** [decode d p] matches a path component if decoder [d] can successfully decode
     to [Some c]. *)
 
@@ -224,7 +231,7 @@ val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
 val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
 val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
 val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
-val qdecode : string * 'c decoder -> ('a, 'b) query -> ('c -> 'a, 'b) query
+val qdecode : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
 val qexact : string * string -> ('a, 'b) query -> ('a, 'b) query
 val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 
@@ -287,14 +294,14 @@ module Private : sig
   val slash : ('b, 'b) uri
   val exact : string -> ('a, 'b) uri -> ('a, 'b) uri
   val query_exact : string -> string -> ('a, 'b) uri -> ('a, 'b) uri
-  val decode : 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  val query_decode : string -> 'c decoder -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  val int : int decoder
-  val int32 : int32 decoder
-  val int64 : int64 decoder
-  val float : float decoder
-  val bool : bool decoder
-  val string : string decoder
+  val decode : 'c arg -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  val query_decode : string -> 'c arg -> ('a, 'b) uri -> ('c -> 'a, 'b) uri
+  val int : int arg
+  val int32 : int32 arg
+  val int64 : int64 arg
+  val float : float arg
+  val bool : bool arg
+  val string : string arg
 end
 
 (**/**)

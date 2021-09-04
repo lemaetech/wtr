@@ -30,8 +30,8 @@ Wtr is typed router for OCaml web applications.
 module Fruit = struct
   type t = Apple | Orange | Pineapple
 
-  let t : t Wtr.decoder =
-    Wtr.decoder "fruit" (function
+  let t : t Wtr.arg =
+    Wtr.arg "fruit" (function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
