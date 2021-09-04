@@ -6,6 +6,7 @@
 - BREAKING CHANGE: 'create' has been renamed to 'router'
 - BREAKING CHANGE: 't' type has been renamed to `router`
 - BREAKING CHANGE: `'a decoder` has been renamed to `'a arg`
+- BREAKING CHANGE: `'a uri` has been renamed to `'a request_target`
 - FIX: Fix matching query components in uri
 - FIX: Fix pretty printing of query components in uri
 - NEW: Add path, query and uri combinators to create and manipulate path, query and uri values

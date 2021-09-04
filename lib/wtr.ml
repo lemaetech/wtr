@@ -45,16 +45,20 @@ type 'a router =
 (* Unoptimized/un-compiled router type. *)
 and 'a node = {route': 'a route option; node_types': (node_type * 'a node) list}
 
-and ('a, 'b) uri =
-  | Nil : ('b, 'b) uri
-  | Splat : (string -> 'b, 'b) uri
-  | Slash : ('b, 'b) uri
-  | Exact : string * ('a, 'b) uri -> ('a, 'b) uri
-  | Query_exact : string * string * ('a, 'b) uri -> ('a, 'b) uri
-  | Arg : 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
-  | Query_arg : string * 'c arg * ('a, 'b) uri -> ('c -> 'a, 'b) uri
+and ('a, 'b) request_target =
+  | Nil : ('b, 'b) request_target
+  | Splat : (string -> 'b, 'b) request_target
+  | Slash : ('b, 'b) request_target
+  | Exact : string * ('a, 'b) request_target -> ('a, 'b) request_target
+  | Query_exact :
+      string * string * ('a, 'b) request_target
+      -> ('a, 'b) request_target
+  | Arg : 'c arg * ('a, 'b) request_target -> ('c -> 'a, 'b) request_target
+  | Query_arg :
+      string * 'c arg * ('a, 'b) request_target
+      -> ('c -> 'a, 'b) request_target
 
-(** Existential to encode uri component/node type. *)
+(** Existential to encode request_target component/node type. *)
 and node_type =
   | NSlash : node_type
   | NSplat : node_type
@@ -64,7 +68,7 @@ and node_type =
   | NArg : 'c arg -> node_type
   | NQuery_arg : string * 'c arg -> node_type
 
-and 'c route = Route : method' * ('a, 'c) uri * 'a -> 'c route
+and 'c route = Route : method' * ('a, 'c) request_target * 'a -> 'c route
 
 and method' =
   [ `GET
@@ -77,9 +81,9 @@ and method' =
   | `TRACE
   | `Method of string ]
 
-and ('a, 'b) path = ('a, 'b) uri
+and ('a, 'b) path = ('a, 'b) request_target
 
-and ('a, 'b) query = ('a, 'b) uri
+and ('a, 'b) query = ('a, 'b) request_target
 
 and 'a arg =
   { name: string (* name e.g. int, float, bool, string etc *)
@@ -130,14 +134,15 @@ let float u = Arg (float_d, u)
 let bool u = Arg (bool_d, u)
 let string u = Arg (string_d, u)
 let parg d u = Arg (d, u)
-let exact s uri = Exact (s, uri)
+let exact s request_target = Exact (s, request_target)
 let pend = Nil
 let splat = Splat
 let slash = Slash
 let ( / ) f1 f2 r = f1 @@ f2 r
 let ( /. ) f e = f e
 
-external to_uri : ('a, 'b) path -> ('a, 'b) uri = "%identity"
+external to_request_target : ('a, 'b) path -> ('a, 'b) request_target
+  = "%identity"
 
 (* Query *)
 
@@ -149,9 +154,11 @@ let qfloat field u = Query_arg (field, float_d, u)
 let qbool field u = Query_arg (field, bool_d, u)
 let qstring field u = Query_arg (field, string_d, u)
 let qarg (field, d) u = Query_arg (field, d, u)
-let qexact (field, exact) uri = Query_exact (field, exact, uri)
 
-(* URI Combinators *)
+let qexact (field, exact) request_target =
+  Query_exact (field, exact, request_target)
+
+(* Request Target Combinators *)
 
 let root = Slash
 let ( /? ) f1 f2 r = f1 (f2 r)
@@ -159,11 +166,11 @@ let ( /?. ) qf () = qf Nil
 
 (* Route and Router *)
 
-let route : ?method':method' -> ('a, 'b) uri -> 'a -> 'b route =
- fun ?(method' = `GET) uri f -> Route (method', uri, f)
+let route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route =
+ fun ?(method' = `GET) request_target f -> Route (method', request_target, f)
 
-let routes methods uri f =
-  List.map (fun method' -> route ~method' uri f) methods
+let routes methods request_target f =
+  List.map (fun method' -> route ~method' request_target f) methods
 
 let node_type_equal a b =
   match (a, b) with
@@ -180,18 +187,22 @@ let node_type_equal a b =
       && match eq arg1.id arg2.id with Some Eq -> true | None -> false )
   | _ -> false
 
-let rec node_type_of_uri : type a b. (a, b) uri -> node_type list = function
+let rec node_type_of_request_target :
+    type a b. (a, b) request_target -> node_type list = function
   | Nil -> []
   | Slash -> [NSlash]
   | Splat -> [NSplat]
-  | Exact (exact1, uri) -> NExact exact1 :: node_type_of_uri uri
-  | Query_exact (name, value, uri) ->
-      NQuery_exact (name, value) :: node_type_of_uri uri
-  | Arg (arg, uri) -> NArg arg :: node_type_of_uri uri
-  | Query_arg (name, arg, uri) -> NQuery_arg (name, arg) :: node_type_of_uri uri
+  | Exact (exact1, request_target) ->
+      NExact exact1 :: node_type_of_request_target request_target
+  | Query_exact (name, value, request_target) ->
+      NQuery_exact (name, value) :: node_type_of_request_target request_target
+  | Arg (arg, request_target) ->
+      NArg arg :: node_type_of_request_target request_target
+  | Query_arg (name, arg, request_target) ->
+      NQuery_arg (name, arg) :: node_type_of_request_target request_target
 
 let rec node : 'a node -> 'a route -> 'a node =
- fun node' (Route (method', uri, _) as route) ->
+ fun node' (Route (method', request_target, _) as route) ->
   let rec loop node node_types =
     match node_types with
     | [] -> {node with route'= Some route}
@@ -214,7 +225,9 @@ let rec node : 'a node -> 'a route -> 'a node =
             | None ->
                 (node_type, loop empty_node node_types) :: node.node_types' ) }
   in
-  let node_types = NMethod method' :: node_type_of_uri uri in
+  let node_types =
+    NMethod method' :: node_type_of_request_target request_target
+  in
   loop node' node_types
 
 and empty_node : 'a node = {route'= None; node_types'= []}
@@ -236,40 +249,40 @@ let rec drop : 'a list -> int -> 'a list =
  fun l n -> match l with _ :: tl when n > 0 -> drop tl (n - 1) | t -> t
 
 let rec match' : method' -> string -> 'a router -> 'a option =
- fun method' uri t ->
-  (* split uri path and query into tokens *)
-  let uri' = uri |> String.trim |> Uri.of_string in
+ fun method' request_target t ->
+  (* split request_target into path and query tokens *)
+  let request_target' = request_target |> String.trim |> Uri.of_string in
   let path_tokens =
-    Uri.path uri'
+    Uri.path request_target'
     |> String.split_on_char '/'
     |> List.tl
     |> List.map (fun tok -> `Path tok)
   in
   let query_tokens =
-    Uri.query uri'
+    Uri.query request_target'
     |> List.map (fun (k, values) -> List.map (fun v' -> `Query (k, v')) values)
     |> List.concat
   in
-  let uri_tokens = path_tokens @ query_tokens in
+  let request_target_tokens = path_tokens @ query_tokens in
   (* Matching algorithm overview:
 
      1. First match the HTTP method as all routes always start with a HTTP method
      2. Then follow the trie nodes as suggested by the trie algorithm.
   *)
-  let rec try_match t arg_values uri_tokens matched_token_count =
-    match uri_tokens with
+  let rec try_match t arg_values request_target_tokens matched_token_count =
+    match request_target_tokens with
     | [] ->
         Option.map
-          (fun (Route (_, uri, f)) ->
-            exec_route_handler f (uri, List.rev arg_values) )
+          (fun (Route (_, request_target, f)) ->
+            exec_route_handler f (request_target, List.rev arg_values) )
           t.route
-    | uri_token :: uri_tokens ->
+    | request_target_token :: request_target_tokens ->
         let continue = ref true in
         let index = ref 0 in
         let matched_node = ref None in
         let full_splat_matched = ref false in
         while !continue && !index < Array.length t.node_types do
-          match (uri_token, t.node_types.(!index)) with
+          match (request_target_token, t.node_types.(!index)) with
           | `Path v, (NArg arg, t') -> (
             match arg.convert v with
             | Some v ->
@@ -289,7 +302,7 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 |> String.concat "/"
               in
               let splat_url =
-                String.split_on_char '?' uri
+                String.split_on_char '?' request_target
                 |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
@@ -313,64 +326,75 @@ let rec match' : method' -> string -> 'a router -> 'a option =
             if !full_splat_matched then
               (try_match [@tailcall]) t' arg_values [] matched_tok_count
             else
-              (try_match [@tailcall]) t' arg_values uri_tokens matched_tok_count )
+              (try_match [@tailcall]) t' arg_values request_target_tokens
+                matched_tok_count )
   in
-  if List.length uri_tokens > 0 then
+  if List.length request_target_tokens > 0 then
     let n = Array.length t.node_types in
     let rec loop i =
       if i = n then None
       else
         match t.node_types.(i) with
         | NMethod method'', t' when method_equal method' method'' ->
-            try_match t' [] uri_tokens 0
+            try_match t' [] request_target_tokens 0
         | _ -> (loop [@tailcall]) (i + 1)
     in
     loop 0
   else None
 
-and exec_route_handler : type a b. a -> (a, b) uri * arg_value list -> b =
+and exec_route_handler :
+    type a b. a -> (a, b) request_target * arg_value list -> b =
  fun f -> function
   | Nil, [] -> f
   | Splat, [D (d, v)] -> (
     match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
   | Slash, [] -> f
-  | Exact (_, uri), arg_values -> exec_route_handler f (uri, arg_values)
-  | Query_exact (_, _, uri), arg_values -> exec_route_handler f (uri, arg_values)
-  | Arg ({id; _}, uri), D ({id= id'; _}, v) :: arg_values -> (
+  | Exact (_, request_target), arg_values ->
+      exec_route_handler f (request_target, arg_values)
+  | Query_exact (_, _, request_target), arg_values ->
+      exec_route_handler f (request_target, arg_values)
+  | Arg ({id; _}, request_target), D ({id= id'; _}, v) :: arg_values -> (
     match eq id id' with
-    | Some Eq -> exec_route_handler (f v) (uri, arg_values)
+    | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
     | None -> assert false )
-  | Query_arg (_, {id; _}, uri), D ({id= id'; _}, v) :: arg_values -> (
+  | Query_arg (_, {id; _}, request_target), D ({id= id'; _}, v) :: arg_values
+    -> (
     match eq id id' with
-    | Some Eq -> exec_route_handler (f v) (uri, arg_values)
+    | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
     | None -> assert false )
   | _, _ -> assert false
 
 (* Pretty Printers *)
 
-let rec pp_uri : type a b. Format.formatter -> (a, b) uri -> unit =
- fun fmt uri ->
+let rec pp_request_target :
+    type a b. Format.formatter -> (a, b) request_target -> unit =
+ fun fmt request_target ->
   let query_start_tok_emitted = ref false in
-  let pp_query_tok fmt pp' uri =
+  let pp_query_tok fmt pp' request_target =
     if not !query_start_tok_emitted then (
       query_start_tok_emitted := true ;
-      Format.fprintf fmt "?%a" pp' uri )
-    else Format.fprintf fmt "&%a" pp' uri
+      Format.fprintf fmt "?%a" pp' request_target )
+    else Format.fprintf fmt "&%a" pp' request_target
   in
-  match uri with
+  match request_target with
   | Nil -> Format.fprintf fmt "%!"
   | Splat -> Format.fprintf fmt "/**%!"
   | Slash -> Format.fprintf fmt "/%!"
-  | Exact (exact, uri) -> Format.fprintf fmt "/%s%a" exact pp_uri uri
-  | Query_exact (name, value, uri) ->
-      let pp' fmt uri = Format.fprintf fmt "%s=%s%a" name value pp_uri uri in
-      pp_query_tok fmt pp' uri
-  | Arg (arg, uri) -> Format.fprintf fmt "/:%s%a" arg.name pp_uri uri
-  | Query_arg (name, arg, uri) ->
-      let pp' fmt uri =
-        Format.fprintf fmt "%s=:%s%a" name arg.name pp_uri uri
+  | Exact (exact, request_target) ->
+      Format.fprintf fmt "/%s%a" exact pp_request_target request_target
+  | Query_exact (name, value, request_target) ->
+      let pp' fmt request_target =
+        Format.fprintf fmt "%s=%s%a" name value pp_request_target request_target
       in
-      pp_query_tok fmt pp' uri
+      pp_query_tok fmt pp' request_target
+  | Arg (arg, request_target) ->
+      Format.fprintf fmt "/:%s%a" arg.name pp_request_target request_target
+  | Query_arg (name, arg, request_target) ->
+      let pp' fmt request_target =
+        Format.fprintf fmt "%s=:%s%a" name arg.name pp_request_target
+          request_target
+      in
+      pp_query_tok fmt pp' request_target
 
 let pp_method fmt t =
   ( match t with
@@ -396,8 +420,8 @@ let pp_node_type fmt node_type =
   | NMethod method' -> Format.fprintf fmt "%a" pp_method method'
 
 let pp_route : Format.formatter -> 'b route -> unit =
- fun fmt (Route (method', uri, _)) ->
-  Format.fprintf fmt "%a%a" pp_method method' pp_uri uri
+ fun fmt (Route (method', request_target, _)) ->
+  Format.fprintf fmt "%a%a" pp_method method' pp_request_target request_target
 
 let rec pp fmt t =
   let nodes = t.node_types |> Array.to_list in
@@ -423,10 +447,13 @@ module Private = struct
   let nil = Nil
   let splat = Splat
   let slash = Slash
-  let exact s uri = Exact (s, uri)
-  let query_exact name value uri = Query_exact (name, value, uri)
-  let arg d uri = Arg (d, uri)
-  let query_arg name d uri = Query_arg (name, d, uri)
+  let exact s request_target = Exact (s, request_target)
+
+  let query_exact name value request_target =
+    Query_exact (name, value, request_target)
+
+  let arg d request_target = Arg (d, request_target)
+  let query_arg name d request_target = Query_arg (name, d, request_target)
   let int = int_d
   let int32 = int32_d
   let int64 = int64_d
