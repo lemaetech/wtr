@@ -92,6 +92,60 @@ and 'a arg =
 
 and arg_value = D : 'c arg * 'c -> arg_value
 
+(* Arg *)
+
+let arg name convert =
+  let id = new_id () in
+  {name; convert; id}
+
+let int_d = arg "int" int_of_string_opt
+let int32_d = arg "int32" Int32.of_string_opt
+let int64_d = arg "int64" Int64.of_string_opt
+let float_d = arg "float" float_of_string_opt
+let string_d = arg "string" (fun a -> Some a)
+let bool_d = arg "bool" bool_of_string_opt
+
+(* Request Target DSL *)
+
+(* General Components *)
+
+let ( / ) f1 f2 r = f1 @@ f2 r
+let ( /& ) f1 f2 r = f1 @@ f2 r
+let ( /? ) f1 f2 r = f1 (f2 r)
+let ( /. ) f e = f e
+let ( /?. ) qf () = qf Nil
+let exact s request_target = Exact (s, request_target)
+
+let qexact (field, exact) request_target =
+  Query_exact (field, exact, request_target)
+
+external to_request_target : ('a, 'b) path -> ('a, 'b) request_target
+  = "%identity"
+
+let root = Slash
+
+(* Path Arg Components *)
+let int u = Arg (int_d, u)
+let int32 u = Arg (int32_d, u)
+let int64 u = Arg (int64_d, u)
+let float u = Arg (float_d, u)
+let bool u = Arg (bool_d, u)
+let string u = Arg (string_d, u)
+let parg d u = Arg (d, u)
+let qint field u = Query_arg (field, int_d, u)
+let qint32 field u = Query_arg (field, int32_d, u)
+let qint64 field u = Query_arg (field, int64_d, u)
+let qfloat field u = Query_arg (field, float_d, u)
+let qbool field u = Query_arg (field, bool_d, u)
+let qstring field u = Query_arg (field, string_d, u)
+let qarg (field, d) u = Query_arg (field, d, u)
+
+(* Matching Last Components *)
+
+let pend = Nil
+let splat = Splat
+let slash = Slash
+
 (* HTTP Method *)
 
 let method_equal (meth1 : method') (meth2 : method') =
@@ -111,58 +165,6 @@ let method' meth =
   | "OPTIONS" -> `OPTIONS
   | "TRACE" -> `TRACE
   | _ -> `Method meth
-
-(* Arg *)
-
-let arg name convert =
-  let id = new_id () in
-  {name; convert; id}
-
-let int_d = arg "int" int_of_string_opt
-let int32_d = arg "int32" Int32.of_string_opt
-let int64_d = arg "int64" Int64.of_string_opt
-let float_d = arg "float" float_of_string_opt
-let string_d = arg "string" (fun a -> Some a)
-let bool_d = arg "bool" bool_of_string_opt
-
-(* Path *)
-
-let int u = Arg (int_d, u)
-let int32 u = Arg (int32_d, u)
-let int64 u = Arg (int64_d, u)
-let float u = Arg (float_d, u)
-let bool u = Arg (bool_d, u)
-let string u = Arg (string_d, u)
-let parg d u = Arg (d, u)
-let exact s request_target = Exact (s, request_target)
-let pend = Nil
-let splat = Splat
-let slash = Slash
-let ( / ) f1 f2 r = f1 @@ f2 r
-let ( /. ) f e = f e
-
-external to_request_target : ('a, 'b) path -> ('a, 'b) request_target
-  = "%identity"
-
-(* Query *)
-
-let ( /& ) f1 f2 r = f1 @@ f2 r
-let qint field u = Query_arg (field, int_d, u)
-let qint32 field u = Query_arg (field, int32_d, u)
-let qint64 field u = Query_arg (field, int64_d, u)
-let qfloat field u = Query_arg (field, float_d, u)
-let qbool field u = Query_arg (field, bool_d, u)
-let qstring field u = Query_arg (field, string_d, u)
-let qarg (field, d) u = Query_arg (field, d, u)
-
-let qexact (field, exact) request_target =
-  Query_exact (field, exact, request_target)
-
-(* Request Target Combinators *)
-
-let root = Slash
-let ( /? ) f1 f2 r = f1 (f2 r)
-let ( /?. ) qf () = qf Nil
 
 (* Route and Router *)
 

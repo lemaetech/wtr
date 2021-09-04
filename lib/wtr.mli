@@ -21,7 +21,7 @@ type 'a router
     {i route handler} is either of the following:
 
     - a value of type ['a]
-    - or a function which returns value of type ['a]. *)
+    - or a function which returns a value of type ['a]. *)
 and 'a route
 
 (** {!type:request_target} is a HTTP request target value. It consists of either
@@ -36,8 +36,8 @@ and 'a route
       ([name=a&no=123]). Path and query are delimited by [?] character token if
       both are specified.
 
-    Consult {{!section:target} request target} combinators for creating values
-    of this type.
+    Consult {{!section:request_target_dsl} Request Target DSL} for creating
+    values of this type.
 
     See {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} HTTP RFC
     7230 - request target}. *)
@@ -89,6 +89,182 @@ and method' =
     function as an argument. *)
 and 'a arg
 
+(** {1:arg_func Arg} *)
+
+val arg : string -> (string -> 'a option) -> 'a arg
+(** [arg name convert] is {!type:arg} with a name [name] and [convert] as the
+    function which will convert/decode a string value to an OCaml value of type
+    ['a].
+
+    [name] is used during the pretty-printing of {i request_target} by
+    {!val:pp_request_target}.
+
+    [convert v] is [Some a] if [convert] can successfully convert [v] to [a].
+    Otherwise it is [None].
+
+    The following defines an arg of type [Fruit.t arg].
+
+    {[
+      module Fruit = struct
+        type t = Apple | Orange | Pineapple
+
+        let t : t Wtr.arg =
+          Wtr.arg "fruit" (function
+            | "apple" -> Some Apple
+            | "orange" -> Some Orange
+            | "pineapple" -> Some Pineapple
+            | _ -> None )
+      end
+    ]} *)
+
+(** {1:request_target_dsl Request Target DSL}
+
+    Request Target combinators implement a DSL(domain specific language) to
+    specify {!type:request_target} values and hence both {b path component} and
+    {b query component} values.
+
+    Let's assume that we want to specify a HTTP route which matches a request
+    target value as such:
+
+    + match a string literal "hello" exactly
+    + followed by a valid OCaml [int] value
+    + and then finally followed by an OCaml [string] value
+
+    We can use path combinators to implement such a requirement:
+
+    {[ let target1 = Wtr.(exact "hello" / int / string /. pend) ]}
+
+    The [target1] above matches the following instances of HTTP request target:
+
+    - [/home/2/str1]
+    - [/home/3/str2]
+    - [/home/-10/str3] *)
+
+(** {2 General Components} *)
+
+val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
+(** [ p1 / p2] is a closure that {i combines} [p1] and [p2]. [p1] and [p2] are
+    closures which encapsulate {!type:path} value. *)
+
+val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
+(** [q1 /& q1] is a closure that {i combines} [q1] and [q2]. [q1] and [q2] are
+    closures which encapsulate {!type:query} value. *)
+
+val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
+(** [ p /? q] is a closure which {i combines} [p] and [q]. [p] is a closure
+    which encapsulates {!type:path} value and [q] is a closure which encapsulate
+    {!type:query} value. *)
+
+val ( /. ) :
+  (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) request_target
+(** [ p /. pe] is a {!type:request_target} value that consists of only path
+    components. [pe] is a path value that match the last path component. *)
+
+val ( /?. ) :
+  (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) request_target
+(** [ pq /?. ()] is a {!type:request_target} value. [pq] is a closure which
+    encapulates both {!type:path} and {!type:query} components.
+
+    {[
+      let request_target1 =
+        Wtr.(
+          exact "hello"
+          / bool
+          /? qint "hello"
+          /& qstring "hh"
+          /& qbool "b"
+          /?. ())
+    ]} *)
+
+val exact : string -> ('a, 'b) path -> ('a, 'b) path
+(** [exact e p] matches a path component to [e] exactly. *)
+
+val qexact : string * string -> ('a, 'b) query -> ('a, 'b) query
+(** [qexact (field, e)] matches a query component to [e] exactly. The query
+    component token [name] value is [field]. *)
+
+val to_request_target : ('a, 'b) path -> ('a, 'b) request_target
+(** [to_request_target p] is {!type:request_target} consisting of only path [p]. *)
+
+val root : ('a, 'a) request_target
+(** [root] is a {i request_target} with [/] as the only component, i.e. it
+    matches exactly the root HTTP request. *)
+
+(** {2 Arg Components}
+
+    Path/Query arg components encapsulate {!type:arg} value which are then fed
+    to a {i route handler} function as an argument.
+
+    {3 Path Arg Combinators} *)
+
+val int : ('a, 'b) path -> (int -> 'a, 'b) path
+(** [int] matches valid OCaml [int] values. *)
+
+val int32 : ('a, 'b) path -> (int32 -> 'a, 'b) path
+(** [int32] matches valid OCaml [int32] values. *)
+
+val int64 : ('a, 'b) path -> (int64 -> 'a, 'b) path
+(** [int64] matches valid OCaml [int64] values. *)
+
+val float : ('a, 'b) path -> (float -> 'a, 'b) path
+(** [float] matches valid OCaml [float] values. *)
+
+val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
+(** [bool] matches valid OCaml [bool] values. *)
+
+val string : ('a, 'b) path -> (string -> 'a, 'b) path
+(** [string] matches valid OCaml [string] values. *)
+
+val parg : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
+(** [parg d p] matches a path component if arg [d] can successfully convert path
+    component to a value of type ['c]. *)
+
+(** {3 Query Arg Combinators} *)
+
+val qint : string -> ('a, 'b) query -> (int -> 'a, 'b) query
+(** [qint field] matches a valid OCaml [int] value. [field] is the [name] token
+    of {i query component}. *)
+
+val qint32 : string -> ('a, 'b) query -> (int32 -> 'a, 'b) query
+(** [qint32 field] matches a valid OCaml [int32] value. [field] is the [name]
+    token of {i query component}. *)
+
+val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
+(** [qint64 field] matches a valid OCaml [int64] value. [field] is the [name]
+    token of {i query component}. *)
+
+val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
+(** [qfloat field] matches a valid OCaml [float] value. [field] is the [name]
+    token of {i query component}. *)
+
+val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
+(** [qbool field] matches a valid OCaml [bool] value. [field] is the [name]
+    token of {i query component}. *)
+
+val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
+(** [qstring field] matches a valid OCaml [string] value. [field] is the [name]
+    token of {i query component}. *)
+
+val qarg : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
+(** [qarg (field, d)] matches a query component if {i arg} [d] can successfully
+    convert path component to a value of type ['c]. *)
+
+(** {2 Matching Last Components}
+
+    These combinators match the last(end) path component. They are used with
+    {!val:(/.)} function. *)
+
+val pend : ('a, 'a) path
+(** [pend] matches the end of {!type:path} value. *)
+
+val splat : (string -> 'a, 'a) path
+(** [splat] matches and captures all of the remaining path and query components.
+    The captured value is then fed to a {i route handler}. *)
+
+val slash : ('a, 'a) path
+(** [slash] matches path component [/] first and then matches the end of the
+    {!type:path} value. *)
+
 (** {1 HTTP Method} *)
 
 val method_equal : method' -> method' -> bool
@@ -126,147 +302,6 @@ val method' : string -> method'
       Wtr.method' "method" = `Method "method"
     ]} *)
 
-(** {1:arg_func Arg} *)
-
-val arg : string -> (string -> 'a option) -> 'a arg
-(** [arg name convert] is {!type:arg} with a name [name] and [convert] as the
-    function which will convert/decode a string value to an OCaml value of type
-    ['a].
-
-    [name] is used during the pretty-printing of {i request_target} by
-    {!val:pp_request_target}.
-
-    [convert v] is [Some a] if [convert] can successfully convert [v] to [a].
-    Otherwise it is [None].
-
-    The following defines an arg of type [Fruit.t arg].
-
-    {[
-      module Fruit = struct
-        type t = Apple | Orange | Pineapple
-
-        let t : t Wtr.arg =
-          Wtr.arg "fruit" (function
-            | "apple" -> Some Apple
-            | "orange" -> Some Orange
-            | "pineapple" -> Some Pineapple
-            | _ -> None )
-      end
-    ]} *)
-
-(** {1:path Path Components}
-
-    Path combinators implement a DSL(domain specific language) to specify
-    {b path component}s, {!type:path} values and hence {!type:request_target}
-    values.
-
-    Let's assume that we want to specify a HTTP route which matches a request
-    path as such:
-
-    + match a string literal "hello" exactly
-    + followed by a valid OCaml [int] value
-    + and then finally followed by an OCaml [string] value
-
-    We can use path combinators to implement such a requirement:
-
-    {[ let target1 = Wtr.(exact "hello" / int / string /. pend) ]}
-
-    The [target1] value above matches the following HTTP request targets:
-
-    - [/home/2/str1]
-    - [/home/3/str2]
-    - [/home/-10/str3] *)
-
-val ( / ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) path) -> 'd -> 'c
-(** [ p1 / p2] is a closure that {i combines} [p1] and [p2]. [p1] and [p2] are
-    themselves closures which encapsulate {!type:path} value. *)
-
-val ( /. ) :
-  (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) request_target
-(** [/.] is a {!type:request_target} value that consists of only path
-    components. *)
-
-val exact : string -> ('a, 'b) path -> ('a, 'b) path
-(** [exact e p] matches a path component to [e] exactly. *)
-
-val to_request_target : ('a, 'b) path -> ('a, 'b) request_target
-(** [to_request_target p] is {!type:request_target} consisting of only path [p]. *)
-
-(** {3:path-args Args}
-
-    Path arg components encapsulate {!type:arg} value which are then fed to a
-    {i route handler} function as an argument. *)
-
-val int : ('a, 'b) path -> (int -> 'a, 'b) path
-(** [int] matches and captures a valid OCaml [int] value. *)
-
-val int32 : ('a, 'b) path -> (int32 -> 'a, 'b) path
-(** [int32] matches and captures a valid OCaml [int32] values. *)
-
-val int64 : ('a, 'b) path -> (int64 -> 'a, 'b) path
-(** [int64] matches and captures a valid OCaml [int64] values. *)
-
-val float : ('a, 'b) path -> (float -> 'a, 'b) path
-(** [float] matches and captures a valid OCaml [float] values. *)
-
-val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
-(** [bool] matches and captures a valid OCaml [bool] values. *)
-
-val string : ('a, 'b) path -> (string -> 'a, 'b) path
-(** [string] matches and captures a valid OCaml [string] values. *)
-
-val parg : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
-(** [parg d p] matches a path component if arg [d] can successfuly convert path
-    component to a value of type ['c]. *)
-
-(** {3 Path End Components}
-
-    These combinators match the last(end) path component. They are used with
-    {!val:(/.)} function. *)
-
-val pend : ('a, 'a) path
-(** [pend] matches the end of {!type:path} value. *)
-
-val splat : (string -> 'a, 'a) path
-(** [splat] matches and captures all of the remaining path and query components.
-    The captured value is then fed to a {i route handler}. *)
-
-val slash : ('a, 'a) path
-(** [slash] matches path component [/] first and then matches the end of the
-    {!type:path} value. *)
-
-(** {1:query Query} *)
-
-val qint : string -> ('a, 'b) query -> (int -> 'a, 'b) query
-val qint32 : string -> ('a, 'b) query -> (int32 -> 'a, 'b) query
-val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
-val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
-val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
-val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
-val qarg : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
-val qexact : string * string -> ('a, 'b) query -> ('a, 'b) query
-val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
-
-(** {1:target Request Target} *)
-
-val root : ('a, 'a) request_target
-(** [root] is a {i request_target} with [/] as the only component, i.e. it
-    matches exactly the root HTTP request. *)
-
-val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
-(** [ pc /? qc] is a closure which encapsulates path closure [pc] and query
-    closure [qc]. *)
-
-val ( /?. ) :
-  (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) request_target
-(** [ pqc /?. ()] is a {!type:request_target} where [pqc] is a closure
-    encapulating both {!type:path} and {!type:query} - see {!val:(/?)}.
-
-    {[
-      let request_target1 =
-        exact "hello" / bool /? qint "hello" /& qstring "hh" /& qbool "b" /?. ()
-    ]} *)
-
 (** {1 Route and Router} *)
 
 val route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route
@@ -296,9 +331,9 @@ val match' : method' -> string -> 'a router -> 'a option
 
 (** {1:pp Pretty Printers} *)
 
+val pp_request_target : Format.formatter -> ('a, 'b) request_target -> unit
 val pp_method : Format.formatter -> method' -> unit
 val pp_route : Format.formatter -> 'b route -> unit
-val pp_request_target : Format.formatter -> ('a, 'b) request_target -> unit
 val pp : Format.formatter -> 'a router -> unit
 
 (**/**)
