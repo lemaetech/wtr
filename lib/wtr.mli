@@ -132,14 +132,25 @@ val arg : string -> (string -> 'a option) -> 'a arg
     [convert v] is [Some a] if [convert] can successfully convert [v] to [a].
     Otherwise it is [None].
 
-    Creating a user defined arg of type [Fruit.t arg]:
+    Although not strictly necessary if we are only working with
+    {i Request Target DSL}, it is recommended to adhere the following convention
+    when creating a custom decoder. Such an ['a arg] value can be used with both
+    the {i Request Target DSL} and [wtr-ppx] ppxes. The convention is as
+    follows:
+
+    + Encapsulated in a module
+    + The module defines a type called [t]
+    + The module defines a value called [t] which is of type [t Wtr.decoder].
+    + The [name] value match the name of the module.
+
+    An example of such ['a arg] component - [Fruit.t arg] is as below:
 
     {[
       module Fruit = struct
         type t = Apple | Orange | Pineapple
 
         let t : t Wtr.arg =
-          Wtr.arg "fruit" (function
+          Wtr.arg "Fruit" (function
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
@@ -443,7 +454,7 @@ val pp_request_target : Format.formatter -> ('a, 'b) request_target -> unit
     {{!section:path_arg} Path Arg Components}
 
     {i {!val:parg} component} - name of the arg followed by [:] token e.g.
-    [parg Fruit.t] is printed as [:fruit].
+    [parg Fruit.t] is printed as [:Fruit].
 
     {i {!val:exact} component} - the string literal given to [exact] is printed,
     e.g. [exact "hello"] is printed as [hello].
