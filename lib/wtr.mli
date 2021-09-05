@@ -6,9 +6,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *-------------------------------------------------------------------------*)
 
-(** A HTTP request routing library.
+(** {1 Introduction}
 
-    [Wtr] ({i Well Typed Router}) is a HTTP request routing library for OCaml
+    [Wtr] - {i Well Typed Router} - is a HTTP request routing library for OCaml
     web applications.
 
     Given a HTTP {i request_target} and a HTTP {i method}, [Wtr] attempts to
@@ -29,7 +29,7 @@
     - Ppx based approach. The ppx [\[%routes "" \]] is provided by a separate
       opam package [wtr-ppx].
 
-    {3 References}
+    {b References}
 
     - {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} RFC 7230 -
       HTTP Request Target}
@@ -261,7 +261,23 @@ val int64 : ('a, 'b) path -> (int64 -> 'a, 'b) path
 (** [int64] matches valid OCaml [int64] values. *)
 
 val float : ('a, 'b) path -> (float -> 'a, 'b) path
-(** [float] matches valid OCaml [float] values. *)
+(** [float] matches valid OCaml [float] and [int] values.
+
+    {b Note} In addition to OCaml [float] values, the combinator can also match
+    OCaml [int] values. Therefore:
+
+    Given, [p] is
+
+    {[ let p = Wtr.(float /. pend) ]}
+
+    then, it can match the following instances of HTTP request targets:
+
+    - [/123]
+    - [/-234]
+    - [/123.]
+    - [/123.02]
+    - [/-123.]
+    - [/-123.22] *)
 
 val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
 (** [bool] matches a path component if it is equal to either ["true"] or
@@ -301,7 +317,10 @@ val qint64 : string -> ('a, 'b) query -> (int64 -> 'a, 'b) query
 
 val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
 (** [qfloat field] matches a valid OCaml [float] value. [field] is the [name]
-    token of {i query component}. *)
+    token of {i query component}.
+
+    The values matched by this combinator is the same as the {!val:float}
+    combinator. *)
 
 val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
 (** [qbool field] matches query component if [value] token is equal to either
