@@ -20,11 +20,11 @@
     can capture and receive arguments which are typed in a variety of OCaml
     types.
 
-    [wtr] implements two Request Target DSLs to aid in specifying {i route}s for
-    the {i router}:
+    There are two ways to specify {i route}s:
 
-    - {{!section:request_target_dsl} Combinators based}
-    - PPX based - provided by opam package [wtr-ppx]
+    - {{!section:request_target_dsl} Combinators based approach}
+    - Ppx based approach. The ppx [{%routes "" }] is provided by a separate opam
+      package [wtr-ppx].
 
     {3 References}
 
@@ -80,7 +80,8 @@ and ('a, 'b) request_target
     - [/home/about] has path components [home, about]
     - [/home/contact/] has path components [home], [contact] and [/]
 
-    Consult {{!section:path} path combinators} for creating values of this type. *)
+    Consult {{!section:request_target_dsl} Request Target DSL} for creating
+    values of this type. *)
 and ('a, 'b) path
 
 (** {!type:query} is a part of {!type:request_target}. It consists of one of
@@ -92,8 +93,8 @@ and ('a, 'b) path
     Given a {i request_target} [/home/about?a=2&b=3], the {b query component}s
     are [(a,2)] and [(b,3)].
 
-    Consult {{!section:query} query combinators} for creating values of this
-    type. *)
+    Consult {{!section:request_target_dsl} Request Target DSL} for creating
+    values of this type. *)
 and ('a, 'b) query
 
 (** {!type:method'} is a HTTP request method. See
@@ -119,7 +120,7 @@ and 'a arg
 (** {1:arg_func Arg} *)
 
 val arg : string -> (string -> 'a option) -> 'a arg
-(** [arg name convert] is {!type:arg} with a name [name] and [convert] as the
+(** [arg name convert] is {!type:arg} with name [name] and [convert] as the
     function which will convert/decode a string value to an OCaml value of type
     ['a].
 
