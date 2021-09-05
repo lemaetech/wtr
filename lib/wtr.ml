@@ -373,9 +373,7 @@ and exec_route_handler :
 
 (* Pretty Printers *)
 
-let pp_request_target :
-    type a b. Format.formatter -> (a, b) request_target -> unit =
- fun fmt request_target ->
+let pp_request_target fmt request_target =
   let rec loop :
       type a b. bool -> Format.formatter -> (a, b) request_target -> unit =
    fun qmark_printed fmt request_target ->
