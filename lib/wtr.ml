@@ -440,16 +440,17 @@ let pp fmt t =
         Format.pp_open_vbox fmt 2 ;
         ( match node_type with
         | NQuery_exact _ | NQuery_arg _ ->
-            if not qmark_printed then (
-              Format.fprintf fmt "?%a" pp_node_type node_type ;
-              if Array.length t'.node_types > 0 then (
-                Format.pp_print_break fmt 0 0 ;
-                (loop true) fmt t' ) )
-            else (
-              Format.fprintf fmt "&%a" pp_node_type node_type ;
-              if Array.length t'.node_types > 0 then (
-                Format.pp_print_break fmt 0 0 ;
-                (loop true) fmt t' ) )
+            let qmark_printed =
+              if not qmark_printed then (
+                Format.fprintf fmt "?%a" pp_node_type node_type ;
+                true )
+              else (
+                Format.fprintf fmt "&%a" pp_node_type node_type ;
+                false )
+            in
+            if Array.length t'.node_types > 0 then (
+              Format.pp_print_break fmt 0 0 ;
+              (loop qmark_printed) fmt t' )
         | node ->
             Format.fprintf fmt "%a" pp_node_type node ;
             if Array.length t'.node_types > 0 then (
