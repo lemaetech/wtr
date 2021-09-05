@@ -41,8 +41,8 @@
 (** A {!type:router} consists of one or many HTTP request {!type:route}s which
     are used to match a given HTTP request target.
 
-    ['a] represents the value returned after executing the corresponding route
-    handler of a matched route. *)
+    ['a] is a value which is returned by a {i route handler} of the matched
+    {i route}. *)
 type 'a router
 
 (** {!type:route} is a HTTP request route. A route encapsulates a HTTP
@@ -132,7 +132,7 @@ val arg : string -> (string -> 'a option) -> 'a arg
     [convert v] is [Some a] if [convert] can successfully convert [v] to [a].
     Otherwise it is [None].
 
-    The following defines an arg of type [Fruit.t arg].
+    Creating a user defined arg of type [Fruit.t arg]:
 
     {[
       module Fruit = struct
@@ -271,8 +271,19 @@ val string : ('a, 'b) path -> (string -> 'a, 'b) path
 (** [string] matches valid OCaml [string] values. *)
 
 val parg : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
-(** [parg d p] matches a path component if arg [d] can successfully convert path
-    component to a value of type ['c]. *)
+(** [parg d p] matches a path component if [d] can successfully convert path
+    component to a value of type ['c].
+
+    The example below uses the [Fruit.t arg] defined {{!section:arg_func}
+    above}:
+
+    {[ let p = Wtr.(parg Fruit.t /. pend) ]}
+
+    [p] matchs the following instances of HTTP request target values:
+
+    - [/pineapple]
+    - [/apple]
+    - [/orange] *)
 
 (** {3 Query} *)
 
@@ -302,8 +313,20 @@ val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
     token of {i query component}. *)
 
 val qarg : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
-(** [qarg (field, d)] matches a query component if {i arg} [d] can successfully
-    convert path component to a value of type ['c]. *)
+(** [qarg (field, d)] matches a query component if [d] can successfully convert
+    path component to a value of type ['c]. [field] is the [name] token of
+    {i query component}.
+
+    The example below uses the [Fruit.t arg] defined {{!section:arg_func}
+    above}:
+
+    {[ let p = Wtr.(exact "hello" /? qarg ("fruit", Fruit.t) /?. ()) ]}
+
+    [p] matchs the following instances of HTTP request target values:
+
+    - [/hello?fruit=pineapple]
+    - [/hello?fruit=apple]
+    - [/hello?fruit=orange] *)
 
 (** {2 Matching Last Components}
 
