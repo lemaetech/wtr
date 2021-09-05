@@ -173,7 +173,7 @@ val arg : string -> (string -> 'a option) -> 'a arg
     {4 Illustration 1: request_target consisting of path and query}
 
     Let's assume that we want to specify a HTTP route which matches a request
-    target value as such:
+    target value which consists of both path and query as such:
 
     + match a string literal "hello" exactly
     + followed by a valid OCaml [bool] value
