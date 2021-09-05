@@ -168,7 +168,6 @@ val arg : string -> (string -> 'a option) -> 'a arg
     [target1] above matches the following instances of HTTP request target:
 
     - [/home/2/str1]
-    - [/home/3/str2]
     - [/home/-10/str3]
 
     {4 Illustration 1: request_target consisting of path and query}
