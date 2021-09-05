@@ -448,16 +448,16 @@ let pp fmt t =
                 Format.fprintf fmt "&%a" pp_node_type node_type ;
                 false )
             in
-            if Array.length t'.node_types > 0 then (
-              Format.pp_print_break fmt 0 0 ;
-              (loop qmark_printed) fmt t' )
+            (pp' qmark_printed) fmt t'
         | node ->
             Format.fprintf fmt "%a" pp_node_type node ;
-            if Array.length t'.node_types > 0 then (
-              Format.pp_print_break fmt 0 0 ;
-              (loop qmark_printed) fmt t' ) ) ;
+            (pp' qmark_printed) fmt t' ) ;
         Format.pp_close_box fmt () )
       fmt nodes
+  and pp' qmark_printed fmt t' =
+    if Array.length t'.node_types > 0 then (
+      Format.pp_print_break fmt 0 0 ;
+      (loop qmark_printed) fmt t' )
   in
   loop false fmt t
 
