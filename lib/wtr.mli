@@ -249,7 +249,7 @@ val root : ('a, 'a) request_target
     Path/Query arg components encapsulate {!type:arg} value which are then fed
     to a {i route handler} function as an argument.
 
-    {3 Path} *)
+    {3:path_arg Path} *)
 
 val int : ('a, 'b) path -> (int -> 'a, 'b) path
 (** [int] matches valid OCaml [int] values. *)
@@ -430,11 +430,80 @@ val match' : method' -> string -> 'a router -> 'a option
 
 (** {1:pp Pretty Printers}
 
-    Use pretty printers as a tool for debugging routing and route issues. *)
+    Pretty printers can be useful during debugging of routing and/or route
+    related issues. *)
 
 val pp_request_target : Format.formatter -> ('a, 'b) request_target -> unit
+(** [pp_request_target fmt target] pretty prints [target] onto [fmt].
+
+    {b Path components}
+
+    {i arg components} - name of the combinator prefixed by [:] token, eg.
+    {!val:int} is printed as [:int], {!val:float} is printed as [:float].
+    {{!section:path_arg} Path Arg Components}
+
+    {i {!val:parg} component} - name of the arg followed by [:] token e.g.
+    [parg Fruit.t] is printed as [:fruit].
+
+    {i {!val:exact} component} - the string literal given to [exact] is printed,
+    e.g. [exact "hello"] is printed as [hello].
+
+    {i {!val:slash}} - printed as [/]
+
+    {i {!val:splat}} - printed as [**]
+
+    A [/] character is inserted in between the components when printing a
+    sequence of {i path components}, e.g.
+
+    {[ let p = Wtr.(exact "hello" / int / bool /. splat) ]}
+
+    is printed as [/hello/:int/:bool/**].
+
+    {b Query components}
+
+    {i arg components} - query arg components are printed similar to
+    {i path arg components}; with the addition of [name] token, e.g. [qint "h"]
+    is printed as [h=:int], [qbool "b"] is printed as [b=:bool].
+
+    {i qarg component} - is printed similar to {!val:parg}; with the addition of
+    field name, e.g. [qarg ("h", Fruit.t)] is printed as [h=:fruit].
+
+    {i qexact component} - is printed similar to {!val:exact}; with the addition
+    of field name, e.g. [qexact ("h", "hello")] is printed as [h=hello].
+
+    A [&] character is inserted in between the components when printing a
+    sequence of {i query components}. Additionally, a [?] character is printed
+    in between {i path components} and {i query components}, e.g.
+
+    {[
+      let target1 =
+        Wtr.(
+          exact "hello"
+          / bool
+          / int
+          / string
+          /? qexact ("h", "hello")
+          /& qbool "b"
+          /?. ())
+      in
+      Wtr.pp_request_target Format.std_formatter target1
+    ]}
+
+    will print the following: [/hello/:bool/:int/:string?h=hello&b=:bool] *)
+
 val pp_method : Format.formatter -> method' -> unit
+
 val pp_route : Format.formatter -> 'b route -> unit
+(** [pp_route fmt route] first pretty prints the [method] followed by the
+    [request_target] of a [route], e.g.
+
+    {[
+      let route1 =
+        Wtr.(route ~method':`GET (exact "hello" / bool /. slash)) (fun _ -> ())
+    ]}
+
+    [route1] is pretty printed as [GET/hello/:bool/] *)
+
 val pp : Format.formatter -> 'a router -> unit
 
 (**/**)

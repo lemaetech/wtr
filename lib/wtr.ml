@@ -373,35 +373,35 @@ and exec_route_handler :
 
 (* Pretty Printers *)
 
-let rec pp_request_target :
+let pp_request_target :
     type a b. Format.formatter -> (a, b) request_target -> unit =
  fun fmt request_target ->
-  let query_start_tok_emitted = ref false in
-  let pp_query_tok fmt pp' request_target =
-    if not !query_start_tok_emitted then (
-      query_start_tok_emitted := true ;
-      Format.fprintf fmt "?%a" pp' request_target )
-    else Format.fprintf fmt "&%a" pp' request_target
+  let rec loop :
+      type a b. bool -> Format.formatter -> (a, b) request_target -> unit =
+   fun qmark_printed fmt request_target ->
+    match request_target with
+    | Nil -> Format.fprintf fmt "%!"
+    | Splat -> Format.fprintf fmt "/**%!"
+    | Slash -> Format.fprintf fmt "/%!"
+    | Exact (exact, request_target) ->
+        Format.fprintf fmt "/%s%a" exact (loop qmark_printed) request_target
+    | Query_exact (name, value, request_target) ->
+        if not qmark_printed then
+          Format.fprintf fmt "?%s=%s%a" name value (loop true) request_target
+        else
+          Format.fprintf fmt "&%s=%s%a" name value (loop qmark_printed)
+            request_target
+    | Arg (arg, request_target) ->
+        Format.fprintf fmt "/:%s%a" arg.name (loop qmark_printed) request_target
+    | Query_arg (name, arg, request_target) ->
+        if not qmark_printed then
+          Format.fprintf fmt "?%s=:%s%a" name arg.name (loop true)
+            request_target
+        else
+          Format.fprintf fmt "&%s=:%s%a" name arg.name (loop qmark_printed)
+            request_target
   in
-  match request_target with
-  | Nil -> Format.fprintf fmt "%!"
-  | Splat -> Format.fprintf fmt "/**%!"
-  | Slash -> Format.fprintf fmt "/%!"
-  | Exact (exact, request_target) ->
-      Format.fprintf fmt "/%s%a" exact pp_request_target request_target
-  | Query_exact (name, value, request_target) ->
-      let pp' fmt request_target =
-        Format.fprintf fmt "%s=%s%a" name value pp_request_target request_target
-      in
-      pp_query_tok fmt pp' request_target
-  | Arg (arg, request_target) ->
-      Format.fprintf fmt "/:%s%a" arg.name pp_request_target request_target
-  | Query_arg (name, arg, request_target) ->
-      let pp' fmt request_target =
-        Format.fprintf fmt "%s=:%s%a" name arg.name pp_request_target
-          request_target
-      in
-      pp_query_tok fmt pp' request_target
+  loop false fmt request_target
 
 let pp_method fmt t =
   ( match t with
@@ -430,25 +430,35 @@ let pp_route : Format.formatter -> 'b route -> unit =
  fun fmt (Route (method', request_target, _)) ->
   Format.fprintf fmt "%a%a" pp_method method' pp_request_target request_target
 
-let rec pp fmt t =
-  let nodes = t.node_types |> Array.to_list in
-  let len = List.length nodes in
-  let query_tok_printed = ref false in
-  Format.pp_print_list
-    ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
-    (fun fmt (node_type, t') ->
-      Format.pp_open_vbox fmt 2 ;
-      ( match node_type with
-      | NQuery_exact _ | NQuery_arg _ ->
-          if not !query_tok_printed then
-            Format.fprintf fmt "?%a" pp_node_type node_type
-          else Format.fprintf fmt "&%a" pp_node_type node_type
-      | node -> Format.fprintf fmt "%a" pp_node_type node ) ;
-      if Array.length t'.node_types > 0 then (
-        Format.pp_print_break fmt 0 0 ;
-        pp fmt t' ) ;
-      Format.pp_close_box fmt () )
-    fmt nodes
+let pp fmt t =
+  let rec loop qmark_printed fmt t =
+    let nodes = t.node_types |> Array.to_list in
+    let len = List.length nodes in
+    Format.pp_print_list
+      ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
+      (fun fmt (node_type, t') ->
+        Format.pp_open_vbox fmt 2 ;
+        ( match node_type with
+        | NQuery_exact _ | NQuery_arg _ ->
+            if not qmark_printed then (
+              Format.fprintf fmt "?%a" pp_node_type node_type ;
+              if Array.length t'.node_types > 0 then (
+                Format.pp_print_break fmt 0 0 ;
+                (loop true) fmt t' ) )
+            else (
+              Format.fprintf fmt "&%a" pp_node_type node_type ;
+              if Array.length t'.node_types > 0 then (
+                Format.pp_print_break fmt 0 0 ;
+                (loop true) fmt t' ) )
+        | node ->
+            Format.fprintf fmt "%a" pp_node_type node ;
+            if Array.length t'.node_types > 0 then (
+              Format.pp_print_break fmt 0 0 ;
+              (loop qmark_printed) fmt t' ) ) ;
+        Format.pp_close_box fmt () )
+      fmt nodes
+  in
+  loop false fmt t
 
 (* Used by wtr/request_target ppx *)
 

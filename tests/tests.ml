@@ -230,16 +230,20 @@ let%expect_test _ =
        None |}]
 
 let%expect_test _ =
-  pp_route ({%routes| get; /home/about/:bool|} (fun _ -> ())) ;
-  [%expect {| GET/home/about/:bool |}]
+  pp_route
+    ({%routes| get; /home/about/:bool?h=:int&b=:bool&e=hello|} (fun _ _ _ -> ())) ;
+  [%expect {| GET/home/about/:bool?h=:int&b=:bool&e=hello |}]
 
 let%expect_test _ =
   pp_route ({%routes| post; /home/about/:int/:string/:Fruit|} (fun _ _ _ -> ())) ;
   [%expect {| POST/home/about/:int/:string/:Fruit |}]
 
 let%expect_test _ =
-  pp_route ({%routes| head;/home/:int/:int32/:int64/:Fruit|} (fun _ _ _ _ -> ())) ;
-  [%expect {| HEAD/home/:int/:int32/:int64/:Fruit |}]
+  pp_route
+    ({%routes| head;/home/:int/:int32/:int64/:Fruit?q1=hello&f=:Fruit&b=:bool&f=:float |}
+       (fun _ _ _ _ _ _ _ -> ()) ) ;
+  [%expect
+    {| HEAD/home/:int/:int32/:int64/:Fruit?q1=hello&f=:Fruit&b=:bool&f=:float |}]
 
 let%expect_test _ =
   Wtr.pp Format.std_formatter router ;
@@ -260,9 +264,9 @@ let%expect_test _ =
       /product
         /:string
           ?section=:int
-            ?q1=yes
+            &q1=yes
           ?section=:string
-            ?q1=yes
+            &q1=yes
       /fruit
         /:Fruit
       /
@@ -277,7 +281,7 @@ let%expect_test _ =
       /product
         /:string
           ?section=:int
-            ?q=:bool
+            &q=:bool
     HEAD
       /home
         /:int
