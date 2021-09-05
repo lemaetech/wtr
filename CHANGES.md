@@ -7,8 +7,8 @@
 - BREAKING CHANGE: 't' type has been renamed to `router`
 - BREAKING CHANGE: `'a decoder` has been renamed to `'a arg`
 - BREAKING CHANGE: `'a uri` has been renamed to `'a request_target`
-- FIX: Fix matching query components in uri
-- FIX: Fix pretty printing of query components in uri
+- FIX: Fix matching query components in request target
+- FIX: Fix pretty printing of `request_target`
 - NEW: Add path, query and uri combinators to create and manipulate path, query and uri values
 - NEW: Add `route`, `routes` and `pp_uri` functions
 
