@@ -450,6 +450,8 @@ let rec pp fmt t =
       Format.pp_close_box fmt () )
     fmt nodes
 
+(* Used by wtr/request_target ppx *)
+
 module Private = struct
   let nil = Nil
   let splat = Splat
