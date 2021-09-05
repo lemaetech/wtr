@@ -82,8 +82,8 @@ GET
   /product
     /:string
       ?section=:int
-        ?q=:bool
-        ?q1=yes
+        &q=:bool
+        &q1=yes
   /fruit
     /:fruit
   /faq
