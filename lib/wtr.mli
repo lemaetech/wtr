@@ -428,7 +428,9 @@ val match' : method' -> string -> 'a router -> 'a option
     [request_target] together matches one of the routes defined in [router].
     Otherwise it is None. *)
 
-(** {1:pp Pretty Printers} *)
+(** {1:pp Pretty Printers}
+
+    Use pretty printers as a tool for debugging routing and route issues. *)
 
 val pp_request_target : Format.formatter -> ('a, 'b) request_target -> unit
 val pp_method : Format.formatter -> method' -> unit

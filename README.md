@@ -58,14 +58,14 @@ let faq category_id _ =
 
 let router =
   Wtr.router'      
-      [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
-      ; {%wtr| head,delete           ; /home/:int/             |} prod_page
-      ; {%wtr| get,post              ; /home/:float/           |} float_page
-      ; {%wtr| get; /contact/*/:int                            |} contact_page
-      ; {%wtr| get; /product/:string?section=:int&q=:bool      |} product1
-      ; {%wtr| get; /product/:string?section=:int&q1=yes       |} product2
-      ; {%wtr| get; /fruit/:Fruit                              |} fruit_page
-      ; {%wtr| GET; /faq/:int/**                               |} faq ]
+      [ {%routes| get,post,head,delete  ; /home/about/            |} about_page
+      ; {%routes| head,delete           ; /home/:int/             |} prod_page
+      ; {%routes| get,post              ; /home/:float/           |} float_page
+      ; {%routes| get; /contact/*/:int                            |} contact_page
+      ; {%routes| get; /product/:string?section=:int&q=:bool      |} product1
+      ; {%routes| get; /product/:string?section=:int&q1=yes       |} product2
+      ; {%routes| get; /fruit/:Fruit                              |} fruit_page
+      ; {%routes| GET; /faq/:int/**                               |} faq ]
 
 let p () = 
   Printf.printf "\n====Router Match Results====\n" ;
