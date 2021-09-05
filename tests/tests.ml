@@ -237,16 +237,6 @@ let%expect_test _ =
   Wtr.pp Format.std_formatter router ;
   [%expect
     {|
-    POST
-      /home
-        /about
-          /:int
-        /products
-          /**
-      /product
-        /:string
-          ?section=:int
-            ?q=:bool
     GET
       /home
         /about
@@ -270,10 +260,16 @@ let%expect_test _ =
       /
       /public
         /**
-    DELETE
+    POST
       /home
-        /:int
-          /
+        /about
+          /:int
+        /products
+          /**
+      /product
+        /:string
+          ?section=:int
+            ?q=:bool
     HEAD
       /home
         /:int
@@ -282,4 +278,8 @@ let%expect_test _ =
         /:int32
           /code
             /:int64
-              / |}]
+              /
+    DELETE
+      /home
+        /:int
+          / |}]
