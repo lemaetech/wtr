@@ -44,14 +44,14 @@ let faq category_id _url =
 (* create a router *)
 let router =
   Wtr.router'
-    [ {%wtr| get,post; /home/about                     |} "about page"
-    ; {%wtr| get; /home/:int/                          |} prod_page
-    ; {%wtr| get;/home/:float/                         |} float_page
-    ; {%wtr| get;/contact/*/:int                       |} contact_page
-    ; {%wtr| get;/product/:string?section=:int&q=:bool |} product1
-    ; {%wtr| get;/product/:string?section=:int&q1=yes  |} product2
-    ; {%wtr| get;/fruit/:Fruit                         |} fruit_page
-    ; {%wtr| get;/faq/:int/**                          |} faq ]
+    [ {%routes| get,post; /home/about                     |} "about page"
+    ; {%routes| get; /home/:int/                          |} prod_page
+    ; {%routes| get;/home/:float/                         |} float_page
+    ; {%routes| get;/contact/*/:int                       |} contact_page
+    ; {%routes| get;/product/:string?section=:int&q=:bool |} product1
+    ; {%routes| get;/product/:string?section=:int&q1=yes  |} product2
+    ; {%routes| get;/fruit/:Fruit                         |} fruit_page
+    ; {%routes| get;/faq/:int/**                          |} faq ]
 
 let () =
   let callback _conn req _body =

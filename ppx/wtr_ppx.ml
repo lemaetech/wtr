@@ -217,11 +217,11 @@ let wtr ~loc ~path:_ wtr =
       [%expr Wtr.routes [%e methods'] [%e uri]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-let wtr_ppx = "wtr"
+let routes_ppx = "routes"
 
-let wtr_ext =
-  Extension.declare wtr_ppx Extension.Context.Expression
+let wtr_ppx =
+  Extension.declare routes_ppx Extension.Context.Expression
     Ast_pattern.(single_expr_payload (estring __))
     wtr
 
-let () = Driver.register_transformation wtr_ppx ~extensions:[wtr_ext]
+let () = Driver.register_transformation routes_ppx ~extensions:[wtr_ppx]
