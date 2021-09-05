@@ -22,9 +22,10 @@
 
     There are two ways to specify {i route}s:
 
-    - {{!section:request_target_dsl} Combinators based approach}
-    - Ppx based approach. The ppx [{%routes "" }] is provided by a separate opam
-      package [wtr-ppx].
+    - Combinators based approach - {{!section:request_target_dsl} Request Target
+      DSL}
+    - Ppx based approach. The ppx [\[%routes "" \]] is provided by a separate
+      opam package [wtr-ppx].
 
     {3 References}
 
@@ -148,25 +149,50 @@ val arg : string -> (string -> 'a option) -> 'a arg
 (** {1:request_target_dsl Request Target DSL}
 
     Request Target combinators implement a DSL(domain specific language) to
-    specify {!type:request_target} values and hence both {b path component} and
-    {b query component} values.
+    specify {!type:request_target}, {b path component} and {b query component}
+    values.
+
+    {4 Illustration 1: request_target consisting of path only}
+
+    Let's assume that we want to specify a HTTP route which matches a request
+    target value as such:
+
+    + match a string literal "home" exactly
+    + followed by a valid OCaml [int] value
+    + and then finally followed by an OCaml [string] value
+
+    The {i request target} is implemented as such:
+
+    {[ let target1 = Wtr.(exact "hello" / int / string /. pend) ]}
+
+    [target1] above matches the following instances of HTTP request target:
+
+    - [/home/2/str1]
+    - [/home/3/str2]
+    - [/home/-10/str3]
+
+    {4 Illustration 1: request_target consisting of path and query}
 
     Let's assume that we want to specify a HTTP route which matches a request
     target value as such:
 
     + match a string literal "hello" exactly
-    + followed by a valid OCaml [int] value
-    + and then finally followed by an OCaml [string] value
+    + followed by a valid OCaml [bool] value
+    + followed by a query component where the field name is "i" and the query
+      value is a valid OCaml [int] value.
+    + and then finally a query component where the field name is "s" and the
+      query value is an OCaml [string] value.
 
-    We can use path combinators to implement such a requirement:
+    The {i request_target} is implemented as such:
 
-    {[ let target1 = Wtr.(exact "hello" / int / string /. pend) ]}
+    {[
+      let target2 = Wtr.(exact "hello" / bool /? qint "i" / qstring "s" /?. ())
+    ]}
 
-    The [target1] above matches the following instances of HTTP request target:
+    [target2] above matches the following instances of HTTP request target:
 
-    - [/home/2/str1]
-    - [/home/3/str2]
-    - [/home/-10/str3] *)
+    - [/hello/true?i=233&s=str1]
+    - [/hello/false?i=-1234&s=str2] *)
 
 (** {2 General Components} *)
 
@@ -238,7 +264,8 @@ val float : ('a, 'b) path -> (float -> 'a, 'b) path
 (** [float] matches valid OCaml [float] values. *)
 
 val bool : ('a, 'b) path -> (bool -> 'a, 'b) path
-(** [bool] matches valid OCaml [bool] values. *)
+(** [bool] matches a path component if it is equal to either ["true"] or
+    ["false"] and converts them to valid OCaml [bool] values. *)
 
 val string : ('a, 'b) path -> (string -> 'a, 'b) path
 (** [string] matches valid OCaml [string] values. *)
@@ -266,8 +293,9 @@ val qfloat : string -> ('a, 'b) query -> (float -> 'a, 'b) query
     token of {i query component}. *)
 
 val qbool : string -> ('a, 'b) query -> (bool -> 'a, 'b) query
-(** [qbool field] matches a valid OCaml [bool] value. [field] is the [name]
-    token of {i query component}. *)
+(** [qbool field] matches query component if [value] token is equal to either
+    ["true"] or ["false"]. The [value] token is then converted to a valid OCaml
+    [bool] value. [field] is the [name] token of {i query component}. *)
 
 val qstring : string -> ('a, 'b) query -> (string -> 'a, 'b) query
 (** [qstring field] matches a valid OCaml [string] value. [field] is the [name]
