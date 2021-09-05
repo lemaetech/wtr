@@ -192,7 +192,7 @@ let rec make_request_target ~loc query_tokens path_tokens =
           [%e Ast_builder.estring ~loc path_token]
           [%e make_request_target ~loc query_tokens path_tokens]]
 
-let wtr ~loc ~path:_ wtr =
+let make_routes ~loc ~path:_ wtr =
   let wtr = String.trim wtr in
   let methods, uri =
     let tokens =
@@ -217,11 +217,11 @@ let wtr ~loc ~path:_ wtr =
       [%expr Wtr.routes [%e methods'] [%e uri]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-let routes_ppx = "routes"
+let routes_ppx_name = "routes"
 
-let wtr_ppx =
-  Extension.declare routes_ppx Extension.Context.Expression
+let routes_ppx =
+  Extension.declare routes_ppx_name Extension.Context.Expression
     Ast_pattern.(single_expr_payload (estring __))
-    wtr
+    make_routes
 
-let () = Driver.register_transformation routes_ppx ~extensions:[wtr_ppx]
+let () = Driver.register_transformation routes_ppx_name ~extensions:[routes_ppx]
