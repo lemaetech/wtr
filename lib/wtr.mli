@@ -11,10 +11,12 @@
     [Wtr] ({i Well Typed Router}) is a HTTP request routing library for OCaml
     web applications.
 
-    Given a HTTP {!type:request_target} and a HTTP {!type:method'}, [wtr]
-    attempts to match the two properties to a pre-defined set of {!type:route}s.
-    If a match is found then the corresponding {i route handler} function of the
-    matched route is executed.
+    Given a HTTP {i request_target} and a HTTP {i method}, [Wtr] attempts to
+    match the two properties to a pre-defined set of {!type:route}s. If a match
+    is found then the corresponding {i route handler} function of the matched
+    route is executed.
+
+    The route matching algorithm is {i radix trie}.
 
     The {i well typed} part in [Wtr] means that the {i route handler} functions
     can capture and receive arguments which are typed in a variety of OCaml
@@ -37,8 +39,7 @@
 (** {1 Types} *)
 
 (** A {!type:router} consists of one or many HTTP request {!type:route}s which
-    are used to match a given HTTP request target. The base algorithm used for
-    matching is a radix trie.
+    are used to match a given HTTP request target.
 
     ['a] represents the value returned after executing the corresponding route
     handler of a matched route. *)
