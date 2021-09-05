@@ -182,7 +182,7 @@ val arg : string -> (string -> 'a option) -> 'a arg
     - [/home/2/str1]
     - [/home/-10/str3]
 
-    {4 Illustration 1: request_target consisting of path and query}
+    {4 Illustration 2: request_target consisting of path and query}
 
     Let's assume that we want to specify a HTTP route which matches a request
     target value which consists of both path and query as such:
@@ -439,7 +439,7 @@ val match' : method' -> string -> 'a router -> 'a option
     [request_target] together matches one of the routes defined in [router].
     Otherwise it is None. *)
 
-(** {1:pp Pretty Printers}
+(** {1:pp Pretty Printers and Debugging}
 
     Pretty printers can be useful during debugging of routing and/or route
     related issues. *)
@@ -513,7 +513,21 @@ val pp_route : Format.formatter -> 'b route -> unit
         Wtr.(route ~method':`GET (exact "hello" / bool /. slash)) (fun _ -> ())
     ]}
 
-    [route1] is pretty printed as [GET/hello/:bool/] *)
+    [route1] is pretty printed as [GET/hello/:bool/]
+
+    The [route2] contains both path and query components:
+
+    {[
+      let route2 =
+        Wtr.(
+          route ~method':`GET
+            (exact "hello" / bool /? qexact ("h", "hello") /& qbool "b" /?. ()))
+          (fun _ _ -> ())
+      in
+      Wtr.pp_route Format.std_formatter route2
+    ]}
+
+    It is printed as follows: [GET/hello/:bool?h=hello?b=:bool] *)
 
 val pp : Format.formatter -> 'a router -> unit
 
