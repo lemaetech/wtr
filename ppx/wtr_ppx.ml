@@ -82,6 +82,7 @@ let make_methods : loc:location -> string -> expression =
   |> List.filter_map (fun s ->
          let s = String.trim s in
          if String.length s > 0 then Some s else None )
+  |> List.rev
   |> List.fold_left
        (fun expr method' ->
          let method' = Ast_builder.estring ~loc method' in

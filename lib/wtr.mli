@@ -417,7 +417,8 @@ val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b route list
     ]} *)
 
 val router : 'a route list -> 'a router
-(** [router routes] is a {!type:router} made up of given [routes]. *)
+(** [router routes] is a {!type:router} made up of given [routes]. The matching
+    algorithm evaluates the routes in the order given, i.e. from left to right. *)
 
 val router' : 'a route list list -> 'a router
 (** [router' routes_list = router (List.concat routes_list)] *)
