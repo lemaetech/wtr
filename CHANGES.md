@@ -10,7 +10,7 @@
 - FIX: Fix matching query components in request target
 - FIX: Fix pretty printing of `request_target`
 - NEW: Add path, query and uri combinators to create and manipulate path, query and uri values
-- NEW: Add `route`, `routes` and `pp_uri` functions
+- NEW: Add `route`, `routes` and `pp_request_target` functions
 
 ## v2.0.0 2021-08-02 
 
