@@ -6,11 +6,38 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *-------------------------------------------------------------------------*)
 
+(** A HTTP request routing library.
+
+    [Wtr] ({i Well Typed Router}) is a HTTP request routing library for OCaml
+    web applications.
+
+    Given a HTTP {!type:request_target} and a HTTP {!type:method'}, [wtr]
+    attempts to match the two properties to a pre-defined set of {!type:route}s.
+    If a match is found then the corresponding {i route handler} function of the
+    matched route is executed.
+
+    The {i well typed} part in [Wtr] means that the {i route handler} functions
+    can capture and receive arguments which are typed in a variety of OCaml
+    types.
+
+    [wtr] implements two Request Target DSLs to aid in specifying {i route}s for
+    the {i router}:
+
+    - {{!section:request_target_dsl} Combinators based}
+    - PPX based - provided by opam package [wtr-ppx]
+
+    {3 References}
+
+    - {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} RFC 7230 -
+      HTTP Request Target}
+    - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
+      HTTP Methods} *)
+
 (** {1 Types} *)
 
-(** A {!type:router} consists of one or many HTTP request {!type:route}s. These
-    routes are used to match a given HTTP request target using a radix trie
-    algorithm.
+(** A {!type:router} consists of one or many HTTP request {!type:route}s which
+    are used to match a given HTTP request target. The base algorithm used for
+    matching is a radix trie.
 
     ['a] represents the value returned after executing the corresponding route
     handler of a matched route. *)
@@ -24,9 +51,9 @@ type 'a router
     - or a function which returns a value of type ['a]. *)
 and 'a route
 
-(** {!type:request_target} is a HTTP request target value. It consists of either
-    just a {!type:path} value or a combination of {!type:path} and {!type:query}
-    values.
+(** {!type:request_target} is a HTTP request target value to be matched. It
+    consists of either just a {!type:path} value or a combination of
+    {!type:path} and {!type:query} values.
 
     Example {i request_target} values:
 
@@ -195,7 +222,7 @@ val root : ('a, 'a) request_target
     Path/Query arg components encapsulate {!type:arg} value which are then fed
     to a {i route handler} function as an argument.
 
-    {3 Path Arg Combinators} *)
+    {3 Path} *)
 
 val int : ('a, 'b) path -> (int -> 'a, 'b) path
 (** [int] matches valid OCaml [int] values. *)
@@ -219,7 +246,7 @@ val parg : 'c arg -> ('a, 'b) path -> ('c -> 'a, 'b) path
 (** [parg d p] matches a path component if arg [d] can successfully convert path
     component to a value of type ['c]. *)
 
-(** {3 Query Arg Combinators} *)
+(** {3 Query} *)
 
 val qint : string -> ('a, 'b) query -> (int -> 'a, 'b) query
 (** [qint field] matches a valid OCaml [int] value. [field] is the [name] token

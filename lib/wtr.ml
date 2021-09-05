@@ -37,8 +37,7 @@ let eq : type a b. a id -> b id -> (a, b) eq option =
 
 (* Types *)
 
-(* We use array for node_types so that we get better cache locality. The hope being
-   that iterating nodes via array is faster than via the list. *)
+(* We use an array for node_types so that we get better cache locality. *)
 type 'a router =
   {route: 'a route option; node_types: (node_type * 'a router) array}
 
@@ -124,7 +123,7 @@ external to_request_target : ('a, 'b) path -> ('a, 'b) request_target
 
 let root = Slash
 
-(* Path Arg Combinators *)
+(* Path *)
 
 let int u = Arg (int_d, u)
 let int32 u = Arg (int32_d, u)
@@ -134,7 +133,7 @@ let bool u = Arg (bool_d, u)
 let string u = Arg (string_d, u)
 let parg d u = Arg (d, u)
 
-(* Query Arg Combinators *)
+(* Query *)
 
 let qint field u = Query_arg (field, int_d, u)
 let qint32 field u = Query_arg (field, int32_d, u)
