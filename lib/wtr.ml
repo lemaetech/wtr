@@ -217,18 +217,18 @@ let rec node : 'a node -> 'a route -> 'a node =
             (fun (node_type', _) -> node_type_equal node_type node_type')
             node.node_types'
         in
-        { node with
-          node_types'=
-            ( match node'' with
-            | Some _ ->
-                List.map
-                  (fun (node_type', t') ->
-                    if node_type_equal node_type node_type' then
-                      (node_type', loop t' node_types)
-                    else (node_type', t') )
-                  node.node_types'
-            | None ->
-                (node_type, loop empty_node node_types) :: node.node_types' ) }
+        let node_types' =
+          match node'' with
+          | Some _ ->
+              List.map
+                (fun (node_type', t') ->
+                  if node_type_equal node_type node_type' then
+                    (node_type', loop t' node_types)
+                  else (node_type', t') )
+                node.node_types'
+          | None -> (node_type, loop empty_node node_types) :: node.node_types'
+        in
+        {node with node_types'}
   in
   let node_types =
     NMethod method' :: node_type_of_request_target request_target
