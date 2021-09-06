@@ -36,8 +36,6 @@
     - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
       HTTP Methods} *)
 
-(** {1 Demonstration} *)
-
 (** {1 Types} *)
 
 (** A {!type:router} consists of one or many HTTP request {!type:route}s which
@@ -542,7 +540,62 @@ val pp : Format.formatter -> 'a router -> unit
     The indentation and line printing is meant to convey the order of a route
     component evaluation. The evaluation is from top to bottom and left to
     right. This gives some indication of how the routes are evaluated and thus
-    can be used to aid in debugging routing issues. *)
+    can be used to aid in debugging routing issues.
+
+    For example the [router1] below:
+
+    {[
+      let router1 =
+        Wtr.(
+          router'
+            [ routes
+                [`GET; `POST; `HEAD; `DELETE]
+                (exact "home" / exact "about" /. slash)
+                about_page
+            ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
+            ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
+            ; routes [`GET]
+                (exact "contact" / string / int /. pend)
+                contact_page
+            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
+            ; routes [`GET] (exact "faq" / int /. splat) faq ])
+    ]}
+
+    is pretty printed as below:
+
+    {v
+GET
+  /home
+    /about
+      /
+    /:float
+      /
+  /contact
+    /:string
+      /:int
+  /fruit
+    /:Fruit
+  /faq
+    /:int
+      /**
+POST
+  /home
+    /about
+      /
+    /:float
+      /
+HEAD
+  /home
+    /about
+      /
+    /:int
+      /
+DELETE
+  /home
+    /about
+      /
+    /:int
+    v} *)
 
 (**/**)
 
