@@ -36,6 +36,25 @@
     - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
       HTTP Methods} *)
 
+(** {1:demo Demonstration}
+
+    {[
+      let router1 =
+        Wtr.(
+          router'
+            [ routes
+                [`GET; `POST; `HEAD; `DELETE]
+                (exact "home" / exact "about" /. slash)
+                about_page
+            ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
+            ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
+            ; routes [`GET]
+                (exact "contact" / string / int /. pend)
+                contact_page
+            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
+            ; routes [`GET] (exact "faq" / int /. splat) faq ])
+    ]} *)
+
 (** {1 Types} *)
 
 (** A {!type:router} consists of one or many HTTP request {!type:route}s which
@@ -437,7 +456,13 @@ val router' : 'a route list list -> 'a router
 val match' : method' -> string -> 'a router -> 'a option
 (** [match' method' request_target router] is [Some a] if [method'] and
     [request_target] together matches one of the routes defined in [router].
-    Otherwise it is None. *)
+    Otherwise it is None. The value [Some a] is returned by the
+    {i route handler} of the matched {i route}.
+
+    The routes are matched based on the lexical order of the routes. This means
+    they are matched from {i top to bottom}, {i left to right} and to the
+    {i longest match}. See {!val:pp} to visualize the router and the route
+    matching mechanism. *)
 
 (** {1:pp Pretty Printers and Debugging}
 
@@ -542,26 +567,7 @@ val pp : Format.formatter -> 'a router -> unit
     right. This gives some indication of how the routes are evaluated and thus
     can be used to aid in debugging routing issues.
 
-    For example the [router1] below:
-
-    {[
-      let router1 =
-        Wtr.(
-          router'
-            [ routes
-                [`GET; `POST; `HEAD; `DELETE]
-                (exact "home" / exact "about" /. slash)
-                about_page
-            ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
-            ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
-            ; routes [`GET]
-                (exact "contact" / string / int /. pend)
-                contact_page
-            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
-            ; routes [`GET] (exact "faq" / int /. splat) faq ])
-    ]}
-
-    is pretty printed as below:
+    The {{!section:demo} router1} is pretty printed as below:
 
     {v
 GET
