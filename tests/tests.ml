@@ -317,3 +317,15 @@ let%expect_test "top one first: 2" =
    Wtr.match' `GET "/home/12" router
    |> function Some s -> print_string s | None -> () ) ;
   [%expect {| Int  : 12 |}]
+
+let%expect_test "longest match : 1" =
+  (let router =
+     Wtr.(
+       router'
+         [ {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i)
+         ; {%routes| /home/:int/:string |} (fun i _ ->
+               Format.sprintf "longest: %i" i ) ])
+   in
+   Wtr.match' `GET "/home/12/hello" router
+   |> function Some s -> print_string s | None -> () ) ;
+  [%expect {| Int  : 12 |}]
