@@ -50,3 +50,62 @@ let () =
   |> List.iteri (fun i -> function
        | Some s -> Printf.printf "%3d: %s\n" (i + 1) s
        | None -> Printf.printf "%3d: None\n" (i + 1) )
+
+(** Should output below:
+
+    {v
+====Routes====
+GET
+  /home
+    /about
+      /
+    /:float
+      /
+  /contact
+    /:string
+      /:int
+  /product
+    /:string
+      ?section=:int
+        &q=:bool
+        &q1=yes
+  /fruit
+    /:Fruit
+  /faq
+    /:int
+      /**
+POST
+  /home
+    /about
+      /
+    /:float
+      /
+HEAD
+  /home
+    /about
+      /
+    /:int
+      /
+DELETE
+  /home
+    /about
+      /
+    /:int
+      /
+
+====Router Match Results====
+  1: Float page. number : 100001.1
+  2: Int page. number : 100001
+  3: about page
+  4: Product1 dyson350. Id: 233. q = true
+  5: Product1 dyson350. Id: 2. q = false
+  6: Product2 dyson350. Id: 2.
+  7: None
+  8: Apples are juicy!
+  9: Orange is a citrus fruit.
+ 10: Pineapple has scaly skin
+ 11: None
+ 12: FAQ page for category : products
+ 13: FAQ page for category : products
+ 14: FAQ page for category : insurance
+    v} *)
