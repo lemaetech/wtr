@@ -503,6 +503,8 @@ val pp_request_target : Format.formatter -> ('a, 'b) request_target -> unit
     will print the following: [/hello/:bool/:int/:string?h=hello&b=:bool] *)
 
 val pp_method : Format.formatter -> method' -> unit
+(** [pp_method fmt m] pretty prints [m] onto [fmt]. It does the inverse of
+    {!val:method'}. *)
 
 val pp_route : Format.formatter -> 'b route -> unit
 (** [pp_route fmt route] first pretty prints the [method] followed by the
@@ -530,6 +532,15 @@ val pp_route : Format.formatter -> 'b route -> unit
     It is printed as follows: [GET/hello/:bool?h=hello?b=:bool] *)
 
 val pp : Format.formatter -> 'a router -> unit
+(** [pp fmt router] pretty prints [router] onto [fmt]. It follows the same
+    mechanism as {!val:pp_route} and {!val:pp_request_target}. However, unlike
+    the two functions, it prints each component - {i path} and {i query} - onto
+    a separate line. The component in each line is indented.
+
+    The indentation and line printing is meant to convey the order of a route
+    component evaluation. The evaluation is from top to bottom and left to
+    right. This gives some indication of how the routes are evaluated and thus
+    can be used to aid in debugging routing issues. *)
 
 (**/**)
 
