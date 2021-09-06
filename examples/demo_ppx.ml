@@ -1,3 +1,5 @@
+(* Demonstrates using wtr ppx approach to constructing routes and router. *)
+
 let router =
   Wtr.router'
     [ {%routes| get,post,head,delete  ; /home/about/            |}
