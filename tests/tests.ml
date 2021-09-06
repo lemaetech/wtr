@@ -322,7 +322,8 @@ let%expect_test "longest match : 1" =
   (let router =
      Wtr.(
        router'
-         [ {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i)
+         [ {%routes| /home/:int         |} (fun i ->
+               Format.sprintf "Int  : %d" i )
          ; {%routes| /home/:int/:string |} (fun i _ ->
                Format.sprintf "longest: %i" i ) ])
    in
