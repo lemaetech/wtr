@@ -329,4 +329,4 @@ let%expect_test "longest match : 1" =
    in
    Wtr.match' `GET "/home/12/hello" router
    |> function Some s -> print_string s | None -> () ) ;
-  [%expect {| Int  : 12 |}]
+  [%expect {| longest: 12 |}]
