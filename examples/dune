@@ -16,8 +16,8 @@
 ;-----------------------------------------------
 
 (executable
- (name combinator_cohttp)
- (modules combinator_cohttp)
+ (name cohttp_combinator)
+ (modules cohttp_combinator)
  (libraries route_handler wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt))
 
 (executable
@@ -40,8 +40,8 @@
   (pps wtr_ppx)))
 
 (executable
- (name ppx_cohttp)
- (modules ppx_cohttp)
+ (name cohttp_ppx)
+ (modules cohttp_ppx)
  (libraries route_handler wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt)
  (preprocess
   (pps wtr_ppx)))
