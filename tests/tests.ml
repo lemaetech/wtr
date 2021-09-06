@@ -295,3 +295,25 @@ let%expect_test _ =
       /home
         /:int
           / |}]
+
+let%expect_test "top one first: 1" =
+  (let router =
+     Wtr.(
+       router'
+         [ {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f)
+         ; {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i) ])
+   in
+   Wtr.match' `GET "/home/12" router
+   |> function Some s -> print_string s | None -> () ) ;
+  [%expect {| Float: 12.000000 |}]
+
+let%expect_test "top one first: 2" =
+  (let router =
+     Wtr.(
+       router'
+         [ {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i)
+         ; {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f) ])
+   in
+   Wtr.match' `GET "/home/12" router
+   |> function Some s -> print_string s | None -> () ) ;
+  [%expect {| Int  : 12 |}]
