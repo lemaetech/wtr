@@ -1,13 +1,13 @@
 (executable
- (name demo)
+ (name ppx_demo)
  (libraries wtr wtr-ppx)
- (modules demo)
+ (modules ppx_demo)
  (preprocess
   (pps wtr_ppx)))
 
 (executable
- (name cohttp)
+ (name ppx_cohttp)
  (libraries wtr wtr-ppx cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt)
- (modules cohttp)
+ (modules ppx_cohttp)
  (preprocess
   (pps wtr_ppx)))
