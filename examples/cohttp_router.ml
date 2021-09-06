@@ -1,13 +1,20 @@
-(* Steps to run the demo.
+(* Demonstrates using a router in a Cohttp server listening at localhost:5000
 
-    1. Install dependencies.
-    opam install cohttp-lwt-unix
+   Steps to run the demo:
 
-    2. Run the server
-    dune exec examples/cohttp.exe
+   1. Install dependencies.
+   opam install cohttp-lwt-unix
+
+   2. Run the server
+   dune exec examples/cohttp_router.exe
+
+   Sample URLs to try in the browser :
+
+   http://localhost:5000/home/about/
+   http://localhost:5000/faq/1/hello
+   http://localhost:5000/product/dyson?section=1&q=true
+   http://localhost:5000/product/dyson?section=1222&q=false
 *)
-
-(* Demonstrates using a router in a Cohttp server. *)
 
 let () =
   let callback _conn req _body =
