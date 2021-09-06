@@ -1,5 +1,4 @@
-(* Demonstrates using wtr ppx approach to constructing routes and router. *)
-
+(* Uses the router defined using the wtr-ppx and prints router match results in Terminal UI.*)
 let router = Router.ppx_router
 
 let () =

@@ -7,6 +7,8 @@
     dune exec examples/cohttp.exe
 *)
 
+(* Demonstrates using a router in a Cohttp server. *)
+
 let () =
   let callback _conn req _body =
     let uri = req |> Cohttp_lwt_unix.Request.uri |> Uri.path_and_query in
