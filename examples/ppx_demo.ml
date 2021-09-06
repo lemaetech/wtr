@@ -1,48 +1,21 @@
-(* User defined arg *)
-module Fruit = struct
-  type t = Apple | Orange | Pineapple
-
-  let t : t Wtr.arg =
-    Wtr.arg "fruit" (function
-      | "apple" -> Some Apple
-      | "orange" -> Some Orange
-      | "pineapple" -> Some Pineapple
-      | _ -> None )
-end
-
-(* Route handlers. *)
-let about_page = "about page"
-let prod_page i = "Int page. number : " ^ string_of_int i
-let float_page f = "Float page. number : " ^ string_of_float f
-let contact_page nm num = "Contact. Hi, " ^ nm ^ ". Num " ^ string_of_int num
-let product1 name id q = Format.sprintf "Product1 %s. Id: %d. q = %b" name id q
-let product2 name id = Format.sprintf "Product2 %s. Id: %d." name id
-
-let fruit_page = function
-  | Fruit.Apple -> "Apples are juicy!"
-  | Orange -> "Orange is a citrus fruit."
-  | Pineapple -> "Pineapple has scaly skin"
-
-let faq category_id _url =
-  let category_name =
-    match category_id with
-    | 1 -> "products"
-    | 2 -> "insurance"
-    | 3 -> "returns"
-    | _ -> "unknown"
-  in
-  "FAQ page for category : " ^ category_name
-
 let router =
   Wtr.router'
-    [ {%routes| get,post,head,delete  ; /home/about/            |} about_page
-    ; {%routes| head,delete           ; /home/:int/             |} prod_page
-    ; {%routes| get,post              ; /home/:float/           |} float_page
-    ; {%routes| get; /contact/*/:int                            |} contact_page
-    ; {%routes| get; /product/:string?section=:int&q=:bool      |} product1
-    ; {%routes| get; /product/:string?section=:int&q1=yes       |} product2
-    ; {%routes| get; /fruit/:Fruit                              |} fruit_page
-    ; {%routes| GET; /faq/:int/**                               |} faq ]
+    [ {%routes| get,post,head,delete  ; /home/about/            |}
+        Route_handler.about_page
+    ; {%routes| head,delete           ; /home/:int/             |}
+        Route_handler.prod_page
+    ; {%routes| get,post              ; /home/:float/           |}
+        Route_handler.float_page
+    ; {%routes| get; /contact/*/:int                            |}
+        Route_handler.contact_page
+    ; {%routes| get; /product/:string?section=:int&q=:bool      |}
+        Route_handler.product1
+    ; {%routes| get; /product/:string?section=:int&q1=yes       |}
+        Route_handler.product2
+    ; {%routes| get; /fruit/:Route_handler.Fruit                |}
+        Route_handler.fruit_page
+    ; {%routes| GET; /faq/:int/**                               |}
+        Route_handler.faq ]
 
 let () =
   Printexc.record_backtrace true ;
@@ -85,7 +58,7 @@ GET
         &q=:bool
         &q1=yes
   /fruit
-    /:fruit
+    /:Fruit
   /faq
     /:int
       /**

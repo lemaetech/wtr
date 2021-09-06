@@ -1,13 +1,47 @@
+;-----------------------------------------------
+; 'route_handler' library is used by both sets 
+; of examples. 
+;-----------------------------------------------
+
+(library
+ (name route_handler)
+ (modules route_handler)
+ (libraries wtr))
+
+;-----------------------------------------------
+; Example executables using Request Target DSL 
+; combinators. 
+;
+; Note: Dependent on 'wtr'.
+;-----------------------------------------------
+
 (executable
- (name ppx_demo)
- (libraries wtr wtr-ppx)
+ (name combinator_cohttp)
+ (modules combinator_cohttp)
+ (libraries route_handler wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt))
+
+(executable
+ (name combinator_demo)
+ (modules combinator_demo)
+ (libraries wtr route_handler))
+
+;---------------------------------------------
+; Example executables using Request Target 
+; DSL ppx.  
+;
+; Note: dependent on both 'wtr' and 'wtr-ppx'.
+;---------------------------------------------
+
+(executables
+ (names ppx_demo)
  (modules ppx_demo)
+ (libraries route_handler wtr)
  (preprocess
   (pps wtr_ppx)))
 
 (executable
  (name ppx_cohttp)
- (libraries wtr wtr-ppx cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt)
  (modules ppx_cohttp)
+ (libraries route_handler wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt)
  (preprocess
   (pps wtr_ppx)))
