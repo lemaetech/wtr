@@ -21,8 +21,8 @@
  (libraries route_handler wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt))
 
 (executable
- (name combinator_demo)
- (modules combinator_demo)
+ (name demo_combinator)
+ (modules demo_combinator)
  (libraries wtr route_handler))
 
 ;---------------------------------------------
@@ -33,8 +33,8 @@
 ;---------------------------------------------
 
 (executables
- (names ppx_demo)
- (modules ppx_demo)
+ (names demo_ppx)
+ (modules demo_ppx)
  (libraries route_handler wtr)
  (preprocess
   (pps wtr_ppx)))
