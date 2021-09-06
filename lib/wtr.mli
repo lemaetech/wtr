@@ -51,6 +51,16 @@
             ; routes [`GET]
                 (exact "contact" / string / int /. pend)
                 contact_page
+            ; routes [`GET]
+                (exact "product" / string /? qint "section" /& qbool "q" /?. ())
+                product1
+            ; routes [`GET]
+                ( exact "product"
+                / string
+                /? qint "section"
+                /& qexact ("q1", "yes")
+                /?. () )
+                product2
             ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
             ; routes [`GET] (exact "faq" / int /. splat) faq ])
     ]} *)
@@ -579,6 +589,11 @@ GET
   /contact
     /:string
       /:int
+  /product
+    /:string
+      ?section=:int
+        ?q=:bool
+        ?q1=yes
   /fruit
     /:Fruit
   /faq
