@@ -47,7 +47,7 @@ let ppx_router =
     ; {%routes| get; /fruit/:Fruit                              |} fruit_page
     ; {%routes| GET; /faq/:int/**                               |} faq ]
 
-(* Combinator based approach to specifying routes and router. *)
+(* Equivalent router to 'ppx_router' being constructed using the combinator based approach. *)
 let combinator_router =
   Wtr.(
     router'

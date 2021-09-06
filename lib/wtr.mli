@@ -36,6 +36,8 @@
     - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
       HTTP Methods} *)
 
+(** {1 Demonstration} *)
+
 (** {1 Types} *)
 
 (** A {!type:router} consists of one or many HTTP request {!type:route}s which
