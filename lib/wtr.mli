@@ -36,35 +36,6 @@
     - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
       HTTP Methods} *)
 
-(** {1:demo Demonstration}
-
-    {[
-      let router1 =
-        Wtr.(
-          router'
-            [ routes
-                [`GET; `POST; `HEAD; `DELETE]
-                (exact "home" / exact "about" /. slash)
-                about_page
-            ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
-            ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
-            ; routes [`GET]
-                (exact "contact" / string / int /. pend)
-                contact_page
-            ; routes [`GET]
-                (exact "product" / string /? qint "section" /& qbool "q" /?. ())
-                product1
-            ; routes [`GET]
-                ( exact "product"
-                / string
-                /? qint "section"
-                /& qexact ("q1", "yes")
-                /?. () )
-                product2
-            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
-            ; routes [`GET] (exact "faq" / int /. splat) faq ])
-    ]} *)
-
 (** {1 Types} *)
 
 (** A {!type:router} consists of one or many HTTP request {!type:route}s which
@@ -162,17 +133,17 @@ val arg : string -> (string -> 'a option) -> 'a arg
     Otherwise it is [None].
 
     Although not strictly necessary if we are only working with
-    {i Request Target DSL}, it is recommended to adhere the following convention
-    when creating a custom decoder. Such an ['a arg] value can be used with both
-    the {i Request Target DSL} and [wtr-ppx] ppxes. The convention is as
+    {i Request Target DSL}, it is recommended to adhere to the following
+    convention when creating a custom arg. Such an ['a arg] value can be used
+    with both {i Request Target DSL} and [wtr-ppx] ppxes. The convention is as
     follows:
 
-    + Encapsulated in a module
-    + The module defines a type called [t]
-    + The module defines a value called [t] which is of type [t Wtr.decoder].
-    + The [name] value match the name of the module.
+    + Arg value be encapsulated in a module
+    + The module define a type called [t]
+    + The module define a value called [t] which is of type [t Wtr.arg]
+    + The [name] value of the {i arg} match the name of the module.
 
-    An example of such ['a arg] component - [Fruit.t arg] is as below:
+    An example of such an ['a arg] component - [Fruit.t arg] is as below:
 
     {[
       module Fruit = struct
@@ -185,7 +156,10 @@ val arg : string -> (string -> 'a option) -> 'a arg
             | "pineapple" -> Some Pineapple
             | _ -> None )
       end
-    ]} *)
+    ]}
+
+    See {!val:parg} and {!val:qarg} for usage in {i path} and {i query}
+    components. *)
 
 (** {1:request_target_dsl Request Target DSL}
 
@@ -577,7 +551,36 @@ val pp : Format.formatter -> 'a router -> unit
     right. This gives some indication of how the routes are evaluated and thus
     can be used to aid in debugging routing issues.
 
-    The {{!section:demo} router1} is pretty printed as below:
+    For example, [router1] which is defined as:
+
+    {[
+      let router1 =
+        Wtr.(
+          router'
+            [ routes
+                [`GET; `POST; `HEAD; `DELETE]
+                (exact "home" / exact "about" /. slash)
+                about_page
+            ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
+            ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
+            ; routes [`GET]
+                (exact "contact" / string / int /. pend)
+                contact_page
+            ; routes [`GET]
+                (exact "product" / string /? qint "section" /& qbool "q" /?. ())
+                product1
+            ; routes [`GET]
+                ( exact "product"
+                / string
+                /? qint "section"
+                /& qexact ("q1", "yes")
+                /?. () )
+                product2
+            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
+            ; routes [`GET] (exact "faq" / int /. splat) faq ])
+    ]}
+
+    is pretty printed as below:
 
     {v
 GET
