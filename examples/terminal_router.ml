@@ -1,35 +1,6 @@
-(* Demonstrates using wtr combinators approach to constructing routes and router. *)
+(* Demonstrates using wtr ppx approach to constructing routes and router. *)
 
-let router =
-  Wtr.(
-    router'
-      [ routes
-          [`GET; `POST; `HEAD; `DELETE]
-          (exact "home" / exact "about" /. slash)
-          Route_handler.about_page
-      ; routes [`HEAD; `DELETE]
-          (exact "home" / int /. slash)
-          Route_handler.prod_page
-      ; routes [`GET; `POST]
-          (exact "home" / float /. slash)
-          Route_handler.float_page
-      ; routes [`GET]
-          (exact "contact" / string / int /. pend)
-          Route_handler.contact_page
-      ; routes [`GET]
-          (exact "product" / string /? qint "section" /& qbool "q" /?. ())
-          Route_handler.product1
-      ; routes [`GET]
-          ( exact "product"
-          / string
-          /? qint "section"
-          /& qexact ("q1", "yes")
-          /?. () )
-          Route_handler.product2
-      ; routes [`GET]
-          (exact "fruit" / parg Route_handler.Fruit.t /. pend)
-          Route_handler.fruit_page
-      ; routes [`GET] (exact "faq" / int /. splat) Route_handler.faq ])
+let router = Router.ppx_router
 
 let () =
   Printexc.record_backtrace true ;
