@@ -1,13 +1,21 @@
-(executable
- (name demo)
- (libraries wtr wtr-ppx)
- (modules demo)
+;-----------------------------------------------
+; 'route_handler' library is used by both sets 
+; of examples. 
+;-----------------------------------------------
+
+(library
+ (name router)
+ (modules router)
+ (libraries wtr)
  (preprocess
   (pps wtr_ppx)))
 
 (executable
- (name cohttp)
- (libraries wtr wtr-ppx cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt)
- (modules cohttp)
- (preprocess
-  (pps wtr_ppx)))
+ (name terminal_router)
+ (modules terminal_router)
+ (libraries router wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt))
+
+(executable
+ (name cohttp_router)
+ (modules cohttp_router)
+ (libraries router wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt))

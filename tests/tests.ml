@@ -3,8 +3,8 @@ let () = Printexc.record_backtrace false
 module Fruit = struct
   type t = Apple | Orange | Pineapple
 
-  let t : t Wtr.decoder =
-    Wtr.decoder ~name:"Fruit" ~decode:(function
+  let t : t Wtr.arg =
+    Wtr.arg "Fruit" (function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -25,7 +25,7 @@ let wildcard_page s url =
   Printf.sprintf "Wildcard page. %s. Remaining url: %s" s url
 
 let numbers_page id code = Printf.sprintf "int32: %ld, int64: %Ld." id code
-let not_found_page = "404 Not found"
+let root_page = "Root page"
 
 let contact_page name number =
   Printf.sprintf "Contact page. Hi, %s. Number %i" name number
@@ -46,21 +46,29 @@ let product_page3 name section_id =
 let public url = Format.sprintf "file path: %s" url
 
 let router =
-  Wtr.router
-    [ {%wtr| get,post  ;         /home/about/:int             |} about_page
-    ; {%wtr| head,delete;        /home/:int/                  |} home_int_page
-    ; {%wtr| get;   /home/:float/                             |} home_float_page
-    ; {%wtr| get;   /contact/*/:int                           |} contact_page
-    ; {%wtr| post;  /home/products/**                         |} full_splat_page
-    ; {%wtr| get;   /home/*/**                                |} wildcard_page
-    ; {%wtr| get;   /contact/:string/:bool                    |} contact_page2
-    ; {%wtr| post;  /product/:string?section=:int&q=:bool     |} product_page
-    ; {%wtr| get;   /product/:string?section=:int&q1=yes      |} product_page2
-    ; {%wtr| get;   /product/:string?section=:string&q1=yes   |} product_page3
-    ; {%wtr| get;   /fruit/:Fruit                             |} fruit_page
-    ; {%wtr| get;   /                                         |} not_found_page
-    ; {%wtr|        /public/**                                |} public
-    ; {%wtr| head;  /numbers/:int32/code/:int64/              |} numbers_page ]
+  Wtr.router'
+    [ {%routes| get,post  ;         /home/about/:int             |} about_page
+    ; {%routes| head,delete;        /home/:int/                  |}
+        home_int_page
+    ; {%routes| get;   /home/:float/                             |}
+        home_float_page
+    ; {%routes| get;   /contact/*/:int                           |} contact_page
+    ; {%routes| post;  /home/products/**                         |}
+        full_splat_page
+    ; {%routes| get;   /home/*/**                                |}
+        wildcard_page
+    ; {%routes| get;   /contact/:string/:bool                    |}
+        contact_page2
+    ; {%routes| post;  /product/:string?section=:int&q=:bool     |} product_page
+    ; {%routes| get;   /product/:string?section=:int&q1=yes      |}
+        product_page2
+    ; {%routes| get;   /product/:string?section=:string&q1=yes   |}
+        product_page3
+    ; {%routes| get;   /fruit/:Fruit                             |} fruit_page
+    ; {%routes| get;   /                                         |} root_page
+    ; {%routes|        /public/**                                |} public
+    ; {%routes| head;  /numbers/:int32/code/:int64/              |} numbers_page
+    ]
 
 let pp_route r = List.hd r |> Wtr.pp_route Format.std_formatter
 
@@ -199,7 +207,7 @@ let%expect_test _ =
 let%expect_test _ =
   pp_match `GET "/" ;
   [%expect {|
-     "404 Not found" |}]
+     "Root page" |}]
 
 let%expect_test _ =
   pp_match `GET "" ;
@@ -222,31 +230,25 @@ let%expect_test _ =
        None |}]
 
 let%expect_test _ =
-  pp_route ({%wtr| get; /home/about/:bool|} (fun _ -> ())) ;
-  [%expect {| GET/home/about/:bool |}]
+  pp_route
+    ({%routes| get; /home/about/:bool?h=:int&b=:bool&e=hello|} (fun _ _ _ -> ())) ;
+  [%expect {| GET/home/about/:bool?h=:int&b=:bool&e=hello |}]
 
 let%expect_test _ =
-  pp_route ({%wtr| post; /home/about/:int/:string/:Fruit|} (fun _ _ _ -> ())) ;
+  pp_route ({%routes| post; /home/about/:int/:string/:Fruit|} (fun _ _ _ -> ())) ;
   [%expect {| POST/home/about/:int/:string/:Fruit |}]
 
 let%expect_test _ =
-  pp_route ({%wtr| head;/home/:int/:int32/:int64/:Fruit|} (fun _ _ _ _ -> ())) ;
-  [%expect {| HEAD/home/:int/:int32/:int64/:Fruit |}]
+  pp_route
+    ({%routes| head;/home/:int/:int32/:int64/:Fruit?q1=hello&f=:Fruit&b=:bool&f=:float |}
+       (fun _ _ _ _ _ _ _ -> ()) ) ;
+  [%expect
+    {| HEAD/home/:int/:int32/:int64/:Fruit?q1=hello&f=:Fruit&b=:bool&f=:float |}]
 
 let%expect_test _ =
   Wtr.pp Format.std_formatter router ;
   [%expect
     {|
-    POST
-      /home
-        /about
-          /:int
-        /products
-          /**
-      /product
-        /:string
-          ?section=:int
-            ?q=:bool
     GET
       /home
         /about
@@ -262,18 +264,24 @@ let%expect_test _ =
       /product
         /:string
           ?section=:int
-            ?q1=yes
+            &q1=yes
           ?section=:string
-            ?q1=yes
+            &q1=yes
       /fruit
         /:Fruit
       /
       /public
         /**
-    DELETE
+    POST
       /home
-        /:int
-          /
+        /about
+          /:int
+        /products
+          /**
+      /product
+        /:string
+          ?section=:int
+            &q=:bool
     HEAD
       /home
         /:int
@@ -282,4 +290,8 @@ let%expect_test _ =
         /:int32
           /code
             /:int64
-              / |}]
+              /
+    DELETE
+      /home
+        /:int
+          / |}]

@@ -14,11 +14,7 @@ Wtr is typed router for OCaml web applications.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
 - Supports matching HTTP methods, eg `GET, POST, PUT, HEAD, DELETE` etc.
 - Supports converting captured URI components to OCaml and custom user defined data types.
-- `wtr.ppx` is used to specify uri values. If you know how to type URI path in a browser location, then you already know how to use `wtr`.
-- Minimal learning overhead. `Wtr` is centered around 3 API calls, a ppx -`%wtr` - and your existing HTTP url/uri knowledge:
-  - `Wtr.create` - creates a router - *'a Wtr.t* - from a list of `route` values.
-  - `Wtr.match'` - matches a given uri path in a router.
-  - `Wtr.decoder` - allows you to create a user defined decoder. *see `Fruit` module in the demo below.*
+- `wtr_ppx` implements a DSL to allow you to easily specify HTTP uri. 
 
 ## Wtr Demo
 
@@ -30,8 +26,8 @@ Wtr is typed router for OCaml web applications.
 module Fruit = struct
   type t = Apple | Orange | Pineapple
 
-  let t : t Wtr.decoder =
-    Wtr.decoder ~name:"fruit" ~decode:(function
+  let t : t Wtr.arg =
+    Wtr.arg "fruit" (function
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
@@ -61,15 +57,15 @@ let faq category_id _ =
   "FAQ page for category : " ^ category_name
 
 let router =
-  Wtr.router      
-      [ {%wtr| get,post,head,delete  ; /home/about/            |} about_page
-      ; {%wtr| head,delete           ; /home/:int/             |} prod_page
-      ; {%wtr| get,post              ; /home/:float/           |} float_page
-      ; {%wtr| get; /contact/*/:int                            |} contact_page
-      ; {%wtr| get; /product/:string?section=:int&q=:bool      |} product1
-      ; {%wtr| get; /product/:string?section=:int&q1=yes       |} product2
-      ; {%wtr| get; /fruit/:Fruit                              |} fruit_page
-      ; {%wtr| GET; /faq/:int/**                               |} faq ]
+  Wtr.router'      
+      [ {%routes| get,post,head,delete  ; /home/about/            |} about_page
+      ; {%routes| head,delete           ; /home/:int/             |} prod_page
+      ; {%routes| get,post              ; /home/:float/           |} float_page
+      ; {%routes| get; /contact/*/:int                            |} contact_page
+      ; {%routes| get; /product/:string?section=:int&q=:bool      |} product1
+      ; {%routes| get; /product/:string?section=:int&q1=yes       |} product2
+      ; {%routes| get; /fruit/:Fruit                              |} fruit_page
+      ; {%routes| GET; /faq/:int/**                               |} faq ]
 
 let p () = 
   Printf.printf "\n====Router Match Results====\n" ;

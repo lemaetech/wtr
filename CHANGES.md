@@ -2,11 +2,15 @@
 
 - BREAKING CHANGE: A `splat` operator (`**`) now expects a last string paramter
   in the handler. The parameter holds the remaining url matched by the `splat` operator
-- BREAKING CHANGE: 'create_decoder' has been renamed to 'decoder'
+- BREAKING CHANGE: 'create_decoder' has been renamed to 'arg'
 - BREAKING CHANGE: 'create' has been renamed to 'router'
 - BREAKING CHANGE: 't' type has been renamed to `router`
-- FIX: Fix matching query components in uri
-- FIX: Fix pretty printing of query components in uri
+- BREAKING CHANGE: `'a decoder` has been renamed to `'a arg`
+- BREAKING CHANGE: `'a uri` has been renamed to `'a request_target`
+- FIX: Fix matching query components in request target
+- FIX: Fix pretty printing of `request_target`
+- NEW: Add path, query and uri combinators to create and manipulate path, query and uri values
+- NEW: Add `route`, `routes` and `pp_request_target` functions
 
 ## v2.0.0 2021-08-02 
 

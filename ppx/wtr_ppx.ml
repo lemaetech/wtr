@@ -67,10 +67,10 @@ let query_tokens uri =
     |> Result.ok
   with E msg -> Error msg
 
-let request_target_tokens uri =
-  let wtr = String.trim uri in
-  if String.length wtr > 0 then
-    let uri = Uri.of_string wtr in
+let request_target_tokens target =
+  let target = String.trim target in
+  if String.length target > 0 then
+    let uri = Uri.of_string target in
     let* path_components = path_tokens uri in
     let* query_components = query_tokens uri in
     Ok (path_components, query_components)
@@ -82,6 +82,7 @@ let make_methods : loc:location -> string -> expression =
   |> List.filter_map (fun s ->
          let s = String.trim s in
          if String.length s > 0 then Some s else None )
+  |> List.rev
   |> List.fold_left
        (fun expr method' ->
          let method' = Ast_builder.estring ~loc method' in
@@ -91,115 +92,107 @@ let make_methods : loc:location -> string -> expression =
 let rec make_query ~loc query_tokens =
   match query_tokens with
   | [] -> [%expr Wtr.Private.nil]
-  | (name, "*") :: toks ->
+  | (name, "*") :: query_tokens ->
       [%expr
         Wtr.Private.(
-          query_decode
+          query_arg
             [%e Ast_builder.estring ~loc name]
-            string [%e make_query ~loc toks])]
-  | (name, uri) :: uris when Char.equal uri.[0] ':' -> (
-      let comp = String.sub uri 1 (String.length uri - 1) in
+            string
+            [%e make_query ~loc query_tokens])]
+  | (name, query_token) :: query_tokens when Char.equal query_token.[0] ':' -> (
+      let query_token =
+        String.sub query_token 1 (String.length query_token - 1)
+      in
       let name_expr = Ast_builder.estring ~loc name in
-      match comp with
+      match query_token with
       | "int" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] int [%e make_query ~loc uris])]
+              query_arg [%e name_expr] int [%e make_query ~loc query_tokens])]
       | "int32" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] int32 [%e make_query ~loc uris])]
+              query_arg [%e name_expr] int32 [%e make_query ~loc query_tokens])]
       | "int64" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] int64 [%e make_query ~loc uris])]
+              query_arg [%e name_expr] int64 [%e make_query ~loc query_tokens])]
       | "float" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] float [%e make_query ~loc uris])]
+              query_arg [%e name_expr] float [%e make_query ~loc query_tokens])]
       | "string" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] string [%e make_query ~loc uris])]
+              query_arg [%e name_expr] string [%e make_query ~loc query_tokens])]
       | "bool" ->
           [%expr
             Wtr.Private.(
-              query_decode [%e name_expr] bool [%e make_query ~loc uris])]
+              query_arg [%e name_expr] bool [%e make_query ~loc query_tokens])]
       | custom_arg when capitalized custom_arg ->
           let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
-            Wtr.Private.query_decode [%e name_expr]
+            Wtr.Private.query_arg [%e name_expr]
               [%e Ast_builder.pexp_ident ~loc longident_loc]
-              [%e make_query ~loc uris]]
-      | x ->
-          Location.raise_errorf ~loc
-            "wtr: Invalid custom argument name '%s'. Custom argument component \
-             name must be a valid module name."
-            x )
-  | (name, uri) :: uris ->
+              [%e make_query ~loc query_tokens]]
+      | x -> Location.raise_errorf ~loc "wtr: Invalid query component '%s'" x )
+  | (name, query_token) :: query_tokens ->
       [%expr
-        Wtr.Private.query_lit
+        Wtr.Private.query_exact
           [%e Ast_builder.estring ~loc name]
-          [%e Ast_builder.estring ~loc uri]
-          [%e make_query ~loc uris]]
+          [%e Ast_builder.estring ~loc query_token]
+          [%e make_query ~loc query_tokens]]
 
-let rec make_request_target ~loc query_tokens = function
+let rec make_request_target ~loc query_tokens path_tokens =
+  match path_tokens with
   | [] -> make_query ~loc query_tokens
-  | [""] -> [%expr Wtr.Private.t_slash]
+  | [""] -> [%expr Wtr.Private.slash]
   | ["**"] -> [%expr Wtr.Private.splat]
   | "*" :: path_tokens ->
       [%expr
         Wtr.Private.(
-          decode string [%e make_request_target ~loc query_tokens path_tokens])]
-  | path_tok :: path_tokens when Char.equal path_tok.[0] ':' -> (
-      let comp = String.sub path_tok 1 (String.length path_tok - 1) in
-      match comp with
+          arg string [%e make_request_target ~loc query_tokens path_tokens])]
+  | path_token :: path_tokens when Char.equal path_token.[0] ':' -> (
+      let path_token = String.sub path_token 1 (String.length path_token - 1) in
+      match path_token with
       | "int" ->
           [%expr
             Wtr.Private.(
-              decode int [%e make_request_target ~loc query_tokens path_tokens])]
+              arg int [%e make_request_target ~loc query_tokens path_tokens])]
       | "int32" ->
           [%expr
             Wtr.Private.(
-              decode int32
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg int32 [%e make_request_target ~loc query_tokens path_tokens])]
       | "int64" ->
           [%expr
             Wtr.Private.(
-              decode int64
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg int64 [%e make_request_target ~loc query_tokens path_tokens])]
       | "float" ->
           [%expr
             Wtr.Private.(
-              decode float
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg float [%e make_request_target ~loc query_tokens path_tokens])]
       | "string" ->
           [%expr
             Wtr.Private.(
-              decode string
-                [%e make_request_target ~loc query_tokens path_tokens])]
+              arg string [%e make_request_target ~loc query_tokens path_tokens])]
       | "bool" ->
           [%expr
             Wtr.Private.(
-              decode bool [%e make_request_target ~loc query_tokens path_tokens])]
+              arg bool [%e make_request_target ~loc query_tokens path_tokens])]
       | custom_arg when capitalized custom_arg ->
           let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
           [%expr
-            Wtr.Private.decode
+            Wtr.Private.arg
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_request_target ~loc query_tokens path_tokens]]
-      | x ->
-          Location.raise_errorf ~loc
-            "wtr: Invalid custom argument name '%s'. Custom argument component \
-             name must be a valid module name."
-            x )
-  | path_tok :: path_tokens ->
+      | x -> Location.raise_errorf ~loc "wtr: Invalid path component '%s'." x )
+  | path_token :: path_tokens ->
       [%expr
-        Wtr.Private.lit
-          [%e Ast_builder.estring ~loc path_tok]
+        Wtr.Private.exact
+          [%e Ast_builder.estring ~loc path_token]
           [%e make_request_target ~loc query_tokens path_tokens]]
 
-let wtr ~loc ~path:_ wtr =
+let make_routes ~loc ~path:_ wtr =
   let wtr = String.trim wtr in
   let methods, uri =
     let tokens =
@@ -224,11 +217,11 @@ let wtr ~loc ~path:_ wtr =
       [%expr Wtr.routes [%e methods'] [%e uri]]
   | Error msg -> Location.raise_errorf ~loc "wtr: %s" msg
 
-let wtr_ppx = "wtr"
+let routes_ppx_name = "routes"
 
-let wtr_ext =
-  Extension.declare wtr_ppx Extension.Context.Expression
+let routes_ppx =
+  Extension.declare routes_ppx_name Extension.Context.Expression
     Ast_pattern.(single_expr_payload (estring __))
-    wtr
+    make_routes
 
-let () = Driver.register_transformation wtr_ppx ~extensions:[wtr_ext]
+let () = Driver.register_transformation routes_ppx_name ~extensions:[routes_ppx]
