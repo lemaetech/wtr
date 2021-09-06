@@ -1,4 +1,5 @@
 (* Demonstrates using wtr combinators approach to constructing routes and router. *)
+
 let router =
   Wtr.(
     router'
