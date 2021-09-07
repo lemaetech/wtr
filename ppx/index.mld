@@ -21,10 +21,16 @@ We use {i ABNF notation}{^ 3} to specify the [%routes] syntax.
 <pre><div class="code hljs abnf">
 %routes       = [http-methods ";" ] http-path ["?" http-query]
 
-http-methods  = "GET" / "HEAD" / "POST" / "PUT" / "DELETE"	/ "CONNECT"	
-              / "OPTIONS"	/ "TRACE"	/ other-http-method  
-                              ; other-http-method will be converted to 
-                              ; "`Method other-http-method" in OCaml
+http-methods  = "GET" 
+              / "HEAD" 
+              / "POST" 
+              / "PUT" 
+              / "DELETE"
+              / "CONNECT"	
+              / "OPTIONS"	
+              / "TRACE"	
+              / other-http-method      ; other-http-method is converted to
+                                       ; [`Method other-http-method] in OCaml
 
 other-http-method = 1*ALPHA      
 
@@ -33,7 +39,11 @@ http-path     = "/" wtr-segment
 wtr-segment   = wtr-arg / splat / wildcard / [segment-nz *( "/" segment)]
 wtr-arg	      = ":" arg 
 arg           = "int" / "int32" / "int64" / "float" / "bool" / "string" / custom-arg
-custom-arg    = [A-Z] *(ALPHA)    ; OCaml module name 
+custom-arg    = module-path 
+
+module-name   = (A-Z) *(ALPHA ∣  DIGIT ∣  _ ∣  ' ]) ; OCaml module name
+module-path   = module-name *("." module-name)      ; OCaml module path
+
 splat         = "**"
 wildcard      = "*"
 segment       = *pchar
@@ -79,6 +89,18 @@ let ppx_router =
 {1: Path/Query Components}
 
 {2 wtr-segment} 
+
+- splat[(**)] is {!val:Wtr.splat}
+- wildcard[(*)] is {!val:Wtr.string}
+
+{2 wtr-arg}
+- [:int]   - is {!val:Wtr.int} when used in path and {!val:Wtr.qint} when used in query
+- [:int32]   - is {!val:Wtr.int32} when used in path and {!val:Wtr.qint32} when used in query
+- [:int64]   - is {!val:Wtr.int64} when used in path and {!val:Wtr.qint64} when used in query
+- [:float]   - is {!val:Wtr.float} when used in path and {!val:Wtr.qfloat} when used in query
+- [:bool]   - is {!val:Wtr.bool} when used in path and {!val:Wtr.qbool} when used in query
+- [:string]   - is {!val:Wtr.string} when used in path and {!val:Wtr.qstring} when used in query
+- [:custom-arg]   - is the OCaml module name which implements the user defined {!type:Wtr.arg} value, e.g. [:Fruit] or [:LibA.Fruit] 
 
 {1:references References}
 + {{:https://datatracker.ietf.org/doc/html/rfc3986#section-3.3} HTTP path}
