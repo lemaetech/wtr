@@ -1,0 +1,87 @@
+{0 %routes ppx}
+
+[%routes] ppx provides an alternate and productive approach to defining {i route}s in [wtr]. They can be used as follows:
+
++ [\[%routes "route-syntax" \]] or
++ [{%routes| route-syntax |}] - {i since OCaml 4.11.0}
+
+
+where the [route-syntax] is a string which has the following grammar:
+
+{1:syntax %routes Syntax}
+
+In general, the [%routes] syntax closely mirrors that of a HTTP {i path}{^ 1} and {i query}{^ 2} syntax. 
+The two notable points of divergence are as follows:
++ [%routes] allows to specify HTTP methods applicable to a {i request target}
++ [%routes] only allows [key=value] form of query specification.
+
+We use {i ABNF notation}{^ 3} to specify the [%routes] syntax. 
+
+{%html:
+<pre><div class="code hljs abnf">
+%routes       = [http-methods ";" ] http-path ["?" http-query]
+
+http-methods  = "GET" / "HEAD" / "POST" / "PUT" / "DELETE"	/ "CONNECT"	
+              / "OPTIONS"	/ "TRACE"	/ other-http-method  
+                              ; other-http-method will be converted to 
+                              ; "`Method other-http-method" in OCaml
+
+other-http-method = 1*ALPHA      
+
+http-path     = "/" wtr-segment
+
+wtr-segment   = wtr-arg / splat / wildcard / [segment-nz *( "/" segment)]
+wtr-arg	      = ":" arg 
+arg           = "int" / "int32" / "int64" / "float" / "bool" / "string" / custom-arg
+custom-arg    = [A-Z] *(ALPHA)    ; OCaml module name 
+splat         = "**"
+wildcard      = "*"
+segment       = *pchar
+segment-nz    = 1*pchar
+pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+pct-encoded   = "%" HEXDIG HEXDIG
+sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+                / "*" / "+" / "," / ";" / "="
+
+http-query      = query-key-value *("&" query-key-value)
+query-key-value = query-name "=" query-value
+query-value     = 1*pchar / wtr-arg
+query-name      = 1( pchar / "/" / "?" )
+qchar           = unreserved / pct-encoded / qsub-delims / ":" / "@"
+qsub-delims     = "!" / "$" / "'" / "(" / ")"
+                  / "*" / "+" / "," / ";"
+
+ALPHA           =  %x41-5A / %x61-7A   ; A-Z / a-z
+DIGIT           =  %x30-39              ; 0-9
+HEXDIG          =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
+</code></pre>
+%}
+
+{2 Wtr.routes}
+The [%routes] ppx - after parsing and validating the syntax and the tokens - transforms to applying the {!val:Wtr.routes} function.
+
+{2 Examples}
+
+{[
+let ppx_router =
+  Wtr.router'
+    [ {%routes| get,post,head,delete  ; /home/about/            |} about_page
+    ; {%routes| head,delete           ; /home/:int/             |} prod_page
+    ; {%routes| get,post              ; /home/:float/           |} float_page
+    ; {%routes| get; /contact/*/:int                            |} contact_page
+    ; {%routes| get; /product/:string?section=:int&q=:bool      |} product1
+    ; {%routes| get; /product/:string?section=:int&q1=yes       |} product2
+    ; {%routes| get; /fruit/:Fruit                              |} fruit_page
+    ; {%routes| GET; /faq/:int/**                               |} faq ]
+  ]}
+
+{1: Path/Query Components}
+
+{2 wtr-segment} 
+
+{1:references References}
++ {{:https://datatracker.ietf.org/doc/html/rfc3986#section-3.3} HTTP path}
++ {{:https://datatracker.ietf.org/doc/html/rfc3986#section-3.4} HtTP query}
++ {{:https://datatracker.ietf.org/doc/html/rfc5234#section-3.6} ABNF}
+
