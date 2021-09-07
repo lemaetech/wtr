@@ -6,10 +6,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *-------------------------------------------------------------------------*)
 
-(** {1 Introduction}
-
-    [Wtr] - {i Well Typed Router} - is a HTTP request routing library for OCaml
-    web applications.
+(** {i Well Typed Router} - is a HTTP request routing library for OCaml web
+    applications.
 
     Given a HTTP {i request_target} and a HTTP {i method}, [Wtr] attempts to
     match the two properties to a pre-defined set of {i route}s. If a match is
