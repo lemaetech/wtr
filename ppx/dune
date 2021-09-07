@@ -5,3 +5,7 @@
  (libraries wtr uri ppxlib)
  (preprocess
   (pps ppxlib.metaquot)))
+
+(documentation
+ (package wtr-ppx)
+ (mld_files "index"))
