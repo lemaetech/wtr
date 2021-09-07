@@ -6,15 +6,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *-------------------------------------------------------------------------*)
 
-(** {1 Introduction}
-
-    [Wtr] - {i Well Typed Router} - is a HTTP request routing library for OCaml
-    web applications.
+(** {i Well Typed Router} - is a HTTP request routing library for OCaml web
+    applications.
 
     Given a HTTP {i request_target} and a HTTP {i method}, [Wtr] attempts to
-    match the two properties to a pre-defined set of {!type:route}s. If a match
-    is found then the corresponding {i route handler} function of the matched
-    route is executed.
+    match the two properties to a pre-defined set of {i route}s. If a match is
+    found then the corresponding {i route handler} function of the matched route
+    is executed.
 
     The route matching algorithm is {i radix trie}.
 
@@ -22,19 +20,12 @@
     can capture and receive arguments which are typed in a variety of OCaml
     types.
 
-    There are two ways to specify {i route}s:
+    There are two ways to specify {i route} and {i request target}s:
 
-    - Combinators based approach - {{!section:request_target_dsl} Request Target
-      DSL}
-    - Ppx based approach. The ppx [\[%routes "" \]] is provided by a separate
-      opam package [wtr-ppx].
-
-    {b References}
-
-    - {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} RFC 7230 -
-      HTTP Request Target}
-    - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
-      HTTP Methods} *)
+    - {{!section:request_target_dsl} Request Target Combinators} - combinators
+      based
+    - [\[%routes ""\]] - ppx based which is provided by a separate opam package
+      [wtr-ppx]. *)
 
 (** {1 Types} *)
 
@@ -161,7 +152,7 @@ val arg : string -> (string -> 'a option) -> 'a arg
     See {!val:parg} and {!val:qarg} for usage in {i path} and {i query}
     components. *)
 
-(** {1:request_target_dsl Request Target DSL}
+(** {1:request_target_dsl Request Target Combinators}
 
     Request Target combinators implement a DSL(domain specific language) to
     specify {!type:request_target}, {b path component} and {b query component}
@@ -431,8 +422,7 @@ val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b route list
     ]} *)
 
 val router : 'a route list -> 'a router
-(** [router routes] is a {!type:router} made up of given [routes]. The matching
-    algorithm evaluates the routes in the order given, i.e. from left to right. *)
+(** [router routes] is a {!type:router} made up of given [routes]. *)
 
 val router' : 'a route list list -> 'a router
 (** [router' routes_list = router (List.concat routes_list)] *)
@@ -561,8 +551,6 @@ val pp : Format.formatter -> 'a router -> unit
                 [`GET; `POST; `HEAD; `DELETE]
                 (exact "home" / exact "about" /. slash)
                 about_page
-            ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
-            ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
             ; routes [`GET]
                 (exact "contact" / string / int /. pend)
                 contact_page
@@ -576,8 +564,7 @@ val pp : Format.formatter -> 'a router -> unit
                 /& qexact ("q1", "yes")
                 /?. () )
                 product2
-            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
-            ; routes [`GET] (exact "faq" / int /. splat) faq ])
+            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page ])
     ]}
 
     is pretty printed as below:
@@ -587,39 +574,36 @@ GET
   /home
     /about
       /
-    /:float
-      /
   /contact
     /:string
       /:int
   /product
     /:string
       ?section=:int
-        ?q=:bool
-        ?q1=yes
+        &q=:bool
+        &q1=yes
   /fruit
     /:Fruit
-  /faq
-    /:int
-      /**
 POST
   /home
     /about
-      /
-    /:float
       /
 HEAD
   /home
     /about
       /
-    /:int
-      /
 DELETE
   /home
     /about
       /
-    /:int
     v} *)
+
+(** {1 References}
+
+    - {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} RFC 7230 -
+      HTTP Request Target}
+    - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
+      HTTP Methods}*)
 
 (**/**)
 

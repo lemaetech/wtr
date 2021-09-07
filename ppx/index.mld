@@ -1,0 +1,112 @@
+{0 %routes ppx}
+
+[wtr-ppx] package provides [%routes] ppx. Which is an alternate and productive approach to defining {i route}s in [wtr]. They can be used as follows:
+
++ [\[%routes "route-syntax" \]] or
++ [{%routes| route-syntax |}] - {i since OCaml 4.11.0}
+
+
+where the [route-syntax] is a string which has the following grammar:
+
+{1:syntax %routes Syntax}
+
+In general, the [%routes] syntax closely mirrors that of a HTTP {i path}{^ 1} and {i query}{^ 2} syntax. 
+The two notable points of divergence are as follows:
++ [%routes] allows to specify HTTP methods applicable to a {i request target}
++ [%routes] only allows [key=value] form of query specification.
+
+We use {i ABNF notation}{^ 3} to specify the [%routes] syntax. 
+
+{%html:
+<pre><div class="code hljs abnf">
+routes-syntax     = [http-methods ";" ] http-path ["?" http-query]
+http-methods      = http-method *("," http-method)
+http-method       = "GET" 
+                  / "HEAD" 
+                  / "POST" 
+                  / "PUT" 
+                  / "DELETE"
+                  / "CONNECT"	
+                  / "OPTIONS"	
+                  / "TRACE"	
+                  / other-http-method      ; other-http-method is converted to
+                                           ; [`Method other-http-method] in OCaml
+other-http-method = 1*ALPHA      
+
+http-path         = "/" wtr-segment
+wtr-segment       = wtr-arg / splat / wildcard / [segment-nz *( "/" segment)]
+wtr-arg	          = ":int" / ":int32" / ":int64" / ":float" / ":bool" / ":string" / custom-arg
+custom-arg        = ":" ocaml-module-path 
+
+ocaml-module-path = module-name *("." module-name)      ; OCaml module path
+ocaml-module-name = (A-Z) *( ALPHA / DIGIT / "_" / "'" )   ; OCaml module name
+
+splat             = "**"
+wildcard          = "*"
+segment           = *pchar
+segment-nz        = 1*pchar
+pchar             = unreserved / pct-encoded / sub-delims / ":" / "@"
+unreserved        = ALPHA / DIGIT / "-" / "." / "_" / "~"
+pct-encoded       = "%" HEXDIG HEXDIG
+sub-delims        = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+
+http-query        = query-key-value *("&" query-key-value)
+query-key-value   = query-name "=" query-value
+query-value       = 1*pchar / wtr-arg
+query-name        = 1( pchar / "/" / "?" )
+qchar             = unreserved / pct-encoded / qsub-delims / ":" / "@"
+qsub-delims       = "!" / "$" / "'" / "(" / ")" / "*" / "+" / "," / ";"
+
+ALPHA             =  %x41-5A / %x61-7A   ; A-Z / a-z
+DIGIT             =  %x30-39              ; 0-9
+HEXDIG            =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
+</code></pre>
+%}
+
+{2 Wtr.routes}
+The [%routes] ppx - after parsing and validating the syntax and the tokens - transforms to applying the {!val:Wtr.routes} function.
+
+The following two are equivalent:
+{[
+let routes1 = {%routes| get,post,head,delete  ; /home/about/ |} about_page in 
+let routes2 = Wtr.(routes [`GET;`POST;`HEAD;`DELETE] (exact "home" / exact "about" /. slash)) about_page 
+in route1 = route2
+]}
+
+{2 Examples}
+
+{[
+let ppx_router =
+  Wtr.router'
+    [ {%routes| get,post,head,delete  ; /home/about/       |} about_page
+    ; {%routes| head,delete           ; /home/:int/        |} prod_page
+    ; {%routes| get,post              ; /home/:float/      |} float_page
+    ; {%routes| get; /contact/*/:int                       |} contact_page
+    ; {%routes| get; /product/:string?section=:int&q=:bool |} product1
+    ; {%routes| get; /product/:string?section=:int&q1=yes  |} product2
+    ; {%routes| get; /fruit/:Fruit                         |} fruit_page
+    ; {%routes|      /                                     |} root_page
+    ; {%routes| GET; /faq/:int/**                          |} faq ]
+  ]}
+
+{1 Path/Query Components}
+
+{2 wtr-segment} 
+
+- splat[(**)] is {!val:Wtr.splat}
+- wildcard[(*)] is {!val:Wtr.string}
+
+{2 wtr-arg}
+- [:int]   - is {!val:Wtr.int} when used in path and {!val:Wtr.qint} when used in query
+- [:int32]   - is {!val:Wtr.int32} when used in path and {!val:Wtr.qint32} when used in query
+- [:int64]   - is {!val:Wtr.int64} when used in path and {!val:Wtr.qint64} when used in query
+- [:float]   - is {!val:Wtr.float} when used in path and {!val:Wtr.qfloat} when used in query
+- [:bool]   - is {!val:Wtr.bool} when used in path and {!val:Wtr.qbool} when used in query
+- [:string]   - is {!val:Wtr.string} when used in path and {!val:Wtr.qstring} when used in query
+- [:custom-arg]   - is the OCaml module name which implements the user defined {!type:Wtr.arg} value, e.g. [:Fruit] or [:LibA.Fruit] 
+
+{1:references References}
++ {{:https://datatracker.ietf.org/doc/html/rfc3986#section-3.3} HTTP path}
++ {{:https://datatracker.ietf.org/doc/html/rfc3986#section-3.4} HtTP query}
++ {{:https://datatracker.ietf.org/doc/html/rfc5234#section-3.6} ABNF}
+

@@ -1,0 +1,6 @@
+{0 wtr}
+A HTTP request routing library for OCaml web applications.
+
+{1:api API}
+
+{!module: Wtr}
