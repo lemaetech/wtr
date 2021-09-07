@@ -25,14 +25,7 @@
     - {{!section:request_target_dsl} Request Target Combinators} - combinators
       based
     - [\[%routes ""\]] - ppx based which is provided by a separate opam package
-      [wtr-ppx].
-
-    {b References}
-
-    - {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} RFC 7230 -
-      HTTP Request Target}
-    - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
-      HTTP Methods} *)
+      [wtr-ppx]. *)
 
 (** {1 Types} *)
 
@@ -604,6 +597,13 @@ DELETE
     /about
       /
     v} *)
+
+(** {1 References}
+
+    - {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} RFC 7230 -
+      HTTP Request Target}
+    - {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} RFC 7231 -
+      HTTP Methods}*)
 
 (**/**)
 
