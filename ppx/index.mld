@@ -1,6 +1,6 @@
 {0 %routes ppx}
 
-[%routes] ppx provides an alternate and productive approach to defining {i route}s in [wtr]. They can be used as follows:
+[wtr-ppx] package provides [%routes] ppx. Which is an alternate and productive approach to defining {i route}s in [wtr]. They can be used as follows:
 
 + [\[%routes "route-syntax" \]] or
 + [{%routes| route-syntax |}] - {i since OCaml 4.11.0}
