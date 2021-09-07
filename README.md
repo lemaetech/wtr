@@ -2,19 +2,20 @@
 
 Wtr - A typed router for OCaml web applications.
 
-[Wtr API](https://lemaetech.co.uk/wtr/wtr/Wtr/index.html)&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [CoHttp Demo](https://github.com/lemaetech/wtr/blob/main/examples/cohttp.ml) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Summer Demo](https://github.com/lemaetech/summer/blob/main/examples/echo_server.ml)
+[Documentation](https://lemaetech.co.uk/wtr/)&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Examples](https://github.com/lemaetech/wtr/tree/main/examples) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Summer Demo](https://github.com/lemaetech/summer/blob/main/examples/echo_server.ml)
 
 ## Overview 
 
-Wtr is typed router for OCaml web applications. 
+[wtr] is a HTTP request router for OCaml web applications.
 
-- A trie based router. Route matching is efficient and fast.
+- It is a trie based router - route matching is efficient and fast.
 - Route handlers are type-checked during compilation.
 - Supports matching and capturing URI path components, eg `/home/about/:int`.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
 - Supports matching HTTP methods, eg `GET, POST, PUT, HEAD, DELETE` etc.
 - Supports converting captured URI components to OCaml and custom user defined data types.
-- `wtr_ppx` implements a DSL to allow you to easily specify HTTP uri. 
+- `%routes` ppx implements a DSL to allow you to easily specify HTTP uri. 
+- combinatros based approach to specifying routes.
 
 ## Wtr Demo
 
