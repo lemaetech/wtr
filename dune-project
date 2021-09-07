@@ -2,7 +2,7 @@
 
 (name wtr)
 
-(version v2.0.0-31-g424963d-dirty)
+(version 3.0.0)
 
 (using mdx 0.1)
 
