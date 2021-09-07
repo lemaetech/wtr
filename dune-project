@@ -33,7 +33,7 @@
 
 (package
  (name wtr-ppx)
- (synopsis "ppx to create routers")
+ (synopsis "Ppx to create routers")
  (description
   "wtr-ppx provides a ppx driven alternative to Wtr router\n              construction.")
  (depends
