@@ -6,9 +6,9 @@ Wtr - A typed router for OCaml web applications.
 
 ## Overview 
 
-[wtr] is a HTTP request router for OCaml web applications.
+`wtr` is a HTTP request router for OCaml web applications.
 
-- It is a trie based router - route matching is efficient and fast.
+- It is trie based so route matching is efficient and fast.
 - Route handlers are type-checked during compilation.
 - Supports matching and capturing URI path components, eg `/home/about/:int`.
 - Supports matching and capturing URI query parameters, eg `/home/about?q=:int&q1=hello`.
