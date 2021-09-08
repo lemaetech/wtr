@@ -87,9 +87,6 @@ HEXDIG            =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
 </code></pre>
 %}
 
-
-{1 Path/Query Components}
-
 {2 wtr-segment} 
 
 - splat[(**)] is {!val:Wtr.splat}
