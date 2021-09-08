@@ -6,7 +6,23 @@
 + [{%routes| route-syntax |}] - {i since OCaml 4.11.0}
 
 
-where the [route-syntax] is a string which has the following grammar:
+where [route-syntax] is a string which follows the grammar specified in {{!section:syntax} %routes Syntax}.
+
+{2 Demo}
+
+{[
+let ppx_router =
+  Wtr.router'
+    [ {%routes| get,post,head,delete  ; /home/about/       |} about_page
+    ; {%routes| head,delete           ; /home/:int/        |} prod_page
+    ; {%routes| get,post              ; /home/:float/      |} float_page
+    ; {%routes| get; /contact/*/:int                       |} contact_page
+    ; {%routes| get; /product/:string?section=:int&q=:bool |} product1
+    ; {%routes| get; /product/:string?section=:int&q1=yes  |} product2
+    ; {%routes| get; /fruit/:Fruit                         |} fruit_page
+    ; {%routes|      /                                     |} root_page
+    ; {%routes| GET; /faq/:int/**                          |} faq ]
+  ]}
 
 {1:syntax %routes Syntax}
 
@@ -14,6 +30,14 @@ In general, the [%routes] syntax closely mirrors that of a HTTP {i path}{^ 1} an
 The two notable points of divergence are as follows:
 + [%routes] allows to specify HTTP methods applicable to a {i request target}
 + [%routes] only allows [key=value] form of query specification.
+
+{2 Wtr.routes}
+The [%routes] ppx - after parsing and validating the syntax and the tokens - transforms to applying the {!val:Wtr.routes} function. Therefore, the following two are equivalent ways of specifying the same {i route} value:
+
+{[
+let routes1 = {%routes| get,post,head,delete  ; /home/about/ |} about_page in 
+let routes2 = Wtr.(routes [`GET;`POST;`HEAD;`DELETE] (exact "home" / exact "about" /. slash)) about_page 
+]}
 
 We use {i ABNF notation}{^ 3} to specify the [%routes] syntax. 
 
@@ -63,31 +87,6 @@ HEXDIG            =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
 </code></pre>
 %}
 
-{2 Wtr.routes}
-The [%routes] ppx - after parsing and validating the syntax and the tokens - transforms to applying the {!val:Wtr.routes} function.
-
-The following two are equivalent:
-{[
-let routes1 = {%routes| get,post,head,delete  ; /home/about/ |} about_page in 
-let routes2 = Wtr.(routes [`GET;`POST;`HEAD;`DELETE] (exact "home" / exact "about" /. slash)) about_page 
-in route1 = route2
-]}
-
-{2 Examples}
-
-{[
-let ppx_router =
-  Wtr.router'
-    [ {%routes| get,post,head,delete  ; /home/about/       |} about_page
-    ; {%routes| head,delete           ; /home/:int/        |} prod_page
-    ; {%routes| get,post              ; /home/:float/      |} float_page
-    ; {%routes| get; /contact/*/:int                       |} contact_page
-    ; {%routes| get; /product/:string?section=:int&q=:bool |} product1
-    ; {%routes| get; /product/:string?section=:int&q1=yes  |} product2
-    ; {%routes| get; /fruit/:Fruit                         |} fruit_page
-    ; {%routes|      /                                     |} root_page
-    ; {%routes| GET; /faq/:int/**                          |} faq ]
-  ]}
 
 {1 Path/Query Components}
 
