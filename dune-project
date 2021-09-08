@@ -42,6 +42,6 @@
   (uri
    (>= 4.2.0))
   (wtr
-   (= version))
+   (= :version))
   (ppxlib
    (>= 0.22.0))))
