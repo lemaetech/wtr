@@ -8,7 +8,7 @@
  (modules router)
  (libraries wtr)
  (preprocess
-  (pps wtr_ppx)))
+  (pps wtr-ppx)))
 
 (executable
  (name terminal_router)
