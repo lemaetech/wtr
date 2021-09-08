@@ -1,6 +1,6 @@
 # Wtr - Well Typed Router 
 
-Wtr - A typed router for OCaml web applications.
+Wtr - A HTTP request routing library for OCaml web applications.
 
 [Documentation](https://lemaetech.co.uk/wtr/)&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Examples](https://github.com/lemaetech/wtr/tree/main/examples) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [Summer Demo](https://github.com/lemaetech/summer/blob/main/examples/echo_server.ml)
 
