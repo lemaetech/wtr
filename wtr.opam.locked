@@ -1,0 +1,88 @@
+opam-version: "2.0"
+name: "wtr"
+version: "3.0.0"
+synopsis: "Well Typed Router"
+description: "Wtr - A typed router for OCaml web applications"
+maintainer: "Bikal Lem"
+authors: "Bikal Lem, <gbikal@gmail.com>"
+license: "MPL-2.0"
+homepage: "https://github.com/lemaetech/wtr"
+bug-reports: "https://github.com/lemaetech/wtr/issues"
+depends: [
+  "angstrom" {= "0.15.0"}
+  "astring" {= "0.8.5" & with-test}
+  "base" {= "v0.14.1" & with-test}
+  "base-bigarray" {= "base"}
+  "base-bytes" {= "base"}
+  "base-threads" {= "base"}
+  "base-unix" {= "base"}
+  "bigarray-compat" {= "1.0.0"}
+  "bigstringaf" {= "0.8.0"}
+  "cmdliner" {= "1.0.4" & with-test}
+  "conf-pkg-config" {= "2"}
+  "cppo" {= "1.6.7" & with-test}
+  "csexp" {= "1.5.1" & with-test}
+  "dune" {= "2.9.0"}
+  "dune-configurator" {= "2.9.0" & with-test}
+  "fmt" {= "0.8.9" & with-test}
+  "fpath" {= "0.7.3" & with-doc}
+  "jane-street-headers" {= "v0.14.0" & with-test}
+  "jst-config" {= "v0.14.0" & with-test}
+  "logs" {= "0.7.0" & with-test}
+  "mdx" {= "1.10.1" & with-test}
+  "ocaml" {= "4.12.0"}
+  "ocaml-base-compiler" {= "4.12.0"}
+  "ocaml-compiler-libs" {= "v0.12.4" & with-test}
+  "ocaml-config" {= "2"}
+  "ocaml-migrate-parsetree" {= "2.2.0" & with-test}
+  "ocaml-options-vanilla" {= "1"}
+  "ocaml-syntax-shims" {= "1.0.0"}
+  "ocaml-version" {= "3.2.0" & with-test}
+  "ocamlbuild" {= "0.14.0" & with-test}
+  "ocamlfind" {= "1.9.1"}
+  "octavius" {= "1.2.2" & with-test}
+  "odoc" {= "dev" & with-doc}
+  "odoc-parser" {= "0.9.0" & with-test}
+  "ppx_assert" {= "v0.14.0" & with-test}
+  "ppx_base" {= "v0.14.0" & with-test}
+  "ppx_cold" {= "v0.14.0" & with-test}
+  "ppx_compare" {= "v0.14.0" & with-test}
+  "ppx_derivers" {= "1.2.1" & with-test}
+  "ppx_enumerate" {= "v0.14.0" & with-test}
+  "ppx_expect" {= "v0.14.1" & with-test}
+  "ppx_hash" {= "v0.14.0" & with-test}
+  "ppx_here" {= "v0.14.0" & with-test}
+  "ppx_inline_test" {= "v0.14.1" & with-test}
+  "ppx_js_style" {= "v0.14.1" & with-test}
+  "ppx_optcomp" {= "v0.14.3" & with-test}
+  "ppx_sexp_conv" {= "v0.14.3" & with-test}
+  "ppxlib" {= "0.22.2" & with-test}
+  "re" {= "1.9.0" & with-test}
+  "result" {= "1.5"}
+  "seq" {= "base" & with-test}
+  "sexplib0" {= "v0.14.0" & with-test}
+  "stdio" {= "v0.14.0" & with-test}
+  "stdlib-shims" {= "0.3.0" & with-test}
+  "stringext" {= "1.6.0"}
+  "time_now" {= "v0.14.0" & with-test}
+  "topkg" {= "1.0.3" & with-test}
+  "tyxml" {= "4.5.0" & with-doc}
+  "uchar" {= "0.0.2" & with-doc}
+  "uri" {= "4.2.0"}
+  "uutf" {= "1.0.2" & with-doc}
+]
+build: [
+  ["dune" "subst"] {dev}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+dev-repo: "git+https://github.com/lemaetech/wtr.git"
