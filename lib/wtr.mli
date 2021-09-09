@@ -407,13 +407,17 @@ val method' : string -> method'
 
 (** {1 Route and Router} *)
 
+val route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route
+(** [route ~method' request_target handler] is a {!type:route}. The default
+    value for [?method] is [`GET]. *)
+
 val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b route list
-(** [routes methods request_target handler] is a product of
-    [methods X request_target]. This is equivalent to calling {!val:route} like
-    so:
+(** [routes methods request_target route_handler] is a product of
+    [methods X request_target X route_handler]. This is equivalent to calling
+    {!val:route} like so:
 
     {[
-      List.map (fun m -> route ~method:m request_target handler) [meth1; meth2; meth3]
+      List.map (fun m -> route ~method:m request_target route_handler) [meth1; meth2; meth3]
     ]} *)
 
 val router : 'a route list list -> 'a router
