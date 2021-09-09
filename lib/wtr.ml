@@ -171,6 +171,9 @@ let method' meth =
 
 (* Route and Router *)
 
+let route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route =
+ fun ?(method' = `GET) request_target f -> Route (method', request_target, f)
+
 let routes methods request_target f =
   List.map (fun method' -> Route (method', request_target, f)) methods
 
