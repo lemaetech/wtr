@@ -407,25 +407,18 @@ val method' : string -> method'
 
 (** {1 Route and Router} *)
 
-val route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route
-(** [route ~method' request_target handler] is a {!type:route}. The default
-    value for [?method] is [`GET]. *)
-
 val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b route list
-(** [routes methods request_target handler] is a list of routes in which all
-    have the same [request_target] and route [handler] value but each have one
-    [method'] from [methods]. This is equivalent to calling {!val:route} like
+(** [routes methods request_target handler] is a product of
+    [methods X request_target]. This is equivalent to calling {!val:route} like
     so:
 
     {[
       List.map (fun m -> route ~method:m request_target handler) [meth1; meth2; meth3]
     ]} *)
 
-val router : 'a route list -> 'a router
-(** [router routes] is a {!type:router} made up of given [routes]. *)
-
-val router' : 'a route list list -> 'a router
-(** [router' routes_list = router (List.concat routes_list)] *)
+val router : 'a route list list -> 'a router
+(** [router routes] is a {!router} that is composed of [routes]. [routes] is
+    converted to [List.concat routes]. *)
 
 val match' : method' -> string -> 'a router -> 'a option
 (** [match' method' request_target router] is [Some a] if [method'] and

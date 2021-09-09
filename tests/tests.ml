@@ -46,7 +46,7 @@ let product_page3 name section_id =
 let public url = Format.sprintf "file path: %s" url
 
 let router =
-  Wtr.router'
+  Wtr.router
     [ {%routes| get,post  ;         /home/about/:int             |} about_page
     ; {%routes| head,delete;        /home/:int/                  |}
         home_int_page
@@ -299,7 +299,7 @@ let%expect_test _ =
 let%expect_test "top one first: 1" =
   (let router =
      Wtr.(
-       router'
+       router
          [ {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f)
          ; {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i) ])
    in
@@ -310,7 +310,7 @@ let%expect_test "top one first: 1" =
 let%expect_test "top one first: 2" =
   (let router =
      Wtr.(
-       router'
+       router
          [ {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i)
          ; {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f) ])
    in
@@ -321,7 +321,7 @@ let%expect_test "top one first: 2" =
 let%expect_test "longest match : 1" =
   (let router =
      Wtr.(
-       router'
+       router
          [ {%routes| /home/:int         |} (fun i ->
                Format.sprintf "Int  : %d" i )
          ; {%routes| /home/:int/:string |} (fun i _ ->

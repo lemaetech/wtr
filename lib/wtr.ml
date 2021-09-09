@@ -171,11 +171,8 @@ let method' meth =
 
 (* Route and Router *)
 
-let route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route =
- fun ?(method' = `GET) request_target f -> Route (method', request_target, f)
-
 let routes methods request_target f =
-  List.map (fun method' -> route ~method' request_target f) methods
+  List.map (fun method' -> Route (method', request_target, f)) methods
 
 let node_type_equal a b =
   match (a, b) with
@@ -245,9 +242,7 @@ let rec compile : 'a node -> 'a router =
       |> List.map (fun (node_type, t) -> (node_type, compile t))
       |> Array.of_list }
 
-let router routes = compile @@ List.fold_left node empty_node routes
-
-let router' routes =
+let router routes =
   compile @@ (List.concat routes |> List.fold_left node empty_node)
 
 let rec drop : 'a list -> int -> 'a list =
