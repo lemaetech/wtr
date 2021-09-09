@@ -1,4 +1,4 @@
-## v3.0.0 2021-08-02 
+## v3.0.0 [unreleased] 
 
 - BREAKING CHANGE: A `splat` operator (`**`) now expects a last string paramter
   in the handler. The parameter holds the remaining url matched by the `splat` operator
@@ -10,7 +10,7 @@
 - FIX: Fix matching query components in request target
 - FIX: Fix pretty printing of `request_target`
 - NEW: Add path, query and uri combinators to create and manipulate path, query and uri values
-- NEW: Add `route`, `routes` and `pp_request_target` functions
+- NEW: Add `routes` and `pp_request_target` functions
 
 ## v2.0.0 2021-08-02 
 

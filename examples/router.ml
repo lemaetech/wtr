@@ -37,7 +37,7 @@ let faq category_id _url =
 
 (* Ppx based approach to specifying routes and router. *)
 let ppx_router =
-  Wtr.router'
+  Wtr.router
     [ {%routes| get,post,head,delete  ; /home/about/            |} about_page
     ; {%routes| head,delete           ; /home/:int/             |} prod_page
     ; {%routes| get,post              ; /home/:float/           |} float_page
@@ -50,7 +50,7 @@ let ppx_router =
 (* Equivalent router to 'ppx_router' being constructed using the combinator based approach. *)
 let combinator_router =
   Wtr.(
-    router'
+    router
       [ routes
           [`GET; `POST; `HEAD; `DELETE]
           (exact "home" / exact "about" /. slash)
