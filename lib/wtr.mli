@@ -44,6 +44,8 @@ type 'a router
     - or a function which returns a value of type ['a]. *)
 and 'a route
 
+and 'a routes = 'a route list
+
 (** {!type:request_target} is a HTTP request target value to be matched. It
     consists of either just a {!type:path} value or a combination of
     {!type:path} and {!type:query} values.
@@ -76,6 +78,10 @@ and ('a, 'b) request_target
     Consult {{!section:request_target_dsl} Request Target DSL} for creating
     values of this type. *)
 and ('a, 'b) path
+
+(** {!type:rest} represents a part of {i request target} from a given path
+    component to the rest of a {i request_target} *)
+and rest
 
 (** {!type:query} is a part of {!type:request_target}. It consists of one of
     more {b query component}s which are delimited by a [&] character token. A
@@ -360,13 +366,16 @@ val qarg : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
 val pend : ('a, 'a) path
 (** [pend] matches the end of {!type:path} value. *)
 
-val splat : (string -> 'a, 'a) path
-(** [splat] matches and captures all of the remaining path and query components.
+val rest : (rest -> 'a, 'a) path
+(** [rest] matches and captures all of the remaining path and query components.
     The captured value is then fed to a {i route handler}. *)
 
 val slash : ('a, 'a) path
 (** [slash] matches path component [/] first and then matches the end of the
     {!type:path} value. *)
+
+val rest_to_string : rest -> string
+(** [rest_to_string rest] converts [rest] to string. *)
 
 (** {1 HTTP Method} *)
 
@@ -411,7 +420,7 @@ val route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route
 (** [route ~method' request_target handler] is a {!type:route}. The default
     value for [?method] is [`GET]. *)
 
-val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b route list
+val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b routes
 (** [routes methods request_target route_handler] is a product of
     [methods X request_target X route_handler]. This is equivalent to calling
     {!val:route} like so:
@@ -420,9 +429,8 @@ val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b route list
       List.map (fun m -> route ~method:m request_target route_handler) [meth1; meth2; meth3]
     ]} *)
 
-val router : 'a route list list -> 'a router
-(** [router routes] is a {!router} that is composed of [routes]. [routes] is
-    converted to [List.concat routes]. *)
+val router : 'a routes list -> 'a router
+(** [router routes] is a {!type:router} that is composed of [routes]. *)
 
 val match' : method' -> string -> 'a router -> 'a option
 (** [match' method' request_target router] is [Some a] if [method'] and
@@ -457,12 +465,12 @@ val pp_request_target : Format.formatter -> ('a, 'b) request_target -> unit
 
     {i {!val:slash}} - printed as [/]
 
-    {i {!val:splat}} - printed as [**]
+    {i {!val:rest}} - printed as [**]
 
     A [/] character is inserted in between the components when printing a
     sequence of {i path components}, e.g.
 
-    {[ let p = Wtr.(exact "hello" / int / bool /. splat) ]}
+    {[ let p = Wtr.(exact "hello" / int / bool /. rest) ]}
 
     is printed as [/hello/:int/:bool/**].
 
@@ -607,7 +615,7 @@ DELETE
 (** Used by wtr/request_target ppx *)
 module Private : sig
   val nil : ('b, 'b) request_target
-  val splat : (string -> 'b, 'b) request_target
+  val rest : (string -> 'b, 'b) request_target
   val slash : ('b, 'b) request_target
   val exact : string -> ('a, 'b) request_target -> ('a, 'b) request_target
 
