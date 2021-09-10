@@ -58,14 +58,14 @@ http-method       = "GET"
 other-http-method = 1*ALPHA      
 
 http-path         = "/" wtr-segment
-wtr-segment       = wtr-arg / splat / wildcard / [segment-nz *( "/" segment)]
+wtr-segment       = wtr-arg / rest / wildcard / [segment-nz *( "/" segment)]
 wtr-arg	          = ":int" / ":int32" / ":int64" / ":float" / ":bool" / ":string" / custom-arg
 custom-arg        = ":" ocaml-module-path 
 
 ocaml-module-path = module-name *("." module-name)      ; OCaml module path
 ocaml-module-name = (A-Z) *( ALPHA / DIGIT / "_" / "'" )   ; OCaml module name
 
-splat             = "**"
+rest             = "**"
 wildcard          = "*"
 segment           = *pchar
 segment-nz        = 1*pchar
@@ -89,7 +89,7 @@ HEXDIG            =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
 
 {2 wtr-segment} 
 
-- splat[(**)] is {!val:Wtr.splat}
+- rest[(**)] is {!val:Wtr.rest}
 - wildcard[(*)] is {!val:Wtr.string}
 
 {2 wtr-arg}
