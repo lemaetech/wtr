@@ -117,6 +117,10 @@ let ( /& ) f1 f2 r = f1 @@ f2 r
 let ( /? ) f1 f2 r = f1 (f2 r)
 let ( /. ) f e = f e
 let ( /?. ) qf () = qf Nil
+let ( //. ) f e = f e
+
+external of_path : ('a, 'b) path -> ('a, 'b) request_target = "%identity"
+
 let exact s request_target = Exact (s, request_target)
 
 let qexact (field, exact) request_target =
