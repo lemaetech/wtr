@@ -11,6 +11,8 @@
 - FIX: Fix pretty printing of `request_target`
 - NEW: Add path, query and uri combinators to create and manipulate path, query and uri values
 - NEW: Add `route`, `routes` and `pp_request_target` functions
+- NEW: Add `rest` type and function `rest_to_string`
+- CHANGE: Refer `splat` as `rest` in the documentation.
 
 ## v2.0.0 2021-08-02 
 

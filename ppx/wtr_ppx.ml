@@ -42,15 +42,15 @@ let validate_path_tokens tokens =
          token"
     else Ok path
   in
-  let validate_full_splat path =
+  let validate_rest path =
     let _, l2 = split_on (fun x -> String.equal "**" x) path in
     if List.length l2 > 0 then
       Error
-        "Invalid uri path specification. No tokens allowed after full splat \
+        "Invalid uri path specification. No tokens allowed after full rest \
          (**) token"
     else Ok path
   in
-  validate_start tokens >>= validate_end_slash >>= validate_full_splat
+  validate_start tokens >>= validate_end_slash >>= validate_rest
 
 let path_tokens uri =
   Uri.path uri |> String.split_on_char '/' |> validate_path_tokens
@@ -147,7 +147,7 @@ let rec make_request_target ~loc query_tokens path_tokens =
   match path_tokens with
   | [] -> make_query ~loc query_tokens
   | [""] -> [%expr Wtr.Private.slash]
-  | ["**"] -> [%expr Wtr.Private.splat]
+  | ["**"] -> [%expr Wtr.Private.rest]
   | "*" :: path_tokens ->
       [%expr
         Wtr.Private.(

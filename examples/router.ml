@@ -69,4 +69,4 @@ let combinator_router =
           /?. () )
           product2
       ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
-      ; routes [`GET] (exact "faq" / int /. splat) faq ])
+      ; routes [`GET] (exact "faq" / int /. rest) faq ])
