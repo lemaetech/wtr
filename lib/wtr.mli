@@ -223,8 +223,8 @@ val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 val ( /. ) :
   (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) request_target
 (** [ p /. pe] is a {!type:request_target} value that consists of only path
-    components. [pe] is a path value that match the last path component. It is
-    equivalent to the following:
+    components [p] and [pe]. [pe] is a path value that match the last path
+    component. It is equivalent to the following:
 
     {[ let p = Wtr.(exact "hello" / exact "about" //. pend) |> Wtr.of_path ]} *)
 
@@ -245,8 +245,8 @@ val ( /?. ) :
     ]} *)
 
 val ( //. ) : (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) path
-(** [ p /. pe] is a {!type:path} value that consists of only path components.
-    [pe] is a path value that match the last path component. *)
+(** [ p //. pe] is a {!type:path} value that consists of only path components
+    [p] and [pe]. [pe] is a path value that match the last path component. *)
 
 val of_path : ('a, 'b) path -> ('a, 'b) request_target
 
