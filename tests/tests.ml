@@ -340,3 +340,15 @@ let%expect_test "rest: ppx" =
   |> Wtr.match' `GET "/public/styles/style.css"
   |> function Some s -> print_string s | None -> () ) ;
   [%expect {| styles/style.css |}]
+
+let%expect_test "slash matched" =
+  ( Wtr.(router [routes [`GET] (exact "public" /. slash) "slash"])
+  |> Wtr.match' `GET "/public/"
+  |> function Some s -> print_string s | None -> () ) ;
+  [%expect {| slash |}]
+
+let%expect_test "slash not matched" =
+  ( Wtr.(router [routes [`GET] (exact "public" /. slash) "slash"])
+  |> Wtr.match' `GET "/public"
+  |> function Some s -> print_string s | None -> () ) ;
+  [%expect {| |}]

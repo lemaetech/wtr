@@ -58,10 +58,12 @@ let combinator_router =
       ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
       ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
       ; routes [`GET] (exact "contact" / string / int /. pend) contact_page
-      ; routes [`GET]
+      ; routes
+          [`GET]
           (exact "product" / string /? qint "section" /& qbool "q" /?. ())
           product1
-      ; routes [`GET]
+      ; routes
+          [`GET]
           ( exact "product"
           / string
           /? qint "section"
