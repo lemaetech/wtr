@@ -115,9 +115,9 @@ let bool_d = arg "bool" bool_of_string_opt
 let ( / ) f1 f2 r = f1 @@ f2 r
 let ( /& ) f1 f2 r = f1 @@ f2 r
 let ( /? ) f1 f2 r = f1 (f2 r)
+let ( //. ) f e = f e
 let ( /. ) f e = f e
 let ( /?. ) qf () = qf Nil
-let ( //. ) f e = f e
 
 external of_path : ('a, 'b) path -> ('a, 'b) request_target = "%identity"
 
