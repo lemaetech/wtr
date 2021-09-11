@@ -370,10 +370,10 @@ val qarg : string * 'c arg -> ('a, 'b) query -> ('c -> 'a, 'b) query
     - [/hello?fruit=apple]
     - [/hello?fruit=orange] *)
 
-(** {2 Matching Last Components}
+(** {2 Last Path Component}
 
-    These combinators match the last(end) path component. They are used with
-    {!val:(/.)} function. *)
+    These combinators match the last - {i end} - path component. They are used
+    with {!val:(/.)} function. *)
 
 val pend : ('a, 'a) path
 (** [pend] matches the end of {!type:path} value. *)
@@ -383,21 +383,61 @@ val rest : (rest -> 'a, 'a) path
     The captured value is then fed to a {i route handler}.
 
     {[
-      Wtr.(router [routes [`GET] (exact "public" /. rest) rest_to_string])
-      |> Wtr.match' `GET "/public/styles/style.css"
-      |> function Some s -> print_string s | None -> ()
-    ]}
-
-    prints
-
-    {[ "styles/style.css" ]} *)
+      let%expect_test "rest: comb" =
+        ( Wtr.(router [routes [`GET] (exact "public" /. rest) rest_to_string])
+        |> Wtr.match' `GET "/public/styles/style.css"
+        |> function Some s -> print_string s | None -> () ) ;
+        [%expect {| styles/style.css |}]
+    ]} *)
 
 val slash : ('a, 'a) path
 (** [slash] matches path component [/] first and then matches the end of the
-    {!type:path} value. *)
+    {!type:path} value.
+
+    {[
+      let%expect_test "slash matched" =
+        ( Wtr.(router [routes [`GET] (exact "public" /. slash) "slash"])
+        |> Wtr.match' `GET "/public/"
+        |> function Some s -> print_string s | None -> () ) ;
+        [%expect {| slash |}]
+
+      let%expect_test "slash not matched" =
+        ( Wtr.(router [routes [`GET] (exact "public" /. slash) "slash"])
+        |> Wtr.match' `GET "/public"
+        |> function Some s -> print_string s | None -> () ) ;
+        [%expect {| |}]
+    ]} *)
 
 val rest_to_string : rest -> string
 (** [rest_to_string rest] converts [rest] to string. *)
+
+(** {1 Routes and Router} *)
+
+val route : method' -> ('a, 'b) request_target -> 'a -> 'b route
+(** [route method' request_target handler] is a {!type:route}. *)
+
+val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b routes
+(** [routes methods request_target route_handler] is a product of
+    [methods X request_target X route_handler]. This is equivalent to calling
+    {!val:route} like so:
+
+    {[
+      List.map (fun m -> route ~method:m request_target route_handler) [meth1; meth2; meth3]
+    ]} *)
+
+val router : 'a routes list -> 'a router
+(** [router routes] is a {!type:router} that is composed of [routes]. *)
+
+val match' : method' -> string -> 'a router -> 'a option
+(** [match' method' request_target router] is [Some a] if [method'] and
+    [request_target] together matches one of the routes defined in [router].
+    Otherwise it is None. The value [Some a] is returned by the
+    {i route handler} of the matched {i route}.
+
+    The routes are matched based on the lexical order of the routes. This means
+    they are matched from {i top to bottom}, {i left to right} and to the
+    {i longest match}. See {!val:pp} to visualize the router and the route
+    matching mechanism. *)
 
 (** {1 HTTP Method} *)
 
@@ -435,35 +475,6 @@ val method' : string -> method'
       Wtr.method' "get" = `GET;;
       Wtr.method' "method" = `Method "method"
     ]} *)
-
-(** {1 Route and Router} *)
-
-val route : ?method':method' -> ('a, 'b) request_target -> 'a -> 'b route
-(** [route ~method' request_target handler] is a {!type:route}. The default
-    value for [?method] is [`GET]. *)
-
-val routes : method' list -> ('a, 'b) request_target -> 'a -> 'b routes
-(** [routes methods request_target route_handler] is a product of
-    [methods X request_target X route_handler]. This is equivalent to calling
-    {!val:route} like so:
-
-    {[
-      List.map (fun m -> route ~method:m request_target route_handler) [meth1; meth2; meth3]
-    ]} *)
-
-val router : 'a routes list -> 'a router
-(** [router routes] is a {!type:router} that is composed of [routes]. *)
-
-val match' : method' -> string -> 'a router -> 'a option
-(** [match' method' request_target router] is [Some a] if [method'] and
-    [request_target] together matches one of the routes defined in [router].
-    Otherwise it is None. The value [Some a] is returned by the
-    {i route handler} of the matched {i route}.
-
-    The routes are matched based on the lexical order of the routes. This means
-    they are matched from {i top to bottom}, {i left to right} and to the
-    {i longest match}. See {!val:pp} to visualize the router and the route
-    matching mechanism. *)
 
 (** {1:pp Pretty Printers and Debugging}
 
