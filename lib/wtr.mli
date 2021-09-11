@@ -80,7 +80,9 @@ and ('a, 'b) request_target
 and ('a, 'b) path
 
 (** {!type:rest} represents a part of {i request target} from a given path
-    component to the rest of a {i request_target} *)
+    component to the rest of a {i request_target}.
+
+    Use {!val:rest_to_string} to convert to string representation. *)
 and rest
 
 (** {!type:query} is a part of {!type:request_target}. It consists of one of
@@ -217,21 +219,25 @@ val ( /& ) : (('a, 'b) query -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 
 val ( /? ) : (('a, 'b) path -> 'c) -> ('d -> ('a, 'b) query) -> 'd -> 'c
 (** [ p /? q] is a closure which {i combines} [p] and [q]. [p] is a closure
-    which encapsulates {!type:path} value and [q] is a closure which encapsulate
-    {!type:query} value. *)
+    which encapsulates {!type:path} value and [q] is a closure which
+    encapsulates {!type:query} value. *)
+
+val ( //. ) : (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) path
+(** [ p //. pe] is {!type:path} that consists of only path components [p] and
+    [pe]. [pe] is a path value that matches the last path component. *)
 
 val ( /. ) :
   (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) request_target
 (** [ p /. pe] is a {!type:request_target} value that consists of only path
-    components [p] and [pe]. [pe] is a path value that match the last path
+    components [p] and [pe]. [pe] is a path value that matches the last path
     component. It is equivalent to the following:
 
     {[ let p = Wtr.(exact "hello" / exact "about" //. pend) |> Wtr.of_path ]} *)
 
 val ( /?. ) :
   (('b, 'b) query -> ('c, 'd) path) -> unit -> ('c, 'd) request_target
-(** [ pq /?. ()] is a {!type:request_target} value. [pq] is a closure which
-    encapulates both {!type:path} and {!type:query} components.
+(** [ pq /?. ()] is {!type:request_target}. [pq] is a closure which encapulates
+    both {!type:path} and {!type:query} components.
 
     {[
       let request_target1 =
@@ -244,11 +250,8 @@ val ( /?. ) :
           /?. ())
     ]} *)
 
-val ( //. ) : (('d, 'e) path -> ('b, 'c) path) -> ('d, 'e) path -> ('b, 'c) path
-(** [ p //. pe] is a {!type:path} value that consists of only path components
-    [p] and [pe]. [pe] is a path value that match the last path component. *)
-
 val of_path : ('a, 'b) path -> ('a, 'b) request_target
+(** [of_path path] converts [path] to {!type:request_target} *)
 
 val exact : string -> ('a, 'b) path -> ('a, 'b) path
 (** [exact e p] matches a path component to [e] exactly. *)
@@ -377,7 +380,17 @@ val pend : ('a, 'a) path
 
 val rest : (rest -> 'a, 'a) path
 (** [rest] matches and captures all of the remaining path and query components.
-    The captured value is then fed to a {i route handler}. *)
+    The captured value is then fed to a {i route handler}.
+
+    {[
+      Wtr.(router [routes [`GET] (exact "public" /. rest) rest_to_string])
+      |> Wtr.match' `GET "/public/styles/style.css"
+      |> function Some s -> print_string s | None -> ()
+    ]}
+
+    prints
+
+    {[ "styles/style.css" ]} *)
 
 val slash : ('a, 'a) path
 (** [slash] matches path component [/] first and then matches the end of the
@@ -565,13 +578,16 @@ val pp : Format.formatter -> 'a router -> unit
                 [`GET; `POST; `HEAD; `DELETE]
                 (exact "home" / exact "about" /. slash)
                 about_page
-            ; routes [`GET]
+            ; routes
+                [`GET]
                 (exact "contact" / string / int /. pend)
                 contact_page
-            ; routes [`GET]
+            ; routes
+                [`GET]
                 (exact "product" / string /? qint "section" /& qbool "q" /?. ())
                 product1
-            ; routes [`GET]
+            ; routes
+                [`GET]
                 ( exact "product"
                 / string
                 /? qint "section"
@@ -624,7 +640,7 @@ DELETE
 (** Used by wtr/request_target ppx *)
 module Private : sig
   val nil : ('b, 'b) request_target
-  val rest : (string -> 'b, 'b) request_target
+  val rest : (rest -> 'b, 'b) request_target
   val slash : ('b, 'b) request_target
   val exact : string -> ('a, 'b) request_target -> ('a, 'b) request_target
 

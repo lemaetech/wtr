@@ -17,12 +17,16 @@ let fruit_page = function
   | Pineapple -> Printf.sprintf "Pineapple has scaly skin"
 
 let about_page i = Format.sprintf "about_page - %d" i
-let full_splat_page url = Format.sprintf "full splat page: %s" url
+
+let full_rest_page url =
+  Format.sprintf "full rest page: %s" @@ Wtr.rest_to_string url
+
 let home_int_page i = Printf.sprintf "Product Page. Product Id : %d" i
 let home_float_page f = Printf.sprintf "Float page. number : %f" f
 
 let wildcard_page s url =
-  Printf.sprintf "Wildcard page. %s. Remaining url: %s" s url
+  Printf.sprintf "Wildcard page. %s. Remaining url: %s" s
+  @@ Wtr.rest_to_string url
 
 let numbers_page id code = Printf.sprintf "int32: %ld, int64: %Ld." id code
 let root_page = "Root page"
@@ -43,7 +47,7 @@ let product_page2 name section_id =
 let product_page3 name section_id =
   Printf.sprintf "Product detail 2 - %s. Section: %s." name section_id
 
-let public url = Format.sprintf "file path: %s" url
+let public url = Format.sprintf "file path: %s" @@ Wtr.rest_to_string url
 
 let router =
   Wtr.router
@@ -54,7 +58,7 @@ let router =
         home_float_page
     ; {%routes| get;   /contact/*/:int                           |} contact_page
     ; {%routes| post;  /home/products/**                         |}
-        full_splat_page
+        full_rest_page
     ; {%routes| get;   /home/*/**                                |}
         wildcard_page
     ; {%routes| get;   /contact/:string/:bool                    |}
@@ -135,12 +139,12 @@ let%expect_test _ =
 let%expect_test _ =
   pp_match `POST "/home/products/asdfasdf?a=1&b=2" ;
   [%expect {|
-       "full splat page: asdfasdf?a=1&b=2" |}]
+       "full rest page: asdfasdf?a=1&b=2" |}]
 
 let%expect_test _ =
   pp_match `POST "/home/products/product1/locate" ;
   [%expect {|
-       "full splat page: product1/locate" |}]
+       "full rest page: product1/locate" |}]
 
 let%expect_test _ =
   pp_match `GET "/home/product1/" ;
@@ -297,36 +301,42 @@ let%expect_test _ =
           / |}]
 
 let%expect_test "top one first: 1" =
-  (let router =
-     Wtr.(
-       router
-         [ {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f)
-         ; {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i) ])
-   in
-   Wtr.match' `GET "/home/12" router
-   |> function Some s -> print_string s | None -> () ) ;
+  ( Wtr.(
+      router
+        [ {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f)
+        ; {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i) ])
+  |> Wtr.match' `GET "/home/12"
+  |> function Some s -> print_string s | None -> () ) ;
   [%expect {| Float: 12.000000 |}]
 
 let%expect_test "top one first: 2" =
-  (let router =
-     Wtr.(
-       router
-         [ {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i)
-         ; {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f) ])
-   in
-   Wtr.match' `GET "/home/12" router
-   |> function Some s -> print_string s | None -> () ) ;
+  ( Wtr.(
+      router
+        [ {%routes| /home/:int   |} (fun i -> Format.sprintf "Int  : %d" i)
+        ; {%routes| /home/:float |} (fun f -> Format.sprintf "Float: %f" f) ])
+  |> Wtr.match' `GET "/home/12"
+  |> function Some s -> print_string s | None -> () ) ;
   [%expect {| Int  : 12 |}]
 
 let%expect_test "longest match : 1" =
-  (let router =
-     Wtr.(
-       router
-         [ {%routes| /home/:int         |} (fun i ->
-               Format.sprintf "Int  : %d" i )
-         ; {%routes| /home/:int/:string |} (fun i _ ->
-               Format.sprintf "longest: %i" i ) ])
-   in
-   Wtr.match' `GET "/home/12/hello" router
-   |> function Some s -> print_string s | None -> () ) ;
+  ( Wtr.(
+      router
+        [ {%routes| /home/:int         |} (fun i ->
+              Format.sprintf "Int  : %d" i )
+        ; {%routes| /home/:int/:string |} (fun i _ ->
+              Format.sprintf "longest: %i" i ) ])
+  |> Wtr.match' `GET "/home/12/hello"
+  |> function Some s -> print_string s | None -> () ) ;
   [%expect {| longest: 12 |}]
+
+let%expect_test "rest: comb" =
+  ( Wtr.(router [routes [`GET] (exact "public" /. rest) rest_to_string])
+  |> Wtr.match' `GET "/public/styles/style.css"
+  |> function Some s -> print_string s | None -> () ) ;
+  [%expect {| styles/style.css |}]
+
+let%expect_test "rest: ppx" =
+  ( Wtr.(router [{%routes| /public/** |} Wtr.rest_to_string])
+  |> Wtr.match' `GET "/public/styles/style.css"
+  |> function Some s -> print_string s | None -> () ) ;
+  [%expect {| styles/style.css |}]
