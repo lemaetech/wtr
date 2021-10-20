@@ -1,4 +1,4 @@
-## v3.0.0 [unreleased] 
+## v3.0.0 [2021-10-20] 
 
 - BREAKING CHANGE: A `splat` operator (`**`) now expects a last string paramter
   in the handler. The parameter holds the remaining url matched by the `splat` operator
