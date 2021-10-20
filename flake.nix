@@ -15,7 +15,9 @@
           buildInputs = with pkgs; [
             gcc
             gmp
+            pkg-config
             libev
+            openssl
           ];
         };
       });
