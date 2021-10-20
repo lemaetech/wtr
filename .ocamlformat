@@ -1,8 +1,4 @@
-profile = ocamlformat
-exp-grouping=preserve
-module-item-spacing=compact
-sequence-blank-line=preserve-one
-single-case=compact
-break-cases = fit
-break-infix=fit-or-vertical
+profile = conventional
+break-infix = fit-or-vertical
 parse-docstrings = true
+module-item-spacing = compact

@@ -29,23 +29,24 @@
 
 (** {1 Types} *)
 
+type 'a router
 (** A {!type:router} consists of one or many HTTP request {!type:route}s which
     are used to match a given HTTP request target.
 
     ['a] is a value which is returned by a {i route handler} of the matched
     {i route}. *)
-type 'a router
 
+and 'a route
 (** {!type:route} is a HTTP request route. A route encapsulates a HTTP
     {!type:method'}, a {!type:request_target} and a {i route handler}. A
     {i route handler} is either of the following:
 
     - a value of type ['a]
     - or a function which returns a value of type ['a]. *)
-and 'a route
 
 and 'a routes = 'a route list
 
+and ('a, 'b) request_target
 (** {!type:request_target} is a HTTP request target value to be matched. It
     consists of either just a {!type:path} value or a combination of
     {!type:path} and {!type:query} values.
@@ -63,8 +64,8 @@ and 'a routes = 'a route list
 
     See {{:https://datatracker.ietf.org/doc/html/rfc7230#section-5.3} HTTP RFC
     7230 - request target}. *)
-and ('a, 'b) request_target
 
+and ('a, 'b) path
 (** {!type:path} is a part of {!type:request_target}. It consists of one or more
     {b path component}s. {b path component}s are tokens which are delimited by a
     [/] character token.
@@ -77,14 +78,14 @@ and ('a, 'b) request_target
 
     Consult {{!section:request_target_dsl} Request Target DSL} for creating
     values of this type. *)
-and ('a, 'b) path
 
+and rest
 (** {!type:rest} represents a part of {i request target} from a given path
     component to the rest of a {i request_target}.
 
     Use {!val:rest_to_string} to convert to string representation. *)
-and rest
 
+and ('a, 'b) query
 (** {!type:query} is a part of {!type:request_target}. It consists of one of
     more {b query component}s which are delimited by a [&] character token. A
     {b query component} further consists of a pair of values called [name] and
@@ -96,11 +97,7 @@ and rest
 
     Consult {{!section:request_target_dsl} Request Target DSL} for creating
     values of this type. *)
-and ('a, 'b) query
 
-(** {!type:method'} is a HTTP request method. See
-    {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} HTTP RFC 7231 -
-    HTTP Methods} *)
 and method' =
   [ `GET
   | `HEAD
@@ -111,12 +108,15 @@ and method' =
   | `OPTIONS
   | `TRACE
   | `Method of string ]
+(** {!type:method'} is a HTTP request method. See
+    {{:https://datatracker.ietf.org/doc/html/rfc7231#section-4} HTTP RFC 7231 -
+    HTTP Methods} *)
 
+and 'a arg
 (** {!type:arg} is a component which can convert a {b path component} or a
     {b query component} [value] token into an OCaml typed value represented by
     ['a]. The successfully converted value is then fed to a {i route handler}
     function as an argument. *)
-and 'a arg
 
 (** {1:arg_func Arg} *)
 
@@ -153,7 +153,7 @@ val arg : string -> (string -> 'a option) -> 'a arg
             | "apple" -> Some Apple
             | "orange" -> Some Orange
             | "pineapple" -> Some Pineapple
-            | _ -> None )
+            | _ -> None)
       end
     ]}
 
@@ -384,9 +384,12 @@ val rest : (rest -> 'a, 'a) path
 
     {[
       let%expect_test "rest: comb" =
-        ( Wtr.(router [routes [`GET] (exact "public" /. rest) rest_to_string])
-        |> Wtr.match' `GET "/public/styles/style.css"
-        |> function Some s -> print_string s | None -> () ) ;
+        (Wtr.(
+           router [ routes [ `GET ] (exact "public" /. rest) rest_to_string ])
+         |> Wtr.match' `GET "/public/styles/style.css"
+         |> function
+         | Some s -> print_string s
+         | None -> ());
         [%expect {| styles/style.css |}]
     ]} *)
 
@@ -396,15 +399,19 @@ val slash : ('a, 'a) path
 
     {[
       let%expect_test "slash matched" =
-        ( Wtr.(router [routes [`GET] (exact "public" /. slash) "slash"])
-        |> Wtr.match' `GET "/public/"
-        |> function Some s -> print_string s | None -> () ) ;
+        (Wtr.(router [ routes [ `GET ] (exact "public" /. slash) "slash" ])
+         |> Wtr.match' `GET "/public/"
+         |> function
+         | Some s -> print_string s
+         | None -> ());
         [%expect {| slash |}]
 
       let%expect_test "slash not matched" =
-        ( Wtr.(router [routes [`GET] (exact "public" /. slash) "slash"])
-        |> Wtr.match' `GET "/public"
-        |> function Some s -> print_string s | None -> () ) ;
+        (Wtr.(router [ routes [ `GET ] (exact "public" /. slash) "slash" ])
+         |> Wtr.match' `GET "/public"
+         |> function
+         | Some s -> print_string s
+         | None -> ());
         [%expect {| |}]
     ]} *)
 
@@ -585,27 +592,26 @@ val pp : Format.formatter -> 'a router -> unit
       let router1 =
         Wtr.(
           router'
-            [ routes
-                [`GET; `POST; `HEAD; `DELETE]
+            [
+              routes
+                [ `GET; `POST; `HEAD; `DELETE ]
                 (exact "home" / exact "about" /. slash)
-                about_page
-            ; routes
-                [`GET]
+                about_page;
+              routes [ `GET ]
                 (exact "contact" / string / int /. pend)
-                contact_page
-            ; routes
-                [`GET]
+                contact_page;
+              routes [ `GET ]
                 (exact "product" / string /? qint "section" /& qbool "q" /?. ())
-                product1
-            ; routes
-                [`GET]
-                ( exact "product"
+                product1;
+              routes [ `GET ]
+                (exact "product"
                 / string
                 /? qint "section"
                 /& qexact ("q1", "yes")
-                /?. () )
-                product2
-            ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page ])
+                /?. ())
+                product2;
+              routes [ `GET ] (exact "fruit" / parg Fruit.t /. pend) fruit_page;
+            ])
     ]}
 
     is pretty printed as below:

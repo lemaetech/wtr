@@ -16,6 +16,8 @@ depends: [
   "uri" {>= "4.2.0"}
   "wtr" {= version}
   "ppxlib" {>= "0.22.0"}
+  "ppx_expect" {with-test}
+  "mdx" {with-test}
   "odoc" {with-doc}
 ]
 build: [

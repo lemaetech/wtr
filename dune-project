@@ -44,4 +44,7 @@
   (wtr
    (= :version))
   (ppxlib
-   (>= 0.22.0))))
+   (>= 0.22.0))
+  (ppx_expect :with-test)
+  (mdx :with-test)))
+

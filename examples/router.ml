@@ -9,7 +9,7 @@ module Fruit = struct
       | "apple" -> Some Apple
       | "orange" -> Some Orange
       | "pineapple" -> Some Pineapple
-      | _ -> None )
+      | _ -> None)
 end
 
 (* Route handlers. *)
@@ -38,37 +38,39 @@ let faq category_id _url =
 (* Ppx based approach to specifying routes and router. *)
 let ppx_router =
   Wtr.router
-    [ {%routes| get,post,head,delete  ; /home/about/            |} about_page
-    ; {%routes| head,delete           ; /home/:int/             |} prod_page
-    ; {%routes| get,post              ; /home/:float/           |} float_page
-    ; {%routes| get; /contact/*/:int                            |} contact_page
-    ; {%routes| get; /product/:string?section=:int&q=:bool      |} product1
-    ; {%routes| get; /product/:string?section=:int&q1=yes       |} product2
-    ; {%routes| get; /fruit/:Fruit                              |} fruit_page
-    ; {%routes| GET; /faq/:int/**                               |} faq ]
+    [
+      {%routes| get,post,head,delete  ; /home/about/            |} about_page;
+      {%routes| head,delete           ; /home/:int/             |} prod_page;
+      {%routes| get,post              ; /home/:float/           |} float_page;
+      {%routes| get; /contact/*/:int                            |} contact_page;
+      {%routes| get; /product/:string?section=:int&q=:bool      |} product1;
+      {%routes| get; /product/:string?section=:int&q1=yes       |} product2;
+      {%routes| get; /fruit/:Fruit                              |} fruit_page;
+      {%routes| GET; /faq/:int/**                               |} faq;
+    ]
 
 (* Equivalent router to 'ppx_router' being constructed using the combinator based approach. *)
 let combinator_router =
   Wtr.(
     router
-      [ routes
-          [`GET; `POST; `HEAD; `DELETE]
+      [
+        routes
+          [ `GET; `POST; `HEAD; `DELETE ]
           (exact "home" / exact "about" /. slash)
-          about_page
-      ; routes [`HEAD; `DELETE] (exact "home" / int /. slash) prod_page
-      ; routes [`GET; `POST] (exact "home" / float /. slash) float_page
-      ; routes [`GET] (exact "contact" / string / int /. pend) contact_page
-      ; routes
-          [`GET]
+          about_page;
+        routes [ `HEAD; `DELETE ] (exact "home" / int /. slash) prod_page;
+        routes [ `GET; `POST ] (exact "home" / float /. slash) float_page;
+        routes [ `GET ] (exact "contact" / string / int /. pend) contact_page;
+        routes [ `GET ]
           (exact "product" / string /? qint "section" /& qbool "q" /?. ())
-          product1
-      ; routes
-          [`GET]
-          ( exact "product"
+          product1;
+        routes [ `GET ]
+          (exact "product"
           / string
           /? qint "section"
           /& qexact ("q1", "yes")
-          /?. () )
-          product2
-      ; routes [`GET] (exact "fruit" / parg Fruit.t /. pend) fruit_page
-      ; routes [`GET] (exact "faq" / int /. rest) faq ])
+          /?. ())
+          product2;
+        routes [ `GET ] (exact "fruit" / parg Fruit.t /. pend) fruit_page;
+        routes [ `GET ] (exact "faq" / int /. rest) faq;
+      ])

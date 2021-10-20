@@ -63,7 +63,7 @@ let query_tokens uri =
            if List.length v != 1 then
              raise
                (E (Printf.sprintf "Invalid query specification for key: %s" k))
-           else (k, List.hd v) )
+           else (k, List.hd v))
     |> Result.ok
   with E msg -> Error msg
 
@@ -81,12 +81,12 @@ let make_methods : loc:location -> string -> expression =
   String.split_on_char ',' methods_str
   |> List.filter_map (fun s ->
          let s = String.trim s in
-         if String.length s > 0 then Some s else None )
+         if String.length s > 0 then Some s else None)
   |> List.rev
   |> List.fold_left
        (fun expr method' ->
          let method' = Ast_builder.estring ~loc method' in
-         [%expr Wtr.method' [%e method'] :: [%e expr]] )
+         [%expr Wtr.method' [%e method'] :: [%e expr]])
        [%expr []]
 
 let rec make_query ~loc query_tokens =
@@ -130,12 +130,14 @@ let rec make_query ~loc query_tokens =
             Wtr.Private.(
               query_arg [%e name_expr] bool [%e make_query ~loc query_tokens])]
       | custom_arg when capitalized custom_arg ->
-          let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
+          let longident_loc =
+            { txt = Longident.parse (custom_arg ^ ".t"); loc }
+          in
           [%expr
             Wtr.Private.query_arg [%e name_expr]
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_query ~loc query_tokens]]
-      | x -> Location.raise_errorf ~loc "wtr: Invalid query component '%s'" x )
+      | x -> Location.raise_errorf ~loc "wtr: Invalid query component '%s'" x)
   | (name, query_token) :: query_tokens ->
       [%expr
         Wtr.Private.query_exact
@@ -146,8 +148,8 @@ let rec make_query ~loc query_tokens =
 let rec make_request_target ~loc query_tokens path_tokens =
   match path_tokens with
   | [] -> make_query ~loc query_tokens
-  | [""] -> [%expr Wtr.Private.slash]
-  | ["**"] -> [%expr Wtr.Private.rest]
+  | [ "" ] -> [%expr Wtr.Private.slash]
+  | [ "**" ] -> [%expr Wtr.Private.rest]
   | "*" :: path_tokens ->
       [%expr
         Wtr.Private.(
@@ -180,12 +182,14 @@ let rec make_request_target ~loc query_tokens path_tokens =
             Wtr.Private.(
               arg bool [%e make_request_target ~loc query_tokens path_tokens])]
       | custom_arg when capitalized custom_arg ->
-          let longident_loc = {txt= Longident.parse (custom_arg ^ ".t"); loc} in
+          let longident_loc =
+            { txt = Longident.parse (custom_arg ^ ".t"); loc }
+          in
           [%expr
             Wtr.Private.arg
               [%e Ast_builder.pexp_ident ~loc longident_loc]
               [%e make_request_target ~loc query_tokens path_tokens]]
-      | x -> Location.raise_errorf ~loc "wtr: Invalid path component '%s'." x )
+      | x -> Location.raise_errorf ~loc "wtr: Invalid path component '%s'." x)
   | path_token :: path_tokens ->
       [%expr
         Wtr.Private.exact
@@ -224,4 +228,5 @@ let routes_ppx =
     Ast_pattern.(single_expr_payload (estring __))
     make_routes
 
-let () = Driver.register_transformation routes_ppx_name ~extensions:[routes_ppx]
+let () =
+  Driver.register_transformation routes_ppx_name ~extensions:[ routes_ppx ]

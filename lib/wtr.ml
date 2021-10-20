@@ -38,11 +38,16 @@ let eq : type a b. a id -> b id -> (a, b) eq option =
 (* Types *)
 
 (* We use an array for node_types so that we get better cache locality. *)
-type 'a router =
-  {route: 'a route option; node_types: (node_type * 'a router) array}
+type 'a router = {
+  route : 'a route option;
+  node_types : (node_type * 'a router) array;
+}
 
 (* Unoptimized/un-compiled router type. *)
-and 'a node = {route': 'a route option; node_types': (node_type * 'a node) list}
+and 'a node = {
+  route' : 'a route option;
+  node_types' : (node_type * 'a node) list;
+}
 
 and ('a, 'b) request_target =
   | Nil : ('b, 'b) request_target
@@ -88,10 +93,12 @@ and rest = string
 
 and ('a, 'b) query = ('a, 'b) request_target
 
-and 'a arg =
-  { name: string (* name e.g. int, float, bool, string etc *)
-  ; convert: string -> 'a option
-  ; id: 'a id }
+and 'a arg = {
+  name : string;
+  (* name e.g. int, float, bool, string etc *)
+  convert : string -> 'a option;
+  id : 'a id;
+}
 
 and arg_value = Arg_value : 'c arg * 'c -> arg_value
 
@@ -99,7 +106,7 @@ and arg_value = Arg_value : 'c arg * 'c -> arg_value
 
 let arg name convert =
   let id = new_id () in
-  {name; convert; id}
+  { name; convert; id }
 
 let int_d = arg "int" int_of_string_opt
 let int32_d = arg "int32" Int32.of_string_opt
@@ -196,17 +203,17 @@ let node_type_equal a b =
       String.equal name1 name2 && String.equal value1 value2
   | NMethod meth1, NMethod meth2 -> method_equal meth1 meth2
   | NArg arg, NArg arg' -> (
-    match eq arg'.id arg.id with Some Eq -> true | None -> false )
+      match eq arg'.id arg.id with Some Eq -> true | None -> false)
   | NQuery_arg (name1, arg1), NQuery_arg (name2, arg2) -> (
       String.equal name1 name2
-      && match eq arg1.id arg2.id with Some Eq -> true | None -> false )
+      && match eq arg1.id arg2.id with Some Eq -> true | None -> false)
   | _ -> false
 
 let rec node_type_of_request_target :
     type a b. (a, b) request_target -> node_type list = function
   | Nil -> []
-  | Slash -> [NSlash]
-  | Rest -> [NRest]
+  | Slash -> [ NSlash ]
+  | Rest -> [ NRest ]
   | Exact (exact1, request_target) ->
       NExact exact1 :: node_type_of_request_target request_target
   | Query_exact (name, value, request_target) ->
@@ -220,7 +227,7 @@ let rec node : 'a node -> 'a route -> 'a node =
  fun node' (Route (method', request_target, _) as route) ->
   let rec loop node node_types =
     match node_types with
-    | [] -> {node with route'= Some route}
+    | [] -> { node with route' = Some route }
     | node_type :: node_types ->
         let node'' =
           List.find_opt
@@ -234,26 +241,28 @@ let rec node : 'a node -> 'a route -> 'a node =
                 (fun (node_type', t') ->
                   if node_type_equal node_type node_type' then
                     (node_type', loop t' node_types)
-                  else (node_type', t') )
+                  else (node_type', t'))
                 node.node_types'
           | None -> (node_type, loop empty_node node_types) :: node.node_types'
         in
-        {node with node_types'}
+        { node with node_types' }
   in
   let node_types =
     NMethod method' :: node_type_of_request_target request_target
   in
   loop node' node_types
 
-and empty_node : 'a node = {route'= None; node_types'= []}
+and empty_node : 'a node = { route' = None; node_types' = [] }
 
 let rec compile : 'a node -> 'a router =
  fun t ->
-  { route= t.route'
-  ; node_types=
+  {
+    route = t.route';
+    node_types =
       List.rev t.node_types'
       |> List.map (fun (node_type, t) -> (node_type, compile t))
-      |> Array.of_list }
+      |> Array.of_list;
+  }
 
 let router routes =
   compile @@ (List.concat routes |> List.fold_left node empty_node)
@@ -287,7 +296,7 @@ let rec match' : method' -> string -> 'a router -> 'a option =
     | [] ->
         Option.map
           (fun (Route (_, request_target, f)) ->
-            exec_route_handler f (request_target, List.rev arg_values) )
+            exec_route_handler f (request_target, List.rev arg_values))
           t.route
     | request_target_token :: request_target_tokens ->
         let continue = ref true in
@@ -297,16 +306,16 @@ let rec match' : method' -> string -> 'a router -> 'a option =
         while !continue && !index < Array.length t.node_types do
           match (request_target_token, t.node_types.(!index)) with
           | `Path v, (NArg arg, t') -> (
-            match arg.convert v with
-            | Some v ->
-                matched_node := Some (t', Arg_value (arg, v) :: arg_values) ;
-                continue := false
-            | None -> incr index )
+              match arg.convert v with
+              | Some v ->
+                  matched_node := Some (t', Arg_value (arg, v) :: arg_values);
+                  continue := false
+              | None -> incr index)
           | `Path v, (NExact exact, t') when String.equal exact v ->
-              matched_node := Some (t', arg_values) ;
+              matched_node := Some (t', arg_values);
               continue := false
           | `Path v, (NSlash, t') when String.equal "" v ->
-              matched_node := Some (t', arg_values) ;
+              matched_node := Some (t', arg_values);
               continue := false
           | `Path _, (NRest, t') ->
               let path =
@@ -315,33 +324,32 @@ let rec match' : method' -> string -> 'a router -> 'a option =
                 |> String.concat "/"
               in
               let rest_url =
-                String.split_on_char '?' request_target
-                |> fun l ->
+                String.split_on_char '?' request_target |> fun l ->
                 if List.length l > 1 then path ^ "?" ^ List.nth l 1 else path
               in
               matched_node :=
-                Some (t', Arg_value (string_d, rest_url) :: arg_values) ;
-              continue := false ;
+                Some (t', Arg_value (string_d, rest_url) :: arg_values);
+              continue := false;
               rest_matched := true
           | `Query (name, value), (NQuery_arg (name', arg), t') -> (
-            match arg.convert value with
-            | Some v when String.equal name name' ->
-                matched_node := Some (t', Arg_value (arg, v) :: arg_values) ;
-                continue := false
-            | _ -> incr index )
+              match arg.convert value with
+              | Some v when String.equal name name' ->
+                  matched_node := Some (t', Arg_value (arg, v) :: arg_values);
+                  continue := false
+              | _ -> incr index)
           | `Query (name1, value1), (NQuery_exact (name2, value2), t')
             when String.equal name1 name2 && String.equal value1 value2 ->
-              matched_node := Some (t', arg_values) ;
+              matched_node := Some (t', arg_values);
               continue := false
           | _ -> incr index
-        done ;
+        done;
         Option.bind !matched_node (fun (t', arg_values) ->
             let matched_tok_count = matched_token_count + 1 in
             if !rest_matched then
               (try_match [@tailcall]) t' arg_values [] matched_tok_count
             else
               (try_match [@tailcall]) t' arg_values request_target_tokens
-                matched_tok_count )
+                matched_tok_count)
   in
   if List.length request_target_tokens > 0 then
     let n = Array.length t.node_types in
@@ -360,23 +368,23 @@ and exec_route_handler :
     type a b. a -> (a, b) request_target * arg_value list -> b =
  fun f -> function
   | Nil, [] -> f
-  | Rest, [Arg_value (d, v)] -> (
-    match eq string_d.id d.id with Some Eq -> f v | None -> assert false )
+  | Rest, [ Arg_value (d, v) ] -> (
+      match eq string_d.id d.id with Some Eq -> f v | None -> assert false)
   | Slash, [] -> f
   | Exact (_, request_target), arg_values ->
       exec_route_handler f (request_target, arg_values)
   | Query_exact (_, _, request_target), arg_values ->
       exec_route_handler f (request_target, arg_values)
-  | Arg ({id; _}, request_target), Arg_value ({id= id'; _}, v) :: arg_values
-    -> (
-    match eq id id' with
-    | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
-    | None -> assert false )
-  | ( Query_arg (_, {id; _}, request_target)
-    , Arg_value ({id= id'; _}, v) :: arg_values ) -> (
-    match eq id id' with
-    | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
-    | None -> assert false )
+  | ( Arg ({ id; _ }, request_target),
+      Arg_value ({ id = id'; _ }, v) :: arg_values ) -> (
+      match eq id id' with
+      | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
+      | None -> assert false)
+  | ( Query_arg (_, { id; _ }, request_target),
+      Arg_value ({ id = id'; _ }, v) :: arg_values ) -> (
+      match eq id id' with
+      | Some Eq -> exec_route_handler (f v) (request_target, arg_values)
+      | None -> assert false)
   | _, _ -> assert false
 
 (* Pretty Printers *)
@@ -410,7 +418,7 @@ let pp_request_target fmt request_target =
   loop false fmt request_target
 
 let pp_method fmt t =
-  ( match t with
+  (match t with
   | `GET -> "GET"
   | `HEAD -> "HEAD"
   | `POST -> "POST"
@@ -419,7 +427,7 @@ let pp_method fmt t =
   | `CONNECT -> "CONNECT"
   | `OPTIONS -> "OPTIONS"
   | `TRACE -> "TRACE"
-  | `Method s -> Format.sprintf "Method (%s)" s )
+  | `Method s -> Format.sprintf "Method (%s)" s)
   |> Format.fprintf fmt "%s"
 
 let pp_node_type fmt node_type =
@@ -443,27 +451,27 @@ let pp fmt t =
     Format.pp_print_list
       ~pp_sep:(if len > 1 then Format.pp_force_newline else fun _ () -> ())
       (fun fmt (node_type, t') ->
-        Format.pp_open_vbox fmt 2 ;
-        ( match node_type with
+        Format.pp_open_vbox fmt 2;
+        (match node_type with
         | NQuery_exact _ | NQuery_arg _ ->
             let qmark_printed =
               if not qmark_printed then (
-                Format.fprintf fmt "?%a" pp_node_type node_type ;
-                true )
+                Format.fprintf fmt "?%a" pp_node_type node_type;
+                true)
               else (
-                Format.fprintf fmt "&%a" pp_node_type node_type ;
-                false )
+                Format.fprintf fmt "&%a" pp_node_type node_type;
+                false)
             in
             (pp' qmark_printed) fmt t'
         | node ->
-            Format.fprintf fmt "%a" pp_node_type node ;
-            (pp' qmark_printed) fmt t' ) ;
-        Format.pp_close_box fmt () )
+            Format.fprintf fmt "%a" pp_node_type node;
+            (pp' qmark_printed) fmt t');
+        Format.pp_close_box fmt ())
       fmt nodes
   and pp' qmark_printed fmt t' =
     if Array.length t'.node_types > 0 then (
-      Format.pp_print_break fmt 0 0 ;
-      (loop qmark_printed) fmt t' )
+      Format.pp_print_break fmt 0 0;
+      (loop qmark_printed) fmt t')
   in
   loop false fmt t
 

@@ -24,8 +24,7 @@ let () =
       |> Cohttp.Code.string_of_method
       |> Wtr.method'
     in
-    Wtr.match' method' uri Router.combinator_router
-    |> function
+    Wtr.match' method' uri Router.combinator_router |> function
     | Some resp ->
         Cohttp_lwt_unix.Server.respond_string ~status:`OK ~body:resp ()
     | None -> Cohttp_lwt_unix.Server.respond_not_found ()
