@@ -6,7 +6,7 @@
 
 (using mdx 0.1)
 
-(generate_opam_files true)
+(generate_opam_files false)
 
 (implicit_transitive_deps true)
 
@@ -47,4 +47,3 @@
    (>= 0.22.0))
   (ppx_expect :with-test)
   (mdx :with-test)))
-
