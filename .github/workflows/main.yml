@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]        
+        os: [macos-latest, ubuntu-latest]        
         ocaml-compiler:
           - ocaml-base-compiler.4.11.2
           - ocaml-base-compiler.4.12.1
