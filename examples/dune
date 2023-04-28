@@ -13,9 +13,4 @@
 (executable
  (name terminal_router)
  (modules terminal_router)
- (libraries router wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt))
-
-(executable
- (name cohttp_router)
- (modules cohttp_router)
- (libraries router wtr cohttp cohttp-lwt cohttp-lwt-unix conduit-lwt))
+ (libraries router wtr))
